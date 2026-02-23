@@ -264,7 +264,7 @@ export function ExpenseFormDialog({
                   {expenses.map(exp => (
                     <div
                       key={exp.id}
-                      className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] group transition-colors"
+                      className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] group transition-colors min-w-0"
                     >
                       <span className="shrink-0 text-[11px] text-[var(--text-muted)] w-11 text-center bg-[var(--bg-surface-2)] rounded px-1 py-0.5">
                         {formatDate(exp.timestamp)}
