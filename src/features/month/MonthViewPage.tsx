@@ -67,6 +67,7 @@ interface BudgetRow {
   household_id: string;
   start_month: string;
   end_month: string | null;
+  debt_id: string | null;
 }
 
 interface BudgetMonthRow {
@@ -245,6 +246,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
           month={month}
           householdId={householdId}
           userId={userId}
+          debtId={budget.debt_id}
           trigger={<span />}
           defaultOpen
           onClose={() => setExpenseOpen(false)}
@@ -550,7 +552,7 @@ export function MonthViewPage() {
   // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month
+    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month, debt_id
      FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
   );
 

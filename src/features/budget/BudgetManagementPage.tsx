@@ -46,6 +46,12 @@ interface BudgetRow {
   default_amount: number;
   paid_with_credit_card: number;
   household_id: string;
+  debt_id: string | null;
+}
+
+interface DebtOption {
+  id: string;
+  name: string;
 }
 
 interface BudgetFormState {
@@ -56,6 +62,7 @@ interface BudgetFormState {
   end_month: string;   // '' = no end date (indefinite)
   default_amount: string;
   paid_with_credit_card: boolean;
+  debt_id: string;     // '' = not linked
 }
 
 const defaultForm = (): BudgetFormState => ({
@@ -66,6 +73,7 @@ const defaultForm = (): BudgetFormState => ({
   end_month: '',
   default_amount: '0',
   paid_with_credit_card: false,
+  debt_id: '',
 });
 
 // ---------------------------------------------------------------------------
@@ -78,11 +86,12 @@ interface BudgetFormDialogProps {
   budgetId?: string;
   householdId: string;
   userId: string;
+  debts: DebtOption[];
   onDone: () => void;
   trigger: React.ReactNode;
 }
 
-function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, onDone, trigger }: BudgetFormDialogProps) {
+function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, onDone, trigger }: BudgetFormDialogProps) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BudgetFormState>(initial ?? defaultForm());
   const [isLoading, setIsLoading] = useState(false);
@@ -122,6 +131,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, onDone
           end_month: form.end_month || undefined,
           default_amount: amount,
           paid_with_credit_card: form.paid_with_credit_card,
+          debt_id: form.debt_id || null,
           created_by: userId,
         }, userId);
       } else if (mode === 'edit' && budgetId) {
@@ -132,6 +142,8 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, onDone
           default_amount: amount,
           // Pass null to explicitly clear end_month when the field is empty
           end_month: form.end_month || null,
+          // Pass null to unlink debt, or the selected debt_id
+          debt_id: form.debt_id || null,
         }, userId);
       }
       setOpen(false);
@@ -279,6 +291,27 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, onDone
             </div>
           )}
 
+          {/* Debt link — shown when category is 'debt' OR when editing and already linked */}
+          {(form.category_id === 'debt' || form.debt_id) && debts.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Vincular a deuda (opcional)</Label>
+              <Select value={form.debt_id || '__none__'} onValueChange={v => set('debt_id', v === '__none__' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="— Sin vincular —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Sin vincular —</SelectItem>
+                  {debts.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                Al registrar un gasto aquí, se abona automáticamente a la deuda vinculada.
+              </p>
+            </div>
+          )}
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">{error}</p>
           )}
@@ -307,8 +340,12 @@ export function BudgetManagementPage() {
   const userId = session?.userId ?? '';
 
   const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, description, category_id, start_month, end_month, default_amount, paid_with_credit_card, household_id
+    `SELECT id, name, description, category_id, start_month, end_month, default_amount, paid_with_credit_card, household_id, debt_id
      FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
+  );
+
+  const { data: debtOptions = [] } = useQuery<DebtOption>(
+    `SELECT id, name FROM debts WHERE deleted_at IS NULL ORDER BY name ASC`,
   );
 
   const creditCard = budgets.filter(b => b.paid_with_credit_card === 1);
@@ -347,6 +384,7 @@ export function BudgetManagementPage() {
                 budgetId={b.id}
                 householdId={householdId}
                 userId={userId}
+                debts={debtOptions}
                 initial={{
                   name: b.name,
                   description: b.description ?? '',
@@ -355,6 +393,7 @@ export function BudgetManagementPage() {
                   end_month: b.end_month ?? '',
                   default_amount: String(b.default_amount),
                   paid_with_credit_card: b.paid_with_credit_card === 1,
+                  debt_id: b.debt_id ?? '',
                 }}
                 onDone={() => {}}
                 trigger={
@@ -389,6 +428,7 @@ export function BudgetManagementPage() {
             mode="create"
             householdId={householdId}
             userId={userId}
+            debts={debtOptions}
             onDone={() => {}}
             trigger={
               <Button size="sm" className="gap-1.5">

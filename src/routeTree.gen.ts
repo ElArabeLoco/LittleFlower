@@ -20,6 +20,7 @@ import { Route as AnualRouteImport } from './routes/anual'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsBudgetsRouteImport } from './routes/settings/budgets'
+import { Route as FinancesDebtsRouteImport } from './routes/finances/debts'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -76,17 +77,23 @@ const SettingsBudgetsRoute = SettingsBudgetsRouteImport.update({
   path: '/settings/budgets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinancesDebtsRoute = FinancesDebtsRouteImport.update({
+  id: '/debts',
+  path: '/debts',
+  getParentRoute: () => FinancesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
   '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
-  '/finances': typeof FinancesRoute
+  '/finances': typeof FinancesRouteWithChildren
   '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
+  '/finances/debts': typeof FinancesDebtsRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -95,11 +102,12 @@ export interface FileRoutesByTo {
   '/anual': typeof AnualRoute
   '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
-  '/finances': typeof FinancesRoute
+  '/finances': typeof FinancesRouteWithChildren
   '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
+  '/finances/debts': typeof FinancesDebtsRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings': typeof SettingsIndexRoute
 }
@@ -109,11 +117,12 @@ export interface FileRoutesById {
   '/anual': typeof AnualRoute
   '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
-  '/finances': typeof FinancesRoute
+  '/finances': typeof FinancesRouteWithChildren
   '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
+  '/finances/debts': typeof FinancesDebtsRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/month'
     | '/onboarding'
+    | '/finances/debts'
     | '/settings/budgets'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/month'
     | '/onboarding'
+    | '/finances/debts'
     | '/settings/budgets'
     | '/settings'
   id:
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/month'
     | '/onboarding'
+    | '/finances/debts'
     | '/settings/budgets'
     | '/settings/'
   fileRoutesById: FileRoutesById
@@ -164,7 +176,7 @@ export interface RootRouteChildren {
   AnualRoute: typeof AnualRoute
   BudgetRoute: typeof BudgetRoute
   DashboardRoute: typeof DashboardRoute
-  FinancesRoute: typeof FinancesRoute
+  FinancesRoute: typeof FinancesRouteWithChildren
   IncomeRoute: typeof IncomeRoute
   LoginRoute: typeof LoginRoute
   MonthRoute: typeof MonthRoute
@@ -252,15 +264,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsBudgetsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/finances/debts': {
+      id: '/finances/debts'
+      path: '/debts'
+      fullPath: '/finances/debts'
+      preLoaderRoute: typeof FinancesDebtsRouteImport
+      parentRoute: typeof FinancesRoute
+    }
   }
 }
+
+interface FinancesRouteChildren {
+  FinancesDebtsRoute: typeof FinancesDebtsRoute
+}
+
+const FinancesRouteChildren: FinancesRouteChildren = {
+  FinancesDebtsRoute: FinancesDebtsRoute,
+}
+
+const FinancesRouteWithChildren = FinancesRoute._addFileChildren(
+  FinancesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnualRoute: AnualRoute,
   BudgetRoute: BudgetRoute,
   DashboardRoute: DashboardRoute,
-  FinancesRoute: FinancesRoute,
+  FinancesRoute: FinancesRouteWithChildren,
   IncomeRoute: IncomeRoute,
   LoginRoute: LoginRoute,
   MonthRoute: MonthRoute,

@@ -54,6 +54,7 @@ const budgets = new Table({
   deleted_at: column.text,      // nullable — soft delete
   last_edited_by: column.text,  // nullable
   last_edited_at: column.text,  // nullable
+  debt_id: column.text,         // nullable — FK to debts.id if budget is debt-linked
 });
 
 const budget_months = new Table({
@@ -125,6 +126,38 @@ const exchange_rates = new Table({
   last_edited_at: column.text,  // nullable
 });
 
+const debts = new Table({
+  household_id: column.text,
+  name: column.text,
+  description: column.text,        // nullable
+  initial_amount: column.integer,  // COP integer — original disbursed amount
+  currency: column.text,           // 'COP' | 'USD'
+  disbursed_at: column.text,       // 'YYYY-MM-DD'
+  created_by: column.text,
+  created_at: column.text,
+  deleted_at: column.text,         // nullable — soft delete
+  updated_at: column.text,
+  last_edited_by: column.text,     // nullable
+  last_edited_at: column.text,     // nullable
+});
+
+const debt_transactions = new Table({
+  household_id: column.text,
+  debt_id: column.text,
+  amount: column.integer,          // always COP integer (converted if USD)
+  original_amount: column.integer, // nullable — amount in original currency if USD
+  original_currency: column.text,  // nullable — 'USD' if applicable
+  exchange_rate: column.real,      // nullable — TRM used at transaction time
+  type: column.text,               // 'debit' (payment/abono) | 'credit' (increase)
+  note: column.text,               // nullable
+  date: column.text,               // 'YYYY-MM-DD'
+  source: column.text,             // 'manual' | 'expense'
+  expense_id: column.text,         // nullable — FK to expenses.id if source='expense'
+  created_by: column.text,
+  created_at: column.text,
+  deleted_at: column.text,         // nullable — soft delete
+});
+
 // ---------------------------------------------------------------------------
 // Exported schema
 // ---------------------------------------------------------------------------
@@ -138,6 +171,8 @@ export const AppSchema = new Schema({
   incomes,
   income_months,
   exchange_rates,
+  debts,
+  debt_transactions,
 });
 
 export type Database = (typeof AppSchema)['types'];

@@ -19,7 +19,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Scale, CreditCard, Banknote } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Scale, CreditCard, Banknote, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
@@ -120,6 +120,20 @@ interface RecentExpenseRow {
   timestamp: string;
   budget_name: string;
   category_id: string;
+}
+
+interface DebtDashRow {
+  id: string;
+  name: string;
+  initial_amount: number;
+  currency: string;
+}
+
+interface DebtTxDashRow {
+  debt_id: string;
+  type: string;
+  amount: number;
+  date: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,6 +329,15 @@ export function DashboardPage() {
      LIMIT 10`,
   );
 
+  // ── Debts ─────────────────────────────────────────────────────────────────
+  const { data: dashDebts = [] } = useQuery<DebtDashRow>(
+    `SELECT id, name, initial_amount, currency FROM debts WHERE deleted_at IS NULL`,
+  );
+
+  const { data: dashDebtTxs = [] } = useQuery<DebtTxDashRow>(
+    `SELECT debt_id, type, amount, date FROM debt_transactions WHERE deleted_at IS NULL ORDER BY date ASC`,
+  );
+
   // ── Build lookup maps ──────────────────────────────────────────────────────
 
   const bmIdMap = useMemo(() => {
@@ -468,6 +491,48 @@ export function DashboardPage() {
     } catch { return iso.slice(0, 10); }
   }
 
+  // ── Debt computations ─────────────────────────────────────────────────────
+
+  /** Per-debt balance (COP) and progress, sorted by pending balance desc */
+  const debtProgressData = useMemo(() => {
+    return dashDebts
+      .map(debt => {
+        const txs = dashDebtTxs.filter(t => t.debt_id === debt.id);
+        const credits = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+        const debits  = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
+        const balance = debt.initial_amount + credits - debits;
+        const pctPaid = debt.initial_amount > 0
+          ? Math.min(Math.max((debt.initial_amount - balance) / debt.initial_amount * 100, 0), 100)
+          : 0;
+        return { id: debt.id, name: debt.name, balance, initial: debt.initial_amount, pctPaid };
+      })
+      .sort((a, b) => b.balance - a.balance);
+  }, [dashDebts, dashDebtTxs]);
+
+  const totalDebtBalance = useMemo(
+    () => debtProgressData.reduce((s, d) => s + Math.max(d.balance, 0), 0),
+    [debtProgressData],
+  );
+
+  /** Monthly total debt balance for last 6 months — AreaChart data */
+  const debtEvolutionData = useMemo(() => {
+    return last6.map(month => {
+      // End-of-month boundary: include all txs up to last day of `month`
+      const endOfMonth = `${month}-31`; // '2025-02-31' sorts correctly (string comparison)
+      let total = 0;
+      for (const debt of dashDebts) {
+        const txs = dashDebtTxs.filter(t => t.debt_id === debt.id && t.date <= endOfMonth);
+        const credits = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+        const debits  = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
+        const balance = debt.initial_amount + credits - debits;
+        total += Math.max(balance, 0);
+      }
+      return { month, label: shortMonth(month), saldo: total };
+    });
+  }, [last6, dashDebts, dashDebtTxs]);
+
+  const hasDebts = dashDebts.length > 0;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const hasSpend = currentData.spent > 0;
@@ -486,7 +551,7 @@ export function DashboardPage() {
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-5 space-y-5">
 
         {/* ── KPI strip ── */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className={`grid grid-cols-2 gap-3 ${hasDebts ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
           <KpiCard
             label="Balance real"
             value={currentData.balance}
@@ -515,6 +580,15 @@ export function DashboardPage() {
             highlight={currentData.spent > currentData.budgeted ? 'negative' : 'default'}
             formatCOP={formatCOP}
           />
+          {hasDebts && (
+            <KpiCard
+              label="Total adeudado"
+              value={totalDebtBalance}
+              icon={<AlertCircle size={16} />}
+              highlight={totalDebtBalance > 0 ? 'negative' : 'positive'}
+              formatCOP={formatCOP}
+            />
+          )}
         </div>
 
         {/* ── Tendencia 6 meses ── */}
@@ -741,6 +815,87 @@ export function DashboardPage() {
                 );
               })}
             </div>
+          </ChartCard>
+        )}
+
+        {/* ── Deudas: barras de progreso ── */}
+        {hasDebts && (
+          <ChartCard
+            title="Progreso de deudas"
+            subtitle="Saldo pendiente por deuda"
+          >
+            <div className="space-y-4">
+              {debtProgressData.map((d) => (
+                <div key={d.id}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-[var(--text-primary)] truncate flex items-center gap-1.5">
+                      💳 <span className="truncate">{d.name}</span>
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-[11px] font-semibold tabular-nums text-rose-500 dark:text-rose-400">
+                        {formatCOP(Math.max(d.balance, 0))}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)]">
+                        / {formatCOP(d.initial)}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] font-medium">
+                        ({d.pctPaid.toFixed(0)}% pagado)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${d.pctPaid}%`,
+                        background: 'var(--accent-rose, #fb7185)',
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        )}
+
+        {/* ── Deudas: evolución 6 meses ── */}
+        {hasDebts && (
+          <ChartCard
+            title="Evolución de deudas"
+            subtitle="Saldo total de deudas en los últimos 6 meses"
+          >
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={debtEvolutionData}>
+                <defs>
+                  <linearGradient id="debtGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#fb7185" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#fb7185" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={formatK}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false} width={52}
+                />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }} />
+                <Area
+                  type="monotone"
+                  dataKey="saldo"
+                  name="Saldo deudas"
+                  stroke="#fb7185"
+                  strokeWidth={2.5}
+                  fill="url(#debtGrad)"
+                  dot={{ r: 3, fill: '#fb7185', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#fb7185' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </ChartCard>
         )}
 

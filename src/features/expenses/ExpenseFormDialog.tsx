@@ -42,6 +42,8 @@ export interface ExpenseFormDialogProps {
   month: string; // 'YYYY-MM'
   householdId: string;
   userId: string;
+  /** If set, expenses on this budget auto-create a debit transaction on this debt */
+  debtId?: string | null;
   trigger: React.ReactNode;
   defaultOpen?: boolean;   // open immediately (controlled from parent)
   onClose?: () => void;    // called when dialog closes (controlled mode)
@@ -81,6 +83,7 @@ export function ExpenseFormDialog({
   month,
   householdId,
   userId,
+  debtId,
   trigger,
   defaultOpen = false,
   onClose,
@@ -151,6 +154,7 @@ export function ExpenseFormDialog({
       note: expenseNote || undefined,
       recorded_by: userId,
       timestamp: new Date(expenseDate + 'T12:00:00').toISOString(),
+      debt_id: debtId ?? undefined,
     });
   }
 
