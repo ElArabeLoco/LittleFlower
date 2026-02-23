@@ -19,6 +19,7 @@ import {
   upsertBudgetMonth,
   recordExpense,
   softDeleteExpense,
+  updateBudgetMonthExecution,
 } from '@/infrastructure/powersync/mutationWrappers';
 import { useQuery } from '@powersync/react';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -137,7 +138,8 @@ export function ExpenseFormDialog({
   }
 
   // Core save logic — shared by form submit and quick-pay button
-  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string) {
+  // Returns the resolved budgetMonthId (created on-demand if needed)
+  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string): Promise<string> {
     let bmId = resolvedBmId;
     if (!bmId) {
       bmId = await upsertBudgetMonth(
@@ -156,6 +158,7 @@ export function ExpenseFormDialog({
       timestamp: new Date(expenseDate + 'T12:00:00').toISOString(),
       debt_id: debtId ?? undefined,
     });
+    return bmId;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -169,7 +172,7 @@ export function ExpenseFormDialog({
     setSaving(true);
     try {
       await saveExpense(parsed, date, note.trim());
-      resetForm();
+      setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
@@ -184,7 +187,9 @@ export function ExpenseFormDialog({
     if (pendingAmount <= 0) return;
     setQuickPaying(true);
     try {
-      await saveExpense(pendingAmount, todayISO(), '');
+      const bmId = await saveExpense(pendingAmount, todayISO(), '');
+      await updateBudgetMonthExecution(bmId, true, userId);
+      setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
