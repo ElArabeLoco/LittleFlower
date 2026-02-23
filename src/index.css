@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Semantic design tokens — light mode (default)
+   Parallel dark palette via .dark class on <html>
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Brand */
+  --color-primary: #f9a8d4;           /* pink-300 */
+  --color-secondary: #c4b5fd;         /* violet-300 */
+
+  /* Backgrounds */
+  --bg-app: #fdf2f8;                  /* pink-50 tint — page background */
+  --bg-surface: #ffffff;              /* card / header surface */
+  --bg-surface-2: #fdf4ff;            /* subtle secondary surface */
+  --bg-hover: rgba(249,168,212,0.15); /* pink-300/15 */
+
+  /* Text */
+  --text-primary: #1e1b4b;            /* indigo-950 */
+  --text-secondary: #6b7280;          /* gray-500 */
+  --text-muted: #9ca3af;              /* gray-400 */
+  --text-brand: #db2777;              /* pink-600 */
+
+  /* Borders */
+  --border-subtle: #fce7f3;           /* pink-100 */
+  --border-medium: #fbcfe8;           /* pink-200 */
+  --border-strong: #f9a8d4;           /* pink-300 */
+
+  /* Navigation */
+  --nav-bg: #ffffff;
+  --nav-border: #fce7f3;
+  --nav-active: #db2777;
+  --nav-inactive: #9ca3af;
+  --nav-active-bg: rgba(219,39,119,0.08);
+
+  /* Spreadsheet group headers / totals rows */
+  --group-cc-bg: #f5f3ff;             /* violet-50 */
+  --group-cc-text: #6d28d9;           /* violet-700 */
+  --group-cc-border: #ede9fe;         /* violet-100 */
+  --group-cash-bg: #f0fdf4;           /* green-50 */
+  --group-cash-text: #15803d;         /* green-700 */
+  --group-cash-border: #dcfce7;       /* green-100 */
+  --group-totals-bg: rgba(253,242,248,0.5);  /* pink-50/50 */
+  --group-totals-sticky: rgba(253,242,248,0.85);
+  --group-available-bg: #fdf2f8;      /* pink-50 */
+  --group-available-sticky: rgba(252,231,243,0.9);  /* pink-100/90 */
+  --group-available-text: #9d174d;    /* pink-800 */
+  --group-total-bg: #f9fafb;          /* gray-50 */
+  --group-total-sticky: rgba(243,244,246,0.9); /* gray-100/90 */
+  --group-total-text: #4b5563;        /* gray-600 */
+  --group-balance-bg: #ffffff;
+  --group-balance-text: #374151;      /* gray-700 */
+}
+
+.dark {
+  /* Brand (brightened for dark backgrounds) */
+  --color-primary: #f472b6;           /* pink-400 */
+  --color-secondary: #a78bfa;         /* violet-400 */
+
+  /* Backgrounds */
+  --bg-app: #0f0e17;                  /* near-black, warm-violet tint */
+  --bg-surface: #1a1826;              /* dark violet-tinted card */
+  --bg-surface-2: #201e30;            /* slightly lighter surface */
+  --bg-hover: rgba(244,114,182,0.08); /* pink-400/8 */
+
+  /* Text */
+  --text-primary: #f1e9f5;            /* near-white, lavender tint */
+  --text-secondary: #a09ab8;          /* muted violet-gray */
+  --text-muted: #6b6485;              /* dimmer */
+  --text-brand: #f472b6;              /* pink-400 */
+
+  /* Borders */
+  --border-subtle: #2d2640;           /* dark violet */
+  --border-medium: #3d3555;
+  --border-strong: #5b4e7a;
+
+  /* Navigation */
+  --nav-bg: #1a1826;
+  --nav-border: #2d2640;
+  --nav-active: #f472b6;
+  --nav-inactive: #6b6485;
+  --nav-active-bg: rgba(244,114,182,0.12);
+
+  /* Spreadsheet group headers / totals rows — dark palette */
+  --group-cc-bg: #221d35;             /* dark violet, clearly darker than bg-surface */
+  --group-cc-text: #c4b5fd;           /* violet-300 */
+  --group-cc-border: #2d2640;
+  --group-cash-bg: #0f2318;           /* dark green-tinted, clearly different */
+  --group-cash-text: #86efac;         /* green-300 */
+  --group-cash-border: #14362a;
+  --group-totals-bg: rgba(45,38,64,0.45);   /* violet-tinted subtle */
+  --group-totals-sticky: rgba(45,38,64,0.80);
+  --group-available-bg: #2a1d36;      /* dark pink-violet */
+  --group-available-sticky: rgba(52,28,55,0.92);
+  --group-available-text: #f9a8d4;    /* pink-300 */
+  --group-total-bg: #1e1c2e;          /* slightly lighter than bg-surface */
+  --group-total-sticky: rgba(32,30,48,0.92);
+  --group-total-text: #a09ab8;        /* text-secondary */
+  --group-balance-bg: #1a1826;        /* same as bg-surface */
+  --group-balance-text: #c4b5fd;      /* violet-300 */
+}
+
+/* ---------------------------------------------------------------------------
+   Base styles
+   --------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
