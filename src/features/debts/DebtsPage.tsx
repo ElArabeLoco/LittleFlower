@@ -528,8 +528,15 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
     [initialAmountCOP, transactions],
   );
 
-  const paid = initialAmountCOP - balance;
-  const pctPaid = initialAmountCOP > 0 ? Math.min(100, Math.max(0, Math.round((paid / initialAmountCOP) * 100))) : 0;
+  // Base = todo lo que se ha debido (inicial + aumentos)
+  // Pagado = suma de abonos
+  const { totalBase, totalPaid } = useMemo(() => {
+    const credits = transactions.filter(tx => tx.type === 'credit').reduce((s, tx) => s + tx.amount, 0);
+    const debits  = transactions.filter(tx => tx.type === 'debit').reduce((s, tx) => s + tx.amount, 0);
+    return { totalBase: initialAmountCOP + credits, totalPaid: debits };
+  }, [initialAmountCOP, transactions]);
+
+  const pctPaid = totalBase > 0 ? Math.min(100, Math.max(0, Math.round((totalPaid / totalBase) * 100))) : 0;
   const isFullyPaid = balance <= 0;
 
   return (
@@ -620,7 +627,7 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
             <span>{pctPaid}% pagado</span>
-            <span>{formatCOP(Math.max(0, paid))} abonado</span>
+            <span>{formatCOP(totalPaid)} abonado de {formatCOP(totalBase)}</span>
           </div>
           <div className="h-2 rounded-full bg-[var(--border-medium)] overflow-hidden">
             <div

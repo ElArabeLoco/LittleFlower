@@ -500,11 +500,12 @@ export function DashboardPage() {
         const txs = dashDebtTxs.filter(t => t.debt_id === debt.id);
         const credits = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
         const debits  = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
-        const balance = debt.initial_amount + credits - debits;
-        const pctPaid = debt.initial_amount > 0
-          ? Math.min(Math.max((debt.initial_amount - balance) / debt.initial_amount * 100, 0), 100)
+        const totalBase = debt.initial_amount + credits; // inicial + aumentos
+        const balance   = totalBase - debits;            // saldo pendiente
+        const pctPaid   = totalBase > 0
+          ? Math.min(Math.max(debits / totalBase * 100, 0), 100)
           : 0;
-        return { id: debt.id, name: debt.name, balance, initial: debt.initial_amount, pctPaid };
+        return { id: debt.id, name: debt.name, balance, initial: totalBase, pctPaid };
       })
       .sort((a, b) => b.balance - a.balance);
   }, [dashDebts, dashDebtTxs]);
