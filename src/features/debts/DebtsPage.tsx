@@ -823,11 +823,11 @@ export function DebtsPage() {
         }
       />
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
 
         {/* KPI strip */}
         {debts.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] p-4">
               <p className="text-xs text-[var(--text-muted)] mb-1">Total adeudado</p>
               <p className="text-lg font-bold text-[var(--text-primary)]">{formatCOP(totalBalance)}</p>
@@ -849,19 +849,21 @@ export function DebtsPage() {
           </div>
         )}
 
-        {/* Debt cards */}
-        {debts.map(debt => (
-          <DebtCard
-            key={debt.id}
-            debt={debt}
-            transactions={txByDebt.get(debt.id) ?? []}
-            householdId={householdId}
-            userId={userId}
-            currentMonthRate={currentMonthRate}
-            formatCOP={formatCOP}
-            onDelete={handleDelete}
-          />
-        ))}
+        {/* Debt cards — 2-col on lg+ */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          {debts.map(debt => (
+            <DebtCard
+              key={debt.id}
+              debt={debt}
+              transactions={txByDebt.get(debt.id) ?? []}
+              householdId={householdId}
+              userId={userId}
+              currentMonthRate={currentMonthRate}
+              formatCOP={formatCOP}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
 
       </main>
 

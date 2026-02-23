@@ -423,6 +423,7 @@ export function BudgetManagementPage() {
         emoji="📋"
         title="Presupuestos"
         subtitle="Gestiona tus categorías de gasto"
+        maxWidth="max-w-3xl"
         actions={
           <BudgetFormDialog
             mode="create"
@@ -439,7 +440,7 @@ export function BudgetManagementPage() {
         }
       />
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-6">
         {budgets.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">📋</p>
@@ -448,25 +449,28 @@ export function BudgetManagementPage() {
           </div>
         )}
 
-        {/* Credit Card group */}
-        {creditCard.length > 0 && (
-          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-4">
-            <h2 className="text-sm font-bold text-violet-700 mb-3 flex items-center gap-1.5">
-              <CreditCard size={14} /> Tarjeta de Crédito
-            </h2>
-            <BudgetList items={creditCard} emptyLabel="Sin ítems de tarjeta" />
-          </div>
-        )}
+        {/* 2-col on lg+, single-col on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+          {/* Credit Card group */}
+          {creditCard.length > 0 && (
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-4">
+              <h2 className="text-sm font-bold text-violet-700 mb-3 flex items-center gap-1.5">
+                <CreditCard size={14} /> Tarjeta de Crédito
+              </h2>
+              <BudgetList items={creditCard} emptyLabel="Sin ítems de tarjeta" />
+            </div>
+          )}
 
-        {/* Cash group */}
-        {cash.length > 0 && (
-          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-4">
-            <h2 className="text-sm font-bold text-green-700 mb-3 flex items-center gap-1.5">
-              <Banknote size={14} /> Efectivo
-            </h2>
-            <BudgetList items={cash} emptyLabel="Sin ítems de efectivo" />
-          </div>
-        )}
+          {/* Cash group */}
+          {cash.length > 0 && (
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-4">
+              <h2 className="text-sm font-bold text-green-700 mb-3 flex items-center gap-1.5">
+                <Banknote size={14} /> Efectivo
+              </h2>
+              <BudgetList items={cash} emptyLabel="Sin ítems de efectivo" />
+            </div>
+          )}
+        </div>
       </main>
 
       <AppNav />

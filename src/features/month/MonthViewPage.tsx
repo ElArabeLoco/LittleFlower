@@ -660,11 +660,11 @@ export function MonthViewPage() {
         emoji="🗓️"
         title="Vista Mensual"
         subtitle={formatMonthLabel(month)}
-        maxWidth="max-w-lg"
+        maxWidth="max-w-3xl"
       />
 
       {/* Month navigator */}
-      <div className="max-w-lg mx-auto w-full px-4 py-2.5 flex items-center gap-3">
+      <div className="max-w-3xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
         <button
           onClick={() => setMonth(m => prevMonth(m))}
           className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
@@ -686,9 +686,9 @@ export function MonthViewPage() {
 
       {/* Scrollable content */}
       <main className="flex-1 overflow-auto">
-        <div className="max-w-lg mx-auto px-4 pb-6 space-y-4">
+        <div className="max-w-3xl mx-auto px-4 pb-6 space-y-4">
 
-          {/* Hero balance card */}
+          {/* Hero balance card — full width */}
           <BalanceCard
             available={totalAvailable}
             totalBudgeted={totalBudgeted}
@@ -706,37 +706,40 @@ export function MonthViewPage() {
             </div>
           )}
 
-          {/* Credit Card group */}
-          <GroupSection
-            label="Tarjeta de Crédito"
-            icon={<CreditCard size={15} />}
-            accent="violet"
-            budgets={creditCardBudgets}
-            bmMap={bmMap}
-            expenseMap={expenseMap}
-            month={month}
-            householdId={householdId}
-            userId={userId}
-            totalBudgeted={ccTotals.budgeted}
-            totalSpent={ccTotals.spent}
-          />
+          {/* Budget groups — 2-col on lg+ */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {/* Credit Card group */}
+            <GroupSection
+              label="Tarjeta de Crédito"
+              icon={<CreditCard size={15} />}
+              accent="violet"
+              budgets={creditCardBudgets}
+              bmMap={bmMap}
+              expenseMap={expenseMap}
+              month={month}
+              householdId={householdId}
+              userId={userId}
+              totalBudgeted={ccTotals.budgeted}
+              totalSpent={ccTotals.spent}
+            />
 
-          {/* Cash group */}
-          <GroupSection
-            label="Efectivo"
-            icon={<Banknote size={15} />}
-            accent="green"
-            budgets={cashBudgets}
-            bmMap={bmMap}
-            expenseMap={expenseMap}
-            month={month}
-            householdId={householdId}
-            userId={userId}
-            totalBudgeted={cashTotals.budgeted}
-            totalSpent={cashTotals.spent}
-          />
+            {/* Cash group */}
+            <GroupSection
+              label="Efectivo"
+              icon={<Banknote size={15} />}
+              accent="green"
+              budgets={cashBudgets}
+              bmMap={bmMap}
+              expenseMap={expenseMap}
+              month={month}
+              householdId={householdId}
+              userId={userId}
+              totalBudgeted={cashTotals.budgeted}
+              totalSpent={cashTotals.spent}
+            />
+          </div>
 
-          {/* Income section */}
+          {/* Income section — full width */}
           {activeIncomes.length > 0 && (
             <IncomeSection
               incomes={activeIncomes}

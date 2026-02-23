@@ -546,10 +546,10 @@ export function DashboardPage() {
         emoji="✨"
         title="Dashboard"
         subtitle={`${shortMonth(currentMonth)} ${currentMonth.slice(0, 4)}`}
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-4xl"
       />
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-5 space-y-5">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-5 space-y-5">
 
         {/* ── KPI strip ── */}
         <div className={`grid grid-cols-2 gap-3 ${hasDebts ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
@@ -592,73 +592,74 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* ── Tendencia 6 meses ── */}
-        <ChartCard
-          title="Tendencia de los últimos 6 meses"
-          subtitle="Presupuestado vs. gastado real"
-        >
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyData} barCategoryGap="28%" barGap={3}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-                axisLine={false} tickLine={false}
-              />
-              <YAxis
-                tickFormatter={formatK}
-                tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
-                axisLine={false} tickLine={false} width={48}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--bg-hover)' }} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }}
-                formatter={(v) => v === 'budgeted' ? 'Presupuestado' : 'Gastado'}
-              />
-              <Bar dataKey="budgeted" name="budgeted" fill="#c4b5fd" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="spent" name="spent" fill="#f472b6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        {/* ── Tendencia + Balance — 2-col en lg ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <ChartCard
+            title="Tendencia de los últimos 6 meses"
+            subtitle="Presupuestado vs. gastado real"
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyData} barCategoryGap="28%" barGap={3}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={formatK}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false} width={48}
+                />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--bg-hover)' }} />
+                <Legend
+                  wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }}
+                  formatter={(v) => v === 'budgeted' ? 'Presupuestado' : 'Gastado'}
+                />
+                <Bar dataKey="budgeted" name="budgeted" fill="#c4b5fd" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="spent" name="spent" fill="#f472b6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
 
-        {/* ── Balance real 6M ── */}
-        <ChartCard
-          title="Balance real mes a mes"
-          subtitle="Ingresos disponibles menos gasto real"
-        >
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={monthlyData}>
-              <defs>
-                <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f472b6" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-                axisLine={false} tickLine={false}
-              />
-              <YAxis
-                tickFormatter={formatK}
-                tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
-                axisLine={false} tickLine={false} width={48}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }} />
-              <Area
-                type="monotone"
-                dataKey="balance"
-                name="Balance"
-                stroke="#f472b6"
-                strokeWidth={2.5}
-                fill="url(#balanceGrad)"
-                dot={{ r: 3, fill: '#f472b6', strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: '#f472b6' }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
+          <ChartCard
+            title="Balance real mes a mes"
+            subtitle="Ingresos disponibles menos gasto real"
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={monthlyData}>
+                <defs>
+                  <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f472b6" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={formatK}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false} width={48}
+                />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }} />
+                <Area
+                  type="monotone"
+                  dataKey="balance"
+                  name="Balance"
+                  stroke="#f472b6"
+                  strokeWidth={2.5}
+                  fill="url(#balanceGrad)"
+                  dot={{ r: 3, fill: '#f472b6', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#f472b6' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
 
         {/* ── Pies row ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -819,8 +820,9 @@ export function DashboardPage() {
           </ChartCard>
         )}
 
-        {/* ── Deudas: barras de progreso ── */}
+        {/* ── Deudas: progreso + evolución — 2-col en lg ── */}
         {hasDebts && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           <ChartCard
             title="Progreso de deudas"
             subtitle="Saldo pendiente por deuda"
@@ -857,15 +859,12 @@ export function DashboardPage() {
               ))}
             </div>
           </ChartCard>
-        )}
 
-        {/* ── Deudas: evolución 6 meses ── */}
-        {hasDebts && (
           <ChartCard
             title="Evolución de deudas"
             subtitle="Saldo total de deudas en los últimos 6 meses"
           >
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={debtEvolutionData}>
                 <defs>
                   <linearGradient id="debtGrad" x1="0" y1="0" x2="0" y2="1">
@@ -898,6 +897,7 @@ export function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           </ChartCard>
+        </div>
         )}
 
         {/* Empty state */}
