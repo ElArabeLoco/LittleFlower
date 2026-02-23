@@ -120,38 +120,29 @@ export async function logout(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Get current session (from Supabase's persisted token in localStorage)
+// Get current session — validated against Supabase (async)
 // ---------------------------------------------------------------------------
 
 /**
- * Reads the session synchronously from localStorage (no network call).
- * Supabase persists the session there automatically after login.
- * Returns null if there's no session or it's expired.
+ * Returns the current session validated against Supabase.
  *
- * PowerSync is connected in the background — it doesn't block the UI.
+ * Uses supabase.auth.getSession() which:
+ *   1. Returns the in-memory/localStorage session if the token is still valid.
+ *   2. Automatically refreshes the token if it's about to expire.
+ *   3. Returns null if there's no session or the refresh fails.
+ *
+ * This is async but is typically instant (no network call unless refresh needed).
+ * Calling this in route beforeLoad guarantees the JWT is fresh and contains
+ * the latest user_metadata (including household_id).
+ *
+ * Also connects PowerSync in the background when a valid session is found.
  */
-export function getCurrentSession(): AuthSession | null {
+export async function getCurrentSession(): Promise<AuthSession | null> {
   try {
-    // Supabase stores the session under a key like "sb-<project-ref>-auth-token"
-    const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL as string).hostname.split('.')[0]}-auth-token`;
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return null;
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) return null;
 
-    const parsed = JSON.parse(raw) as {
-      access_token?: string;
-      expires_at?: number;
-      user?: {
-        id?: string;
-        email?: string;
-        user_metadata?: { household_id?: string; [key: string]: unknown };
-      };
-    };
-
-    // Check if the token is expired
-    if (!parsed.access_token || !parsed.expires_at) return null;
-    if (parsed.expires_at * 1000 < Date.now()) return null;
-
-    const user = parsed.user;
+    const { user, access_token } = data.session;
     if (!user?.id) return null;
 
     // Connect PowerSync in background — does NOT block the UI
@@ -162,7 +153,7 @@ export function getCurrentSession(): AuthSession | null {
     return {
       userId: user.id,
       email: user.email ?? '',
-      token: parsed.access_token,
+      token: access_token,
       householdId: (user.user_metadata?.['household_id'] as string | undefined) ?? null,
     };
   } catch {

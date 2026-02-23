@@ -63,6 +63,7 @@ interface BudgetRow {
   household_id: string;
   start_month: string;
   end_month: string | null;
+  debt_id: string | null;
 }
 
 interface BudgetMonthRow {
@@ -312,18 +313,23 @@ export function YearView() {
   const userId = session?.userId ?? '';
   const { formatCOP: fmt } = useNumberFormat();
 
-  // Expense modal state — which budget × month is open
+  // Expense modal state — which budget × month is open.
+  // openKey increments on every open to force a full remount of ExpenseFormDialog,
+  // preventing stale internal state (open=false) when reopening the same budget×month.
   const [expenseModal, setExpenseModal] = useState<{
     budgetId: string;
     budgetName: string;
     budgetMonthId: string | null;
     budgetMonthAmount: number;
     month: string;
+    debtId: string | null;
+    openKey: number;
   } | null>(null);
+  const expenseModalKeyRef = useRef(0);
 
   // All active budgets
   const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month
+    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month, debt_id
      FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
   );
 
@@ -498,13 +504,18 @@ export function YearView() {
                   isCurrent={month === currentMonth}
                   isFuture={month > currentMonth}
                   hasStarted={hasStarted}
-                  onOpenExpenses={() => setExpenseModal({
-                    budgetId: budget.id,
-                    budgetName: budget.name,
-                    budgetMonthId: bm?.id ?? null,
-                    budgetMonthAmount: bm?.amount ?? budget.default_amount,
-                    month,
-                  })}
+                  onOpenExpenses={() => {
+                    expenseModalKeyRef.current += 1;
+                    setExpenseModal({
+                      budgetId: budget.id,
+                      budgetName: budget.name,
+                      budgetMonthId: bm?.id ?? null,
+                      budgetMonthAmount: bm?.amount ?? budget.default_amount,
+                      month,
+                      debtId: budget.debt_id ?? null,
+                      openKey: expenseModalKeyRef.current,
+                    });
+                  }}
                   {...handlers}
                 />
               );
@@ -671,7 +682,7 @@ export function YearView() {
       {/* Expense modal — rendered outside the table, controlled by expenseModal state */}
       {expenseModal && (
         <ExpenseFormDialog
-          key={`${expenseModal.budgetId}|${expenseModal.month}`}
+          key={`${expenseModal.budgetId}|${expenseModal.month}|${expenseModal.openKey}`}
           budgetId={expenseModal.budgetId}
           budgetName={expenseModal.budgetName}
           budgetMonthId={expenseModal.budgetMonthId}
@@ -679,6 +690,7 @@ export function YearView() {
           month={expenseModal.month}
           householdId={householdId}
           userId={userId}
+          debtId={expenseModal.debtId}
           trigger={<span />}
           defaultOpen
           onClose={() => setExpenseModal(null)}

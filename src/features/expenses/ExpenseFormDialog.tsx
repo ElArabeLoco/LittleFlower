@@ -8,7 +8,7 @@
  * Se abre desde cualquier BudgetCell, usando el mes de esa celda.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Receipt, Plus, Trash2, X, Zap } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -19,6 +19,7 @@ import {
   upsertBudgetMonth,
   recordExpense,
   softDeleteExpense,
+  updateBudgetMonthExecution,
 } from '@/infrastructure/powersync/mutationWrappers';
 import { useQuery } from '@powersync/react';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -42,6 +43,8 @@ export interface ExpenseFormDialogProps {
   month: string; // 'YYYY-MM'
   householdId: string;
   userId: string;
+  /** If set, expenses on this budget auto-create a debit transaction on this debt */
+  debtId?: string | null;
   trigger: React.ReactNode;
   defaultOpen?: boolean;   // open immediately (controlled from parent)
   onClose?: () => void;    // called when dialog closes (controlled mode)
@@ -81,6 +84,7 @@ export function ExpenseFormDialog({
   month,
   householdId,
   userId,
+  debtId,
   trigger,
   defaultOpen = false,
   onClose,
@@ -94,6 +98,10 @@ export function ExpenseFormDialog({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Set to true when the user submits with Ctrl+Enter — keeps modal open after save
+  const keepOpenRef = useRef(false);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Track the budgetMonthId — may be created on first expense
   const [resolvedBmId, setResolvedBmId] = useState<string | null>(initialBudgetMonthId);
@@ -134,7 +142,8 @@ export function ExpenseFormDialog({
   }
 
   // Core save logic — shared by form submit and quick-pay button
-  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string) {
+  // Returns the resolved budgetMonthId (created on-demand if needed)
+  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string): Promise<string> {
     let bmId = resolvedBmId;
     if (!bmId) {
       bmId = await upsertBudgetMonth(
@@ -151,7 +160,9 @@ export function ExpenseFormDialog({
       note: expenseNote || undefined,
       recorded_by: userId,
       timestamp: new Date(expenseDate + 'T12:00:00').toISOString(),
+      debt_id: debtId ?? undefined,
     });
+    return bmId;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -162,10 +173,18 @@ export function ExpenseFormDialog({
       setError('Ingresa un monto válido mayor a 0');
       return;
     }
+    const shouldKeepOpen = keepOpenRef.current;
+    keepOpenRef.current = false;
     setSaving(true);
     try {
       await saveExpense(parsed, date, note.trim());
       resetForm();
+      if (!shouldKeepOpen) {
+        setOpen(false);
+      } else {
+        // Re-focus amount field for the next entry
+        setTimeout(() => amountInputRef.current?.focus(), 0);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
@@ -180,7 +199,9 @@ export function ExpenseFormDialog({
     if (pendingAmount <= 0) return;
     setQuickPaying(true);
     try {
-      await saveExpense(pendingAmount, todayISO(), '');
+      const bmId = await saveExpense(pendingAmount, todayISO(), '');
+      await updateBudgetMonthExecution(bmId, true, userId);
+      setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
@@ -236,15 +257,15 @@ export function ExpenseFormDialog({
         </div>
 
         {/* ── Two-column body ── */}
-        <div className="flex flex-col sm:flex-row min-h-0">
+        <div className="flex flex-col sm:flex-row min-h-0 overflow-hidden">
 
           {/* Left: expense list — scrollable */}
-          <div className="flex-1 flex flex-col min-h-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
             <p className="px-5 pt-4 pb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide shrink-0">
               Gastos registrados
             </p>
 
-            <div className="overflow-y-auto px-5 pb-4" style={{ maxHeight: '280px' }}>
+            <div className="overflow-y-auto overflow-x-hidden px-5 pb-4" style={{ maxHeight: '280px' }}>
               {expenses.length === 0 ? (
                 <div className="text-center py-8 text-[var(--text-muted)]">
                   <p className="text-2xl mb-1">🧾</p>
@@ -255,7 +276,7 @@ export function ExpenseFormDialog({
                   {expenses.map(exp => (
                     <div
                       key={exp.id}
-                      className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] group transition-colors"
+                      className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] group transition-colors min-w-0"
                     >
                       <span className="shrink-0 text-[11px] text-[var(--text-muted)] w-11 text-center bg-[var(--bg-surface-2)] rounded px-1 py-0.5">
                         {formatDate(exp.timestamp)}
@@ -282,7 +303,17 @@ export function ExpenseFormDialog({
 
           {/* Right: form — fixed, never scrolls */}
           <div className="w-full sm:w-72 shrink-0 flex flex-col">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3 px-5 pt-4 pb-5 h-full">
+            <form
+              onSubmit={handleSubmit}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  e.preventDefault();
+                  keepOpenRef.current = true;
+                  e.currentTarget.requestSubmit();
+                }
+              }}
+              className="flex flex-col gap-3 px-5 pt-4 pb-5 h-full"
+            >
 
               {/* Quick-pay button */}
               {pendingAmount > 0 && (
@@ -315,6 +346,7 @@ export function ExpenseFormDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="exp-amount">Monto (COP) *</Label>
                 <Input
+                  ref={amountInputRef}
                   id="exp-amount"
                   inputMode="numeric"
                   placeholder="0"
@@ -360,9 +392,14 @@ export function ExpenseFormDialog({
                   <X size={13} className="mr-1" />
                   Cerrar
                 </Button>
-                <Button type="submit" size="sm" className="flex-1 gap-1" disabled={saving}>
-                  <Plus size={13} />
-                  {saving ? '...' : 'Registrar'}
+                <Button type="submit" size="sm" className="flex-1 gap-1 flex-col h-auto py-1.5" disabled={saving}>
+                  <span className="flex items-center gap-1">
+                    <Plus size={13} />
+                    {saving ? '...' : 'Registrar'}
+                  </span>
+                  <span className="text-[9px] font-normal opacity-60 leading-none">
+                    Ctrl+↵ sin cerrar
+                  </span>
                 </Button>
               </div>
             </form>

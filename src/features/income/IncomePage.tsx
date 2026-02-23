@@ -70,6 +70,7 @@ interface IncomeRow {
   default_amount: number;
   currency: string;
   start_month: string;
+  end_month: string | null;
 }
 
 interface IncomeMonthRow {
@@ -103,6 +104,7 @@ interface IncomeFormState {
   currency: string;
   is_fixed: boolean;
   start_month: string;
+  end_month: string; // '' = no end date
 }
 
 const defaultIncomeForm = (): IncomeFormState => ({
@@ -112,6 +114,7 @@ const defaultIncomeForm = (): IncomeFormState => ({
   currency: 'COP',
   is_fixed: true,
   start_month: getCurrentMonth(),
+  end_month: '',
 });
 
 interface IncomeFormDialogProps {
@@ -164,6 +167,7 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
           default_amount: amount,
           currency: form.currency,
           start_month: form.start_month,
+          end_month: form.end_month || null,
           created_by: userId,
         });
       } else if (mode === 'edit' && incomeId) {
@@ -173,6 +177,7 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
           currency: form.currency,
           is_fixed: form.is_fixed,
           category: form.category,
+          end_month: form.end_month || null,
         });
       }
       setOpen(false);  // triggers handleOpenChange(false) → onDone()
@@ -231,6 +236,19 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
                 onChange={e => set('start_month', e.target.value)} />
             </div>
           )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="inc-end">Mes de fin <span className="text-gray-400 font-normal">(opcional)</span></Label>
+            <Input id="inc-end" type="month" value={form.end_month}
+              min={form.start_month || undefined}
+              onChange={e => set('end_month', e.target.value)} />
+            {form.end_month && (
+              <button type="button" className="text-xs text-gray-400 hover:text-gray-600"
+                onClick={() => set('end_month', '')}>
+                Quitar fecha de fin
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-3 text-sm">
             <span className="text-gray-500">Tipo:</span>
@@ -799,7 +817,7 @@ export function IncomePage() {
   const userId = session?.userId ?? '';
 
   const { data: incomes = [] } = useQuery<IncomeRow>(
-    `SELECT id, name, person, is_fixed, category, default_amount, currency, start_month
+    `SELECT id, name, person, is_fixed, category, default_amount, currency, start_month, end_month
      FROM incomes WHERE deleted_at IS NULL ORDER BY category ASC, name ASC`,
   );
 
@@ -938,6 +956,7 @@ export function IncomePage() {
             currency: editingIncome.currency,
             is_fixed: editingIncome.is_fixed === 1,
             start_month: editingIncome.start_month,
+            end_month: editingIncome.end_month ?? '',
           }}
           onDone={() => setEditingIncome(null)}
           trigger={<span />}

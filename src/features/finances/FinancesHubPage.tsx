@@ -4,11 +4,11 @@
  * Hub de navegación para la configuración financiera:
  *   - Ingresos        → /income
  *   - Presupuestos    → /settings/budgets
- *   - Deudas          → /finances/debts  (próximamente)
+ *   - Deudas          → /debts
  */
 
 import { useNavigate } from '@tanstack/react-router';
-import { TrendingUp, LayoutList, CreditCard, ChevronRight, Lock } from 'lucide-react';
+import { TrendingUp, LayoutList, CreditCard, ChevronRight } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
@@ -46,12 +46,11 @@ const CARDS: HubCard[] = [
   {
     emoji: '💳',
     title: 'Deudas',
-    desc: 'Registra y haz seguimiento de tus deudas, cuotas pendientes y fechas de vencimiento.',
-    to: '/finances/debts',
+    desc: 'Registra y haz seguimiento de tus deudas. Vincula presupuestos para abonos automáticos.',
+    to: '/debts',
     icon: <CreditCard size={22} />,
     gradient: 'from-amber-400 to-orange-400',
     border: 'border-amber-100 dark:border-amber-900/30',
-    soon: true,
   },
 ];
 
@@ -71,13 +70,9 @@ export function FinancesHubPage() {
         {CARDS.map(card => (
           <button
             key={card.to}
-            onClick={() => !card.soon && navigate({ to: card.to })}
-            disabled={card.soon}
+            onClick={() => navigate({ to: card.to })}
             className={cn(
-              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 transition-all',
-              card.soon
-                ? 'opacity-60 cursor-not-allowed'
-                : 'hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]',
+              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]',
               card.border,
             )}
           >
@@ -93,17 +88,10 @@ export function FinancesHubPage() {
               {/* Copy */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <h2 className="text-sm font-bold text-[var(--text-primary)]">
                     {card.emoji} {card.title}
-                    {card.soon && (
-                      <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-[var(--text-muted)] bg-[var(--bg-surface-2)] border border-[var(--border-medium)] rounded-full px-1.5 py-0.5">
-                        <Lock size={8} /> Próximamente
-                      </span>
-                    )}
                   </h2>
-                  {!card.soon && (
-                    <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
-                  )}
+                  <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                   {card.desc}

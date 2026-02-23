@@ -20,6 +20,7 @@ interface IncomeRow {
   default_amount: number;
   currency: string;
   start_month: string;
+  end_month: string | null;
   created_by: string;
   created_at: string;
   deleted_at: string | null;
@@ -53,6 +54,7 @@ function toIncome(row: IncomeRow): Income {
     defaultAmount: row.default_amount,
     currency: row.currency,
     startMonth: row.start_month,
+    endMonth: row.end_month,
     createdBy: row.created_by,
     createdAt: row.created_at,
     deletedAt: row.deleted_at,

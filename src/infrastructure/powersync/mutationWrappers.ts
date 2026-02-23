@@ -43,6 +43,16 @@ function authorshipStamp(userId: string): { last_edited_by: string; last_edited_
   };
 }
 
+/** Guard: throws if household_id or userId are empty strings (session not ready). */
+function assertAuth(householdId: string, userId: string): void {
+  if (!householdId || !userId) {
+    throw new Error(
+      `[mutationWrappers] Attempted write with empty auth: household_id="${householdId}" userId="${userId}". ` +
+      `This usually means the mutation was called before the session was ready.`,
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Budget mutations
 // ---------------------------------------------------------------------------
@@ -57,18 +67,21 @@ export interface InsertBudgetPayload {
   default_amount: number;    // integer COP
   paid_with_credit_card: boolean;
   credit_card_id?: string;
+  /** FK to debts.id — when set, expenses auto-create a debit transaction on this debt */
+  debt_id?: string | null;
   created_by: string;        // userId
 }
 
 export async function insertBudget(payload: InsertBudgetPayload, userId: string): Promise<string> {
+  assertAuth(payload.household_id, userId);
   const id = newId();
   const stamp = authorshipStamp(userId);
   await db.execute(
     `INSERT INTO budgets
        (id, household_id, name, description, category_id, start_month, end_month,
-        default_amount, paid_with_credit_card, credit_card_id,
+        default_amount, paid_with_credit_card, credit_card_id, debt_id,
         created_by, created_at, last_edited_by, last_edited_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
@@ -80,6 +93,7 @@ export async function insertBudget(payload: InsertBudgetPayload, userId: string)
       payload.default_amount,
       payload.paid_with_credit_card ? 1 : 0,
       payload.credit_card_id ?? null,
+      payload.debt_id ?? null,
       payload.created_by,
       now(),
       stamp.last_edited_by,
@@ -91,7 +105,7 @@ export async function insertBudget(payload: InsertBudgetPayload, userId: string)
 
 export async function updateBudget(
   id: string,
-  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'end_month'>>,
+  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'end_month' | 'debt_id'>>,
   userId: string,
 ): Promise<void> {
   const stamp = authorshipStamp(userId);
@@ -104,6 +118,8 @@ export async function updateBudget(
   if (patch.category_id !== undefined) { fields.push('category_id = ?'); values.push(patch.category_id); }
   // end_month can be set to null (clear) or a YYYY-MM string
   if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
+  // debt_id can be set to null (unlink) or a debt UUID
+  if ('debt_id' in patch) { fields.push('debt_id = ?'); values.push(patch.debt_id ?? null); }
 
   fields.push('last_edited_by = ?', 'last_edited_at = ?');
   values.push(stamp.last_edited_by, stamp.last_edited_at, id);
@@ -138,6 +154,7 @@ export async function upsertBudgetMonth(
   payload: UpsertBudgetMonthPayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
   // Pattern: UPDATE first; if no rows affected, INSERT.
   const stamp = authorshipStamp(userId);
@@ -214,6 +231,8 @@ export interface RecordExpensePayload {
   recorded_by: string;        // userId
   timestamp: string;          // ISO8601 — user-visible date of the expense
   linked_expense_id?: string; // set when reversing another expense
+  /** If the budget is linked to a debt, pass the debt_id here to auto-create a debit transaction */
+  debt_id?: string;
 }
 
 /**
@@ -224,6 +243,7 @@ export interface RecordExpensePayload {
  * linked_expense_id pointing to the original.
  */
 export async function recordExpense(payload: RecordExpensePayload): Promise<string> {
+  assertAuth(payload.household_id, payload.recorded_by);
   const id = newId();
   await db.execute(
     `INSERT INTO expenses
@@ -243,6 +263,25 @@ export async function recordExpense(payload: RecordExpensePayload): Promise<stri
       payload.linked_expense_id ?? null,
     ],
   );
+
+  // Auto-create a debt debit transaction if this budget is linked to a debt
+  if (payload.debt_id && payload.amount > 0) {
+    const date = payload.timestamp.split('T')[0];
+    await insertDebtTransaction(
+      {
+        household_id: payload.household_id,
+        debt_id: payload.debt_id,
+        amount: payload.amount,
+        type: 'debit',
+        source: 'expense',
+        expense_id: id,
+        date,
+        note: payload.note,
+      },
+      payload.recorded_by,
+    );
+  }
+
   return id;
 }
 
@@ -267,16 +306,18 @@ export interface InsertIncomePayload {
   default_amount: number;
   currency: string;         // ISO 4217
   start_month: string;      // 'YYYY-MM'
+  end_month?: string | null; // 'YYYY-MM' | null — if null, no end date
   created_by: string;
 }
 
 export async function insertIncome(payload: InsertIncomePayload): Promise<string> {
+  assertAuth(payload.household_id, payload.created_by);
   const id = newId();
   await db.execute(
     `INSERT INTO incomes
        (id, household_id, name, person, is_fixed, category,
-        default_amount, currency, start_month, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        default_amount, currency, start_month, end_month, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
@@ -287,6 +328,7 @@ export async function insertIncome(payload: InsertIncomePayload): Promise<string
       payload.default_amount,
       payload.currency,
       payload.start_month,
+      payload.end_month ?? null,
       payload.created_by,
       now(),
     ],
@@ -296,7 +338,7 @@ export async function insertIncome(payload: InsertIncomePayload): Promise<string
 
 export async function updateIncome(
   id: string,
-  patch: Partial<Pick<InsertIncomePayload, 'name' | 'default_amount' | 'currency' | 'is_fixed' | 'category'>>,
+  patch: Partial<Pick<InsertIncomePayload, 'name' | 'default_amount' | 'currency' | 'is_fixed' | 'category' | 'end_month'>>,
 ): Promise<void> {
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -306,6 +348,7 @@ export async function updateIncome(
   if (patch.currency !== undefined) { fields.push('currency = ?'); values.push(patch.currency); }
   if (patch.is_fixed !== undefined) { fields.push('is_fixed = ?'); values.push(patch.is_fixed ? 1 : 0); }
   if (patch.category !== undefined) { fields.push('category = ?'); values.push(patch.category); }
+  if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
 
   if (fields.length === 0) return;
   values.push(id);
@@ -339,6 +382,7 @@ export async function upsertIncomeMonth(
   payload: UpsertIncomeMonthPayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
   const stamp = authorshipStamp(userId);
   const ts = now();
@@ -414,6 +458,7 @@ export async function upsertExchangeRate(
   payload: UpsertExchangeRatePayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
   const stamp = authorshipStamp(userId);
   const ts = now();
@@ -471,4 +516,138 @@ export async function updateExchangeRate(
      WHERE id = ?`,
     [rate, source, now(), stamp.last_edited_by, stamp.last_edited_at, id],
   );
+}
+
+// ---------------------------------------------------------------------------
+// Debt mutations
+// ---------------------------------------------------------------------------
+
+export interface InsertDebtPayload {
+  household_id: string;
+  name: string;
+  description?: string;
+  /** Integer in the debt's own currency (COP or USD) */
+  initial_amount: number;
+  /** ISO 4217: 'COP' | 'USD' */
+  currency: string;
+  /** 'YYYY-MM-DD' */
+  disbursed_at: string;
+  created_by: string;
+}
+
+export async function insertDebt(payload: InsertDebtPayload, userId: string): Promise<string> {
+  assertAuth(payload.household_id, userId);
+  const id = newId();
+  const stamp = authorshipStamp(userId);
+  const ts = now();
+  await db.execute(
+    `INSERT INTO debts
+       (id, household_id, name, description, initial_amount, currency, disbursed_at,
+        created_by, created_at, updated_at, last_edited_by, last_edited_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      payload.household_id,
+      payload.name,
+      payload.description ?? null,
+      payload.initial_amount,
+      payload.currency,
+      payload.disbursed_at,
+      payload.created_by,
+      ts,
+      ts,
+      stamp.last_edited_by,
+      stamp.last_edited_at,
+    ],
+  );
+  return id;
+}
+
+export async function updateDebt(
+  id: string,
+  patch: Partial<Pick<InsertDebtPayload, 'name' | 'description' | 'initial_amount' | 'currency' | 'disbursed_at'>>,
+  userId: string,
+): Promise<void> {
+  const stamp = authorshipStamp(userId);
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  if (patch.name !== undefined) { fields.push('name = ?'); values.push(patch.name); }
+  if (patch.description !== undefined) { fields.push('description = ?'); values.push(patch.description); }
+  if (patch.initial_amount !== undefined) { fields.push('initial_amount = ?'); values.push(patch.initial_amount); }
+  if (patch.currency !== undefined) { fields.push('currency = ?'); values.push(patch.currency); }
+  if (patch.disbursed_at !== undefined) { fields.push('disbursed_at = ?'); values.push(patch.disbursed_at); }
+
+  if (fields.length === 0) return;
+  fields.push('updated_at = ?', 'last_edited_by = ?', 'last_edited_at = ?');
+  values.push(now(), stamp.last_edited_by, stamp.last_edited_at, id);
+
+  await db.execute(`UPDATE debts SET ${fields.join(', ')} WHERE id = ?`, values);
+}
+
+export async function softDeleteDebt(id: string, userId: string): Promise<void> {
+  const stamp = authorshipStamp(userId);
+  await db.execute(
+    `UPDATE debts SET deleted_at = ?, updated_at = ?, last_edited_by = ?, last_edited_at = ? WHERE id = ?`,
+    [now(), now(), stamp.last_edited_by, stamp.last_edited_at, id],
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DebtTransaction mutations
+// ---------------------------------------------------------------------------
+
+export interface InsertDebtTransactionPayload {
+  household_id: string;
+  debt_id: string;
+  /** Always COP integer */
+  amount: number;
+  /** Amount in original currency if USD, null for COP transactions */
+  original_amount?: number;
+  /** 'USD' if applicable, null for COP */
+  original_currency?: string;
+  /** TRM used, null for COP transactions */
+  exchange_rate?: number;
+  type: 'debit' | 'credit';
+  note?: string;
+  /** 'YYYY-MM-DD' */
+  date: string;
+  source: 'manual' | 'expense';
+  /** Set when source='expense' */
+  expense_id?: string;
+}
+
+export async function insertDebtTransaction(
+  payload: InsertDebtTransactionPayload,
+  userId: string,
+): Promise<string> {
+  assertAuth(payload.household_id, userId);
+  const id = newId();
+  await db.execute(
+    `INSERT INTO debt_transactions
+       (id, household_id, debt_id, amount, original_amount, original_currency,
+        exchange_rate, type, note, date, source, expense_id, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      payload.household_id,
+      payload.debt_id,
+      payload.amount,
+      payload.original_amount ?? null,
+      payload.original_currency ?? null,
+      payload.exchange_rate ?? null,
+      payload.type,
+      payload.note ?? null,
+      payload.date,
+      payload.source,
+      payload.expense_id ?? null,
+      userId,
+      now(),
+    ],
+  );
+  return id;
+}
+
+export async function softDeleteDebtTransaction(id: string): Promise<void> {
+  await db.execute(`UPDATE debt_transactions SET deleted_at = ? WHERE id = ?`, [now(), id]);
 }

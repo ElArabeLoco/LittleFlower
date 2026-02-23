@@ -10,6 +10,8 @@ export interface Budget {
   defaultAmount: COPAmount; // used when no BudgetMonth override exists
   paidWithCreditCard: boolean;
   creditCardId: string | null;
+  /** FK to debts.id — when set, expenses on this budget auto-create a debt debit transaction */
+  debtId: string | null;
   createdBy: string; // userId
   createdAt: ISODateTime;
   deletedAt: ISODateTime | null;

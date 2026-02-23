@@ -8,7 +8,7 @@
  * Diseño de tarjetas, no tabular. Optimizado para móvil y escritorio.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@powersync/react';
 import {
   ChevronLeft, ChevronRight, CreditCard, Banknote,
@@ -67,6 +67,7 @@ interface BudgetRow {
   household_id: string;
   start_month: string;
   end_month: string | null;
+  debt_id: string | null;
 }
 
 interface BudgetMonthRow {
@@ -87,6 +88,7 @@ interface IncomeRow {
   default_amount: number;
   currency: string;
   start_month: string;
+  end_month: string | null;
   name: string;
   is_fixed: number;
 }
@@ -132,6 +134,7 @@ interface BudgetCardProps {
 function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: BudgetCardProps) {
   const { formatCOP } = useNumberFormat();
   const [expenseOpen, setExpenseOpen] = useState(false);
+  const expenseOpenKeyRef = useRef(0);
 
   const amount = bm?.amount ?? budget.default_amount;
   const isExecuted = bm?.is_executed === 1;
@@ -190,7 +193,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
         {/* Amounts — tap to open expense dialog */}
         <button
           className="w-full grid grid-cols-3 gap-1 px-4 pb-3 text-left hover:bg-[var(--bg-hover)] transition-colors rounded-b-xl"
-          onClick={() => setExpenseOpen(true)}
+          onClick={() => { expenseOpenKeyRef.current += 1; setExpenseOpen(true); }}
           title="Ver o registrar gastos"
         >
           <div>
@@ -237,7 +240,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
 
       {expenseOpen && (
         <ExpenseFormDialog
-          key={`${budget.id}|${month}`}
+          key={`${budget.id}|${month}|${expenseOpenKeyRef.current}`}
           budgetId={budget.id}
           budgetName={budget.name}
           budgetMonthId={bm?.id ?? null}
@@ -245,6 +248,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
           month={month}
           householdId={householdId}
           userId={userId}
+          debtId={budget.debt_id}
           trigger={<span />}
           defaultOpen
           onClose={() => setExpenseOpen(false)}
@@ -550,7 +554,7 @@ export function MonthViewPage() {
   // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month
+    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month, debt_id
      FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
   );
 
@@ -570,7 +574,7 @@ export function MonthViewPage() {
   );
 
   const { data: incomes = [] } = useQuery<IncomeRow>(
-    `SELECT id, default_amount, currency, start_month, name, is_fixed
+    `SELECT id, default_amount, currency, start_month, end_month, name, is_fixed
      FROM incomes WHERE deleted_at IS NULL`,
   );
 
@@ -606,6 +610,7 @@ export function MonthViewPage() {
 
   for (const inc of incomes) {
     if (inc.start_month > month) continue;
+    if (inc.end_month != null && inc.end_month < month) continue;
     const im = imMap.get(inc.id);
     const amount = im ? im.real_amount : inc.default_amount;
     const currency = im ? im.currency : inc.currency;
@@ -647,7 +652,9 @@ export function MonthViewPage() {
 
   // ── Active income sources ─────────────────────────────────────────────────
 
-  const activeIncomes = incomes.filter(inc => inc.start_month <= month);
+  const activeIncomes = incomes.filter(inc =>
+    inc.start_month <= month && (inc.end_month == null || inc.end_month >= month),
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -658,11 +665,11 @@ export function MonthViewPage() {
         emoji="🗓️"
         title="Vista Mensual"
         subtitle={formatMonthLabel(month)}
-        maxWidth="max-w-lg"
+        maxWidth="max-w-3xl"
       />
 
       {/* Month navigator */}
-      <div className="max-w-lg mx-auto w-full px-4 py-2.5 flex items-center gap-3">
+      <div className="max-w-3xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
         <button
           onClick={() => setMonth(m => prevMonth(m))}
           className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
@@ -684,9 +691,9 @@ export function MonthViewPage() {
 
       {/* Scrollable content */}
       <main className="flex-1 overflow-auto">
-        <div className="max-w-lg mx-auto px-4 pb-6 space-y-4">
+        <div className="max-w-3xl mx-auto px-4 pb-6 space-y-4">
 
-          {/* Hero balance card */}
+          {/* Hero balance card — full width */}
           <BalanceCard
             available={totalAvailable}
             totalBudgeted={totalBudgeted}
@@ -704,37 +711,40 @@ export function MonthViewPage() {
             </div>
           )}
 
-          {/* Credit Card group */}
-          <GroupSection
-            label="Tarjeta de Crédito"
-            icon={<CreditCard size={15} />}
-            accent="violet"
-            budgets={creditCardBudgets}
-            bmMap={bmMap}
-            expenseMap={expenseMap}
-            month={month}
-            householdId={householdId}
-            userId={userId}
-            totalBudgeted={ccTotals.budgeted}
-            totalSpent={ccTotals.spent}
-          />
+          {/* Budget groups — 2-col on lg+ */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {/* Credit Card group */}
+            <GroupSection
+              label="Tarjeta de Crédito"
+              icon={<CreditCard size={15} />}
+              accent="violet"
+              budgets={creditCardBudgets}
+              bmMap={bmMap}
+              expenseMap={expenseMap}
+              month={month}
+              householdId={householdId}
+              userId={userId}
+              totalBudgeted={ccTotals.budgeted}
+              totalSpent={ccTotals.spent}
+            />
 
-          {/* Cash group */}
-          <GroupSection
-            label="Efectivo"
-            icon={<Banknote size={15} />}
-            accent="green"
-            budgets={cashBudgets}
-            bmMap={bmMap}
-            expenseMap={expenseMap}
-            month={month}
-            householdId={householdId}
-            userId={userId}
-            totalBudgeted={cashTotals.budgeted}
-            totalSpent={cashTotals.spent}
-          />
+            {/* Cash group */}
+            <GroupSection
+              label="Efectivo"
+              icon={<Banknote size={15} />}
+              accent="green"
+              budgets={cashBudgets}
+              bmMap={bmMap}
+              expenseMap={expenseMap}
+              month={month}
+              householdId={householdId}
+              userId={userId}
+              totalBudgeted={cashTotals.budgeted}
+              totalSpent={cashTotals.spent}
+            />
+          </div>
 
-          {/* Income section */}
+          {/* Income section — full width */}
           {activeIncomes.length > 0 && (
             <IncomeSection
               incomes={activeIncomes}

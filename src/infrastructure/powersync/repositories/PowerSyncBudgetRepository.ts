@@ -25,6 +25,7 @@ interface BudgetRow {
   default_amount: number;
   paid_with_credit_card: number; // 0 | 1
   credit_card_id: string | null;
+  debt_id: string | null;
   created_by: string;
   created_at: string;
   deleted_at: string | null;
@@ -61,6 +62,7 @@ function toBudget(row: BudgetRow): Budget {
     defaultAmount: row.default_amount,
     paidWithCreditCard: row.paid_with_credit_card === 1,
     creditCardId: row.credit_card_id,
+    debtId: row.debt_id,
     createdBy: row.created_by,
     createdAt: row.created_at,
     deletedAt: row.deleted_at,
