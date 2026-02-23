@@ -248,7 +248,7 @@ export function ExpenseFormDialog({
         <div className="flex flex-col sm:flex-row min-h-0">
 
           {/* Left: expense list — scrollable */}
-          <div className="flex-1 flex flex-col min-h-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
             <p className="px-5 pt-4 pb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide shrink-0">
               Gastos registrados
             </p>
