@@ -3,20 +3,15 @@ import { PowerSyncContext, useStatus, useQuery } from '@powersync/react';
 import { db } from '@/infrastructure/powersync/client';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { AppSettingsProvider } from '@/features/settings/AppSettingsContext';
-import { SupabaseConnector } from '@/infrastructure/powersync/SupabaseConnector';
 import { AlertCircle, AlertTriangle, CloudOff, Loader2, Wifi, WifiOff } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/shared/ui/cn';
 
 // ---------------------------------------------------------------------------
-// SyncPill — singleton at root level so it never remounts on navigation.
+// SyncPill — singleton at root, never remounts on navigation.
 //
-// States (priority order):
-//   1. !connected            → "Sin conexión"  (grey)
-//   2. uploadError           → "Error sync"     (red)
-//   3. uploading             → "Subiendo..."    (blue, animated)
-//   4. queue > 0 + connected → "N pendientes"  (amber)
-//   5. connected + queue = 0 → "Sync"           (green)
+// Uses a debounced "disconnected" state: only shows "Sin conexión" after
+// being disconnected for >2s, so transient connecting phases are invisible.
 // ---------------------------------------------------------------------------
 
 interface CrudCountRow { count: number }
@@ -24,7 +19,6 @@ interface CrudCountRow { count: number }
 function SyncPill() {
   const { session } = useAuth();
   const status = useStatus();
-  const connecting = status.connecting;
   const connected = status.connected;
   const uploading = status.dataFlowStatus?.uploading ?? false;
   const uploadError = status.dataFlowStatus?.uploadError ?? null;
@@ -35,43 +29,17 @@ function SyncPill() {
   );
   const pendingCount = crudRows[0]?.count ?? 0;
 
-  // Stable connected state — ignores transient "connecting" phase so the pill
-  // doesn't flash "Sin conexión" during token refresh or reconnect attempts.
-  // Only switches to false when we are neither connected nor connecting.
-  const stableConnected = useRef(connected);
-  if (connected) stableConnected.current = true;
-  if (!connected && !connecting) stableConnected.current = false;
-
-  // Auto-reconnect when PowerSync drops the connection.
-  // Uses exponential backoff: 3s → 6s → 12s → … capped at 60s.
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reconnectDelay = useRef(3000);
-
+  // Debounce disconnected state: only show "Sin conexión" after 2s offline.
+  // This hides the brief connecting→connected transition on startup/navigation.
+  const [showDisconnected, setShowDisconnected] = useState(false);
   useEffect(() => {
     if (connected) {
-      reconnectDelay.current = 3000;
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = null;
-      }
+      setShowDisconnected(false);
       return;
     }
-    // While connecting, don't schedule a reconnect yet
-    if (connecting || !session) return;
-
-    reconnectTimer.current = setTimeout(async () => {
-      try {
-        await db.connect(new SupabaseConnector());
-      } catch {
-        // will retry on next cycle
-      }
-      reconnectDelay.current = Math.min(reconnectDelay.current * 2, 60_000);
-    }, reconnectDelay.current);
-
-    return () => {
-      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-    };
-  }, [connected, connecting, session]);
+    const t = setTimeout(() => setShowDisconnected(true), 2000);
+    return () => clearTimeout(t);
+  }, [connected]);
 
   // Don't render on public pages (no session)
   if (!session) return null;
@@ -80,7 +48,7 @@ function SyncPill() {
   let icon: React.ReactNode;
   let colorClass: string;
 
-  if (!stableConnected.current) {
+  if (showDisconnected) {
     label = 'Sin conexión';
     icon = <WifiOff size={9} strokeWidth={2.5} />;
     colorClass = 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-[var(--border-medium)]';
@@ -162,7 +130,7 @@ function RootInner() {
   return (
     <>
       <SyncErrorBanner />
-      {/* SyncPill rendered here as a singleton — survives page navigation */}
+      {/* SyncPill as singleton — survives page navigation */}
       <div className="fixed top-2 right-3 z-40 pointer-events-none">
         <div className="pointer-events-auto">
           <SyncPill />
