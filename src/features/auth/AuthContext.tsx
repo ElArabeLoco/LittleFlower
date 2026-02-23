@@ -15,7 +15,6 @@ import {
   login as supabaseLogin,
   register as supabaseRegister,
   logout as supabaseLogout,
-  getCurrentSession,
   type AuthSession,
   type AuthError,
 } from '@/infrastructure/auth/SupabaseAuthAdapter';
@@ -35,37 +34,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount: restore session via Supabase (async — handles token refresh if needed)
+  // On mount: use onAuthStateChange as the single source of truth.
+  //
+  // Supabase fires INITIAL_SESSION synchronously on subscribe (using the
+  // persisted localStorage token), then TOKEN_REFRESHED if it needs to
+  // refresh, and SIGNED_OUT on logout. This covers all cases without a
+  // separate getSession() call that could race with the listener.
   useEffect(() => {
-    let cancelled = false;
-
-    getCurrentSession().then((existing) => {
-      if (cancelled) return;
-      setSession(existing);
-      setIsLoading(false);
-    });
-
-    // Listen for Supabase auth state changes (token refresh, sign out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, supabaseSession) => {
-      if (event === 'TOKEN_REFRESHED' && supabaseSession) {
-        const householdId = supabaseSession.user.user_metadata?.['household_id'] ?? null;
-        setSession({
-          userId: supabaseSession.user.id,
-          email: supabaseSession.user.email ?? '',
-          token: supabaseSession.access_token,
-          householdId,
-        });
-        // Reconnect PowerSync with the new token
-        await db.connect(new SupabaseConnector());
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (supabaseSession) {
+          const householdId = supabaseSession.user.user_metadata?.['household_id'] ?? null;
+          setSession({
+            userId: supabaseSession.user.id,
+            email: supabaseSession.user.email ?? '',
+            token: supabaseSession.access_token,
+            householdId,
+          });
+          // Connect PowerSync with the current token
+          await db.connect(new SupabaseConnector());
+        } else {
+          // INITIAL_SESSION fired with no session → user is not logged in
+          setSession(null);
+        }
+        // Auth state is now resolved — stop showing the loading screen
+        setIsLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
+        setIsLoading(false);
       }
     });
 
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   async function login(email: string, password: string): Promise<{ error?: AuthError }> {
