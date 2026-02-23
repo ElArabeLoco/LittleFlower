@@ -101,6 +101,7 @@ export function ExpenseFormDialog({
 
   // Set to true when the user submits with Ctrl+Enter — keeps modal open after save
   const keepOpenRef = useRef(false);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Track the budgetMonthId — may be created on first expense
   const [resolvedBmId, setResolvedBmId] = useState<string | null>(initialBudgetMonthId);
@@ -178,7 +179,12 @@ export function ExpenseFormDialog({
     try {
       await saveExpense(parsed, date, note.trim());
       resetForm();
-      if (!shouldKeepOpen) setOpen(false);
+      if (!shouldKeepOpen) {
+        setOpen(false);
+      } else {
+        // Re-focus amount field for the next entry
+        setTimeout(() => amountInputRef.current?.focus(), 0);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
@@ -340,6 +346,7 @@ export function ExpenseFormDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="exp-amount">Monto (COP) *</Label>
                 <Input
+                  ref={amountInputRef}
                   id="exp-amount"
                   inputMode="numeric"
                   placeholder="0"
