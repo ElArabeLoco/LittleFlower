@@ -35,11 +35,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount: restore session from localStorage and listen for auth changes
+  // On mount: restore session from localStorage synchronously (no network call)
   useEffect(() => {
-    getCurrentSession()
-      .then(setSession)
-      .finally(() => setIsLoading(false));
+    const existing = getCurrentSession();
+    setSession(existing);
+    setIsLoading(false);
 
     // Listen for Supabase auth state changes (token refresh, sign out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, supabaseSession) => {

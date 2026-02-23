@@ -123,20 +123,51 @@ export async function logout(): Promise<void> {
 // Get current session (from Supabase's persisted token in localStorage)
 // ---------------------------------------------------------------------------
 
-export async function getCurrentSession(): Promise<AuthSession | null> {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) return null;
+/**
+ * Reads the session synchronously from localStorage (no network call).
+ * Supabase persists the session there automatically after login.
+ * Returns null if there's no session or it's expired.
+ *
+ * PowerSync is connected in the background — it doesn't block the UI.
+ */
+export function getCurrentSession(): AuthSession | null {
+  try {
+    // Supabase stores the session under a key like "sb-<project-ref>-auth-token"
+    const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL as string).hostname.split('.')[0]}-auth-token`;
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return null;
 
-  // Re-connect PowerSync if not already connected
-  await db.connect(new SupabaseConnector());
+    const parsed = JSON.parse(raw) as {
+      access_token?: string;
+      expires_at?: number;
+      user?: {
+        id?: string;
+        email?: string;
+        user_metadata?: { household_id?: string; [key: string]: unknown };
+      };
+    };
 
-  return {
-    userId: data.session.user.id,
-    email: data.session.user.email ?? '',
-    token: data.session.access_token,
-    householdId:
-      (data.session.user.user_metadata?.['household_id'] as string | undefined) ?? null,
-  };
+    // Check if the token is expired
+    if (!parsed.access_token || !parsed.expires_at) return null;
+    if (parsed.expires_at * 1000 < Date.now()) return null;
+
+    const user = parsed.user;
+    if (!user?.id) return null;
+
+    // Connect PowerSync in background — does NOT block the UI
+    db.connect(new SupabaseConnector()).catch((err) => {
+      console.warn('[Auth] PowerSync connect failed (will retry):', err);
+    });
+
+    return {
+      userId: user.id,
+      email: user.email ?? '',
+      token: parsed.access_token,
+      householdId: (user.user_metadata?.['household_id'] as string | undefined) ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
