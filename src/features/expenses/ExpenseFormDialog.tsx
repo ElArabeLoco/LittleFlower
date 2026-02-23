@@ -8,7 +8,7 @@
  * Se abre desde cualquier BudgetCell, usando el mes de esa celda.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Receipt, Plus, Trash2, X, Zap } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -99,6 +99,9 @@ export function ExpenseFormDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Set to true when the user submits with Ctrl+Enter — keeps modal open after save
+  const keepOpenRef = useRef(false);
+
   // Track the budgetMonthId — may be created on first expense
   const [resolvedBmId, setResolvedBmId] = useState<string | null>(initialBudgetMonthId);
 
@@ -169,10 +172,13 @@ export function ExpenseFormDialog({
       setError('Ingresa un monto válido mayor a 0');
       return;
     }
+    const shouldKeepOpen = keepOpenRef.current;
+    keepOpenRef.current = false;
     setSaving(true);
     try {
       await saveExpense(parsed, date, note.trim());
-      setOpen(false);
+      resetForm();
+      if (!shouldKeepOpen) setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
     } finally {
@@ -291,7 +297,17 @@ export function ExpenseFormDialog({
 
           {/* Right: form — fixed, never scrolls */}
           <div className="w-full sm:w-72 shrink-0 flex flex-col">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3 px-5 pt-4 pb-5 h-full">
+            <form
+              onSubmit={handleSubmit}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  e.preventDefault();
+                  keepOpenRef.current = true;
+                  e.currentTarget.requestSubmit();
+                }
+              }}
+              className="flex flex-col gap-3 px-5 pt-4 pb-5 h-full"
+            >
 
               {/* Quick-pay button */}
               {pendingAmount > 0 && (
@@ -369,9 +385,14 @@ export function ExpenseFormDialog({
                   <X size={13} className="mr-1" />
                   Cerrar
                 </Button>
-                <Button type="submit" size="sm" className="flex-1 gap-1" disabled={saving}>
-                  <Plus size={13} />
-                  {saving ? '...' : 'Registrar'}
+                <Button type="submit" size="sm" className="flex-1 gap-1 flex-col h-auto py-1.5" disabled={saving}>
+                  <span className="flex items-center gap-1">
+                    <Plus size={13} />
+                    {saving ? '...' : 'Registrar'}
+                  </span>
+                  <span className="text-[9px] font-normal opacity-60 leading-none">
+                    Ctrl+↵ sin cerrar
+                  </span>
                 </Button>
               </div>
             </form>

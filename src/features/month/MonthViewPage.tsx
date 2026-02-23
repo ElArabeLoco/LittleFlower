@@ -8,7 +8,7 @@
  * Diseño de tarjetas, no tabular. Optimizado para móvil y escritorio.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@powersync/react';
 import {
   ChevronLeft, ChevronRight, CreditCard, Banknote,
@@ -134,6 +134,7 @@ interface BudgetCardProps {
 function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: BudgetCardProps) {
   const { formatCOP } = useNumberFormat();
   const [expenseOpen, setExpenseOpen] = useState(false);
+  const expenseOpenKeyRef = useRef(0);
 
   const amount = bm?.amount ?? budget.default_amount;
   const isExecuted = bm?.is_executed === 1;
@@ -192,7 +193,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
         {/* Amounts — tap to open expense dialog */}
         <button
           className="w-full grid grid-cols-3 gap-1 px-4 pb-3 text-left hover:bg-[var(--bg-hover)] transition-colors rounded-b-xl"
-          onClick={() => setExpenseOpen(true)}
+          onClick={() => { expenseOpenKeyRef.current += 1; setExpenseOpen(true); }}
           title="Ver o registrar gastos"
         >
           <div>
@@ -239,7 +240,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
 
       {expenseOpen && (
         <ExpenseFormDialog
-          key={`${budget.id}|${month}`}
+          key={`${budget.id}|${month}|${expenseOpenKeyRef.current}`}
           budgetId={budget.id}
           budgetName={budget.name}
           budgetMonthId={bm?.id ?? null}
