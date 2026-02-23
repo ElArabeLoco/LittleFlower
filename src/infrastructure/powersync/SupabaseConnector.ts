@@ -109,7 +109,7 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       case 'PUT': {
         // INSERT or UPDATE — use upsert (on_conflict=id)
         const payload = { id, ...entry.opData };
-        const { error } = await supabase.from(table).upsert(payload);
+        const { error } = await supabase.from(table).upsert(payload, { onConflict: 'id' });
         if (error) throw new Error(`Supabase upsert failed on ${table}: ${error.message}`);
         break;
       }
