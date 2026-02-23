@@ -63,6 +63,7 @@ interface BudgetRow {
   household_id: string;
   start_month: string;
   end_month: string | null;
+  debt_id: string | null;
 }
 
 interface BudgetMonthRow {
@@ -319,11 +320,12 @@ export function YearView() {
     budgetMonthId: string | null;
     budgetMonthAmount: number;
     month: string;
+    debtId: string | null;
   } | null>(null);
 
   // All active budgets
   const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month
+    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month, debt_id
      FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
   );
 
@@ -504,6 +506,7 @@ export function YearView() {
                     budgetMonthId: bm?.id ?? null,
                     budgetMonthAmount: bm?.amount ?? budget.default_amount,
                     month,
+                    debtId: budget.debt_id ?? null,
                   })}
                   {...handlers}
                 />
@@ -679,6 +682,7 @@ export function YearView() {
           month={expenseModal.month}
           householdId={householdId}
           userId={userId}
+          debtId={expenseModal.debtId}
           trigger={<span />}
           defaultOpen
           onClose={() => setExpenseModal(null)}
