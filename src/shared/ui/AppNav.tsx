@@ -2,25 +2,21 @@
  * AppNav — bottom navigation bar shared across all main pages.
  *
  * Mobile-first. Fixed to the bottom of the viewport.
- * Highlights the active route automatically via useRouterState.
+ * 4 tabs + profile avatar:
  *
- * Items:
- *   Vista Anual   → /
- *   Vista Mensual → /month
- *   Presupuestos  → /settings/budgets
- *   Ingresos      → /income
- *   Perfil        → /settings  (avatar con inicial del usuario)
- *
- * SyncIndicator lives in the top-bar of each page, NOT here.
+ *   Dashboard   → /dashboard
+ *   Presupuesto → /budget   (hub: Mensual + Anual)
+ *   Finanzas    → /finances (hub: Ingresos + Presupuestos + Deudas)
+ *   Perfil      → /settings (avatar con inicial del usuario)
  */
 
 import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { LayoutDashboard, CalendarRange, CalendarDays, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, Wallet } from 'lucide-react';
 import { cn } from './cn';
 import { useAuth } from '@/features/auth/AuthContext';
 
 // ---------------------------------------------------------------------------
-// User avatar — shows initials from email, styled with brand colors
+// User avatar
 // ---------------------------------------------------------------------------
 
 function UserAvatar({ email, size = 20 }: { email: string; size?: number }) {
@@ -43,7 +39,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   to: string;
-  /** Match these paths as "active" (exact or prefix) */
+  /** All paths that should highlight this tab as active */
   match: string[];
 }
 
@@ -55,22 +51,18 @@ const NAV_ITEMS: NavItem[] = [
     match: ['/dashboard'],
   },
   {
-    label: 'Anual',
-    icon: <CalendarRange size={20} />,
-    to: '/anual',
-    match: ['/anual'],
-  },
-  {
-    label: 'Mensual',
+    label: 'Presupuesto',
     icon: <CalendarDays size={20} />,
-    to: '/month',
-    match: ['/month'],
+    to: '/budget',
+    // Active on the hub AND on the sub-pages it contains
+    match: ['/budget', '/month', '/anual'],
   },
   {
-    label: 'Ingresos',
-    icon: <TrendingUp size={20} />,
-    to: '/income',
-    match: ['/income'],
+    label: 'Finanzas',
+    icon: <Wallet size={20} />,
+    to: '/finances',
+    // Active on the hub AND on the sub-pages it contains
+    match: ['/finances', '/income', '/settings/budgets'],
   },
 ];
 
@@ -96,7 +88,6 @@ export function AppNav() {
       <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--nav-bg)] border-t border-[var(--nav-border)] shadow-[0_-1px_8px_rgba(0,0,0,0.12)] transition-colors">
         <ul className="flex h-16 items-stretch">
           {NAV_ITEMS.map(item => {
-            // Active: prefix match for all items
             const isActive = item.match.some(m => pathname === m || pathname.startsWith(m + '/'));
 
             return (
@@ -141,7 +132,6 @@ export function AppNav() {
                   isProfileActive && 'bg-[var(--nav-active-bg)]',
                 )}
               >
-                {/* Ring when active */}
                 <span className={cn(
                   'rounded-full transition-all',
                   isProfileActive

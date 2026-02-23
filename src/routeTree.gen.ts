@@ -13,7 +13,9 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MonthRouteImport } from './routes/month'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IncomeRouteImport } from './routes/income'
+import { Route as FinancesRouteImport } from './routes/finances'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as BudgetRouteImport } from './routes/budget'
 import { Route as AnualRouteImport } from './routes/anual'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
@@ -39,9 +41,19 @@ const IncomeRoute = IncomeRouteImport.update({
   path: '/income',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinancesRoute = FinancesRouteImport.update({
+  id: '/finances',
+  path: '/finances',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BudgetRoute = BudgetRouteImport.update({
+  id: '/budget',
+  path: '/budget',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnualRoute = AnualRouteImport.update({
@@ -68,7 +80,9 @@ const SettingsBudgetsRoute = SettingsBudgetsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
+  '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
+  '/finances': typeof FinancesRoute
   '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
@@ -79,7 +93,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
+  '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
+  '/finances': typeof FinancesRoute
   '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
@@ -91,7 +107,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
+  '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
+  '/finances': typeof FinancesRoute
   '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
@@ -104,7 +122,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/anual'
+    | '/budget'
     | '/dashboard'
+    | '/finances'
     | '/income'
     | '/login'
     | '/month'
@@ -115,7 +135,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/anual'
+    | '/budget'
     | '/dashboard'
+    | '/finances'
     | '/income'
     | '/login'
     | '/month'
@@ -126,7 +148,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/anual'
+    | '/budget'
     | '/dashboard'
+    | '/finances'
     | '/income'
     | '/login'
     | '/month'
@@ -138,7 +162,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnualRoute: typeof AnualRoute
+  BudgetRoute: typeof BudgetRoute
   DashboardRoute: typeof DashboardRoute
+  FinancesRoute: typeof FinancesRoute
   IncomeRoute: typeof IncomeRoute
   LoginRoute: typeof LoginRoute
   MonthRoute: typeof MonthRoute
@@ -177,11 +203,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IncomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/finances': {
+      id: '/finances'
+      path: '/finances'
+      fullPath: '/finances'
+      preLoaderRoute: typeof FinancesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/budget': {
+      id: '/budget'
+      path: '/budget'
+      fullPath: '/budget'
+      preLoaderRoute: typeof BudgetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/anual': {
@@ -218,7 +258,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnualRoute: AnualRoute,
+  BudgetRoute: BudgetRoute,
   DashboardRoute: DashboardRoute,
+  FinancesRoute: FinancesRoute,
   IncomeRoute: IncomeRoute,
   LoginRoute: LoginRoute,
   MonthRoute: MonthRoute,
