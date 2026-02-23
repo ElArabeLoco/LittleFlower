@@ -245,7 +245,7 @@ export function ExpenseFormDialog({
         </div>
 
         {/* ── Two-column body ── */}
-        <div className="flex flex-col sm:flex-row min-h-0">
+        <div className="flex flex-col sm:flex-row min-h-0 overflow-hidden">
 
           {/* Left: expense list — scrollable */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
@@ -253,7 +253,7 @@ export function ExpenseFormDialog({
               Gastos registrados
             </p>
 
-            <div className="overflow-y-auto px-5 pb-4" style={{ maxHeight: '280px' }}>
+            <div className="overflow-y-auto overflow-x-hidden px-5 pb-4" style={{ maxHeight: '280px' }}>
               {expenses.length === 0 ? (
                 <div className="text-center py-8 text-[var(--text-muted)]">
                   <p className="text-2xl mb-1">🧾</p>
