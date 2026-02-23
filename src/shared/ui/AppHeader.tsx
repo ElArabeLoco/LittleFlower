@@ -22,31 +22,75 @@
  */
 
 import { useStatus } from '@powersync/react';
-import { Wifi, WifiOff } from 'lucide-react';
+import { useQuery } from '@powersync/react';
+import { AlertCircle, CloudOff, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { cn } from './cn';
 
 // ---------------------------------------------------------------------------
 // SyncPill — sync status badge, always top-right of viewport
+//
+// States (priority order):
+//   1. !connected            → "Sin conexión"  (grey, WifiOff)
+//   2. uploadError           → "Error sync"     (red, AlertCircle)
+//   3. uploading             → "Subiendo..."    (blue, Loader2 spin) + queue count
+//   4. queue > 0 + connected → "N pendientes"  (amber, CloudOff)
+//   5. connected + queue = 0 → "Sync"           (green, Wifi)
 // ---------------------------------------------------------------------------
+
+interface CrudCountRow {
+  count: number;
+}
 
 function SyncPill() {
   const status = useStatus();
   const connected = status.connected;
+  const uploading = status.dataFlowStatus?.uploading ?? false;
+  const uploadError = status.dataFlowStatus?.uploadError ?? null;
+
+  // Reactive count of pending CRUD entries
+  const { data: crudRows = [] } = useQuery<CrudCountRow>(
+    'SELECT COUNT(*) as count FROM ps_crud',
+    [],
+  );
+  const pendingCount = crudRows[0]?.count ?? 0;
+
+  // ── Derive display state ──────────────────────────────────────────────────
+
+  let label: string;
+  let icon: React.ReactNode;
+  let colorClass: string;
+
+  if (!connected) {
+    label = 'Sin conexión';
+    icon = <WifiOff size={9} strokeWidth={2.5} />;
+    colorClass = 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-[var(--border-medium)]';
+  } else if (uploadError) {
+    label = 'Error sync';
+    icon = <AlertCircle size={9} strokeWidth={2.5} />;
+    colorClass = 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800';
+  } else if (uploading) {
+    label = pendingCount > 0 ? `Subiendo (${pendingCount})` : 'Subiendo...';
+    icon = <Loader2 size={9} strokeWidth={2.5} className="animate-spin" />;
+    colorClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800';
+  } else if (pendingCount > 0) {
+    label = `${pendingCount} pendiente${pendingCount !== 1 ? 's' : ''}`;
+    icon = <CloudOff size={9} strokeWidth={2.5} />;
+    colorClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800';
+  } else {
+    label = 'Sync';
+    icon = <Wifi size={9} strokeWidth={2.5} />;
+    colorClass = 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800';
+  }
 
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors',
-        connected
-          ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800'
-          : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-[var(--border-medium)]',
+        colorClass,
       )}
     >
-      {connected
-        ? <Wifi size={9} strokeWidth={2.5} />
-        : <WifiOff size={9} strokeWidth={2.5} />
-      }
-      {connected ? 'Sync' : 'Sin conexión'}
+      {icon}
+      {label}
     </span>
   );
 }
