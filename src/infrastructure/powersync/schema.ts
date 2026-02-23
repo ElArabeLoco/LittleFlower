@@ -92,6 +92,7 @@ const incomes = new Table({
   default_amount: column.integer,
   currency: column.text,        // ISO 4217 e.g. 'USD', 'COP'
   start_month: column.text,     // 'YYYY-MM'
+  end_month: column.text,       // 'YYYY-MM' nullable — if null, no end date
   created_by: column.text,
   created_at: column.text,
   deleted_at: column.text,      // nullable

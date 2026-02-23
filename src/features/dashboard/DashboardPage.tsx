@@ -99,6 +99,7 @@ interface IncomeRow {
   default_amount: number;
   currency: string;
   start_month: string;
+  end_month: string | null;
 }
 
 interface IncomeMonthRow {
@@ -302,7 +303,7 @@ export function DashboardPage() {
 
   // ── Incomes + income months ────────────────────────────────────────────────
   const { data: incomes = [] } = useQuery<IncomeRow>(
-    `SELECT id, default_amount, currency, start_month FROM incomes WHERE deleted_at IS NULL`,
+    `SELECT id, default_amount, currency, start_month, end_month FROM incomes WHERE deleted_at IS NULL`,
   );
 
   const { data: incomeMonths = [] } = useQuery<IncomeMonthRow>(
@@ -388,6 +389,7 @@ export function DashboardPage() {
       let available = 0;
       for (const inc of incomes) {
         if (inc.start_month > month) continue;
+        if (inc.end_month != null && inc.end_month < month) continue;
         const im = imMap.get(`${inc.id}|${month}`);
         const amount = im ? im.real_amount : inc.default_amount;
         const currency = im ? im.currency : inc.currency;

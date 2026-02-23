@@ -13,6 +13,7 @@ export interface Income {
   defaultAmount: number; // integer, in income's native currency
   currency: string; // ISO 4217
   startMonth: YearMonth;
+  endMonth: YearMonth | null; // null = indefinite
   createdBy: string;
   createdAt: ISODateTime;
   deletedAt: ISODateTime | null;

@@ -88,6 +88,7 @@ interface IncomeRow {
   default_amount: number;
   currency: string;
   start_month: string;
+  end_month: string | null;
   name: string;
   is_fixed: number;
 }
@@ -572,7 +573,7 @@ export function MonthViewPage() {
   );
 
   const { data: incomes = [] } = useQuery<IncomeRow>(
-    `SELECT id, default_amount, currency, start_month, name, is_fixed
+    `SELECT id, default_amount, currency, start_month, end_month, name, is_fixed
      FROM incomes WHERE deleted_at IS NULL`,
   );
 
@@ -608,6 +609,7 @@ export function MonthViewPage() {
 
   for (const inc of incomes) {
     if (inc.start_month > month) continue;
+    if (inc.end_month != null && inc.end_month < month) continue;
     const im = imMap.get(inc.id);
     const amount = im ? im.real_amount : inc.default_amount;
     const currency = im ? im.currency : inc.currency;
@@ -649,7 +651,9 @@ export function MonthViewPage() {
 
   // ── Active income sources ─────────────────────────────────────────────────
 
-  const activeIncomes = incomes.filter(inc => inc.start_month <= month);
+  const activeIncomes = incomes.filter(inc =>
+    inc.start_month <= month && (inc.end_month == null || inc.end_month >= month),
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
 

@@ -293,6 +293,7 @@ export interface InsertIncomePayload {
   default_amount: number;
   currency: string;         // ISO 4217
   start_month: string;      // 'YYYY-MM'
+  end_month?: string | null; // 'YYYY-MM' | null — if null, no end date
   created_by: string;
 }
 
@@ -301,8 +302,8 @@ export async function insertIncome(payload: InsertIncomePayload): Promise<string
   await db.execute(
     `INSERT INTO incomes
        (id, household_id, name, person, is_fixed, category,
-        default_amount, currency, start_month, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        default_amount, currency, start_month, end_month, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
@@ -313,6 +314,7 @@ export async function insertIncome(payload: InsertIncomePayload): Promise<string
       payload.default_amount,
       payload.currency,
       payload.start_month,
+      payload.end_month ?? null,
       payload.created_by,
       now(),
     ],
@@ -322,7 +324,7 @@ export async function insertIncome(payload: InsertIncomePayload): Promise<string
 
 export async function updateIncome(
   id: string,
-  patch: Partial<Pick<InsertIncomePayload, 'name' | 'default_amount' | 'currency' | 'is_fixed' | 'category'>>,
+  patch: Partial<Pick<InsertIncomePayload, 'name' | 'default_amount' | 'currency' | 'is_fixed' | 'category' | 'end_month'>>,
 ): Promise<void> {
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -332,6 +334,7 @@ export async function updateIncome(
   if (patch.currency !== undefined) { fields.push('currency = ?'); values.push(patch.currency); }
   if (patch.is_fixed !== undefined) { fields.push('is_fixed = ?'); values.push(patch.is_fixed ? 1 : 0); }
   if (patch.category !== undefined) { fields.push('category = ?'); values.push(patch.category); }
+  if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
 
   if (fields.length === 0) return;
   values.push(id);
