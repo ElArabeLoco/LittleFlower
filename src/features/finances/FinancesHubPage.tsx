@@ -4,7 +4,7 @@
  * Hub de navegación para la configuración financiera:
  *   - Ingresos        → /income
  *   - Presupuestos    → /settings/budgets
- *   - Deudas          → /finances/debts  (próximamente)
+ *   - Deudas          → /debts
  */
 
 import { useNavigate } from '@tanstack/react-router';
@@ -47,7 +47,7 @@ const CARDS: HubCard[] = [
     emoji: '💳',
     title: 'Deudas',
     desc: 'Registra y haz seguimiento de tus deudas. Vincula presupuestos para abonos automáticos.',
-    to: '/finances/debts',
+    to: '/debts',
     icon: <CreditCard size={22} />,
     gradient: 'from-amber-400 to-orange-400',
     border: 'border-amber-100 dark:border-amber-900/30',
