@@ -51,8 +51,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             token: supabaseSession.access_token,
             householdId,
           });
-          // Connect PowerSync with the current token
-          await db.connect(new SupabaseConnector());
+          // Connect PowerSync only when not already connected — avoids
+          // unnecessary connecting→connected transitions on every token refresh
+          // which would cause the SyncPill to flash "Sin conexión" momentarily.
+          if (!db.connected) {
+            await db.connect(new SupabaseConnector());
+          }
         } else {
           // INITIAL_SESSION fired with no session → user is not logged in
           setSession(null);
@@ -106,7 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       householdId,
     });
     // Reconnect PowerSync with the refreshed token containing household_id
-    await db.connect(new SupabaseConnector());
+    if (!db.connected) {
+      await db.connect(new SupabaseConnector());
+    }
   }
 
   return (

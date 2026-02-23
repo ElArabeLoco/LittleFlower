@@ -24,6 +24,7 @@ interface CrudCountRow { count: number }
 function SyncPill() {
   const { session } = useAuth();
   const status = useStatus();
+  const connecting = status.connecting;
   const connected = status.connected;
   const uploading = status.dataFlowStatus?.uploading ?? false;
   const uploadError = status.dataFlowStatus?.uploadError ?? null;
@@ -34,6 +35,13 @@ function SyncPill() {
   );
   const pendingCount = crudRows[0]?.count ?? 0;
 
+  // Stable connected state — ignores transient "connecting" phase so the pill
+  // doesn't flash "Sin conexión" during token refresh or reconnect attempts.
+  // Only switches to false when we are neither connected nor connecting.
+  const stableConnected = useRef(connected);
+  if (connected) stableConnected.current = true;
+  if (!connected && !connecting) stableConnected.current = false;
+
   // Auto-reconnect when PowerSync drops the connection.
   // Uses exponential backoff: 3s → 6s → 12s → … capped at 60s.
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -41,7 +49,6 @@ function SyncPill() {
 
   useEffect(() => {
     if (connected) {
-      // Connection restored — reset backoff
       reconnectDelay.current = 3000;
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
@@ -49,15 +56,14 @@ function SyncPill() {
       }
       return;
     }
-
-    // Not connected — only attempt reconnect when the user has a session
-    if (!session) return;
+    // While connecting, don't schedule a reconnect yet
+    if (connecting || !session) return;
 
     reconnectTimer.current = setTimeout(async () => {
       try {
         await db.connect(new SupabaseConnector());
       } catch {
-        // will retry on next disconnect cycle
+        // will retry on next cycle
       }
       reconnectDelay.current = Math.min(reconnectDelay.current * 2, 60_000);
     }, reconnectDelay.current);
@@ -65,7 +71,7 @@ function SyncPill() {
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
-  }, [connected, session]);
+  }, [connected, connecting, session]);
 
   // Don't render on public pages (no session)
   if (!session) return null;
@@ -74,7 +80,7 @@ function SyncPill() {
   let icon: React.ReactNode;
   let colorClass: string;
 
-  if (!connected) {
+  if (!stableConnected.current) {
     label = 'Sin conexión';
     icon = <WifiOff size={9} strokeWidth={2.5} />;
     colorClass = 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-[var(--border-medium)]';
