@@ -338,6 +338,13 @@ export function DashboardPage() {
     `SELECT debt_id, type, amount, date FROM debt_transactions WHERE deleted_at IS NULL ORDER BY date ASC`,
   );
 
+  // Most recent TRM available (not limited to last 6 months — needed for USD debts)
+  const { data: latestTrmRows = [] } = useQuery<ExchangeRateRow>(
+    `SELECT month, rate FROM exchange_rates
+     WHERE from_currency = 'USD' AND to_currency = 'COP'
+     ORDER BY month DESC LIMIT 1`,
+  );
+
   // ── Build lookup maps ──────────────────────────────────────────────────────
 
   const bmIdMap = useMemo(() => {
@@ -493,22 +500,37 @@ export function DashboardPage() {
 
   // ── Debt computations ─────────────────────────────────────────────────────
 
+  // Latest available TRM (for USD debt conversion)
+  const latestTrm = latestTrmRows[0]?.rate ?? null;
+
+  /** Convert a debt's initial_amount to COP using the best available TRM.
+   *  All transaction amounts are already stored in COP (mutationWrappers converts at insert time),
+   *  so only initial_amount needs conversion here. */
+  function debtInitialCOP(debt: DebtDashRow): number {
+    if (debt.currency === 'COP') return debt.initial_amount;
+    // Use the TRM for the month of disbursement if available, else fall back to latest
+    const trm = latestTrm ?? 0;
+    return Math.round(debt.initial_amount * trm);
+  }
+
   /** Per-debt balance (COP) and progress, sorted by pending balance desc */
   const debtProgressData = useMemo(() => {
     return dashDebts
       .map(debt => {
+        const initialCOP = debtInitialCOP(debt);
         const txs = dashDebtTxs.filter(t => t.debt_id === debt.id);
         const credits = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
         const debits  = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
-        const totalBase = debt.initial_amount + credits; // inicial + aumentos
-        const balance   = totalBase - debits;            // saldo pendiente
+        const totalBase = initialCOP + credits; // inicial COP + aumentos (ya en COP)
+        const balance   = totalBase - debits;
         const pctPaid   = totalBase > 0
           ? Math.min(Math.max(debits / totalBase * 100, 0), 100)
           : 0;
         return { id: debt.id, name: debt.name, balance, initial: totalBase, pctPaid };
       })
       .sort((a, b) => b.balance - a.balance);
-  }, [dashDebts, dashDebtTxs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dashDebts, dashDebtTxs, latestTrm]);
 
   const totalDebtBalance = useMemo(
     () => debtProgressData.reduce((s, d) => s + Math.max(d.balance, 0), 0),
@@ -518,19 +540,20 @@ export function DashboardPage() {
   /** Monthly total debt balance for last 6 months — AreaChart data */
   const debtEvolutionData = useMemo(() => {
     return last6.map(month => {
-      // End-of-month boundary: include all txs up to last day of `month`
-      const endOfMonth = `${month}-31`; // '2025-02-31' sorts correctly (string comparison)
+      const endOfMonth = `${month}-31`;
       let total = 0;
       for (const debt of dashDebts) {
+        const initialCOP = debtInitialCOP(debt);
         const txs = dashDebtTxs.filter(t => t.debt_id === debt.id && t.date <= endOfMonth);
         const credits = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
         const debits  = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
-        const balance = debt.initial_amount + credits - debits;
+        const balance = initialCOP + credits - debits;
         total += Math.max(balance, 0);
       }
       return { month, label: shortMonth(month), saldo: total };
     });
-  }, [last6, dashDebts, dashDebtTxs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [last6, dashDebts, dashDebtTxs, latestTrm]);
 
   const hasDebts = dashDebts.length > 0;
 
