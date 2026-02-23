@@ -43,6 +43,16 @@ function authorshipStamp(userId: string): { last_edited_by: string; last_edited_
   };
 }
 
+/** Guard: throws if household_id or userId are empty strings (session not ready). */
+function assertAuth(householdId: string, userId: string): void {
+  if (!householdId || !userId) {
+    throw new Error(
+      `[mutationWrappers] Attempted write with empty auth: household_id="${householdId}" userId="${userId}". ` +
+      `This usually means the mutation was called before the session was ready.`,
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Budget mutations
 // ---------------------------------------------------------------------------
@@ -63,6 +73,7 @@ export interface InsertBudgetPayload {
 }
 
 export async function insertBudget(payload: InsertBudgetPayload, userId: string): Promise<string> {
+  assertAuth(payload.household_id, userId);
   const id = newId();
   const stamp = authorshipStamp(userId);
   await db.execute(
@@ -143,6 +154,7 @@ export async function upsertBudgetMonth(
   payload: UpsertBudgetMonthPayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
   // Pattern: UPDATE first; if no rows affected, INSERT.
   const stamp = authorshipStamp(userId);
@@ -231,6 +243,7 @@ export interface RecordExpensePayload {
  * linked_expense_id pointing to the original.
  */
 export async function recordExpense(payload: RecordExpensePayload): Promise<string> {
+  assertAuth(payload.household_id, payload.recorded_by);
   const id = newId();
   await db.execute(
     `INSERT INTO expenses
@@ -298,6 +311,7 @@ export interface InsertIncomePayload {
 }
 
 export async function insertIncome(payload: InsertIncomePayload): Promise<string> {
+  assertAuth(payload.household_id, payload.created_by);
   const id = newId();
   await db.execute(
     `INSERT INTO incomes
@@ -368,6 +382,7 @@ export async function upsertIncomeMonth(
   payload: UpsertIncomeMonthPayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
   const stamp = authorshipStamp(userId);
   const ts = now();
@@ -443,6 +458,7 @@ export async function upsertExchangeRate(
   payload: UpsertExchangeRatePayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
   const stamp = authorshipStamp(userId);
   const ts = now();
@@ -520,6 +536,7 @@ export interface InsertDebtPayload {
 }
 
 export async function insertDebt(payload: InsertDebtPayload, userId: string): Promise<string> {
+  assertAuth(payload.household_id, userId);
   const id = newId();
   const stamp = authorshipStamp(userId);
   const ts = now();
@@ -604,6 +621,7 @@ export async function insertDebtTransaction(
   payload: InsertDebtTransactionPayload,
   userId: string,
 ): Promise<string> {
+  assertAuth(payload.household_id, userId);
   const id = newId();
   await db.execute(
     `INSERT INTO debt_transactions
