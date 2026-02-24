@@ -205,14 +205,21 @@ function KpiCard({ label, value, icon, highlight = 'default', formatCOP }: KpiCa
     default: 'text-[var(--text-primary)]',
   };
 
+  const formatted = formatCOP(value);
+  // Scale font size down for long strings (full COP format can be 12+ chars)
+  const textSize =
+    formatted.length > 11 ? 'text-sm' :
+    formatted.length > 8  ? 'text-base' :
+                             'text-xl';
+
   return (
     <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] shadow-sm px-4 py-4 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{label}</span>
         <span className="text-[var(--text-muted)]">{icon}</span>
       </div>
-      <p className={cn('text-xl font-bold tabular-nums leading-tight', colorMap[highlight])}>
-        {formatCOP(value)}
+      <p className={cn('font-bold tabular-nums leading-tight', textSize, colorMap[highlight])}>
+        {formatted}
       </p>
     </div>
   );
