@@ -7,7 +7,7 @@
  * Exposes: session, isLoading, login, register, logout, refreshSession
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/infrastructure/powersync/SupabaseConnector';
 import { db } from '@/infrastructure/powersync/client';
 import { SupabaseConnector } from '@/infrastructure/powersync/SupabaseConnector';
@@ -34,6 +34,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Auto-reconnect: poll every 5s, reconnect if disconnected and session exists.
+  // Lives here (not in a UI component) to avoid useStatus() render loops.
+  const sessionRef = useRef<AuthSession | null>(null);
+
+  // Keep sessionRef in sync so the reconnect interval can read it without deps
+  useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // Auto-reconnect: every 5s check if PowerSync dropped the connection.
+  // Uses an interval (not useStatus) to avoid render-loop risks.
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!sessionRef.current) return;
+      const { connected, connecting } = db.currentStatus;
+      if (connected || connecting) return;
+      try {
+        await db.connect(new SupabaseConnector());
+      } catch {
+        // will retry next interval
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // On mount: use onAuthStateChange as the single source of truth.
   //
   // Supabase fires INITIAL_SESSION synchronously on subscribe (using the
@@ -51,8 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             token: supabaseSession.access_token,
             householdId,
           });
-          // Connect PowerSync with the current token
-          await db.connect(new SupabaseConnector());
+          // Connect PowerSync only when not already connected — avoids
+          // unnecessary connecting→connected transitions on every token refresh
+          // which would cause the SyncPill to flash "Sin conexión" momentarily.
+          if (!db.connected) {
+            await db.connect(new SupabaseConnector());
+          }
         } else {
           // INITIAL_SESSION fired with no session → user is not logged in
           setSession(null);
@@ -106,7 +133,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       householdId,
     });
     // Reconnect PowerSync with the refreshed token containing household_id
-    await db.connect(new SupabaseConnector());
+    if (!db.connected) {
+      await db.connect(new SupabaseConnector());
+    }
   }
 
   return (

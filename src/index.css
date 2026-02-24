@@ -111,8 +111,28 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  /* Prevent the iOS Safari rubber-band / overscroll bounce on the root.
+     Each scrollable container that NEEDS scroll should set
+     -webkit-overflow-scrolling: touch and overscroll-behavior: contain
+     on itself, which keeps momentum scrolling inside that element only. */
+  overscroll-behavior: none;
+  /* Lock the viewport — no rubber-band on the html/body level */
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow-y: auto;
+  /* Smooth momentum scrolling on iOS for the root container */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+body {
   font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   background-color: var(--bg-app);
