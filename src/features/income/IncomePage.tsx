@@ -816,9 +816,16 @@ export function IncomePage() {
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
 
+  // Filter by date range: only show incomes active in the selected month.
+  // An income is active when start_month <= month AND (end_month IS NULL OR end_month >= month).
   const { data: incomes = [] } = useQuery<IncomeRow>(
     `SELECT id, name, person, is_fixed, category, default_amount, currency, start_month, end_month
-     FROM incomes WHERE deleted_at IS NULL ORDER BY category ASC, name ASC`,
+     FROM incomes
+     WHERE deleted_at IS NULL
+       AND start_month <= ?
+       AND (end_month IS NULL OR end_month >= ?)
+     ORDER BY category ASC, name ASC`,
+    [month, month],
   );
 
   const { data: incomeMonths = [] } = useQuery<IncomeMonthRow>(
