@@ -647,8 +647,9 @@ export function MonthViewPage() {
 
   const ccTotals = groupTotals(creditCardBudgets);
   const cashTotals = groupTotals(cashBudgets);
-  const totalBudgeted = ccTotals.budgeted + cashTotals.budgeted;
-  const totalSpent = ccTotals.spent + cashTotals.spent;
+  // Balance real uses cash-only figures: CC budgets are not real cash outflows.
+  const totalBudgeted = cashTotals.budgeted;
+  const totalSpent = cashTotals.spent;
 
   // ── Active income sources ─────────────────────────────────────────────────
 

@@ -397,9 +397,12 @@ export function DashboardPage() {
         else if (trm) available += Math.round(amount * trm);
       }
 
-      // Budgeted & spent
+      // Budgeted & spent — cash only (paid_with_credit_card = 0).
+      // Credit card budgets are excluded from these metrics because they
+      // are not a real cash outflow (the card bill is paid separately).
       let budgeted = 0, spent = 0;
       for (const b of budgets) {
+        if (b.paid_with_credit_card === 1) continue; // skip CC budgets
         if (b.start_month > month) continue;
         if (b.end_month && b.end_month < month) continue;
         const bmKey = `${b.id}|${month}`;
@@ -490,6 +493,56 @@ export function DashboardPage() {
       .sort((a, b) => b.spent - a.spent)
       .slice(0, 6);
   }, [budgets, bmIdMap, budgetAmountMap, expenseByBmId, currentMonth]);
+
+  // ── Rubros excedidos en los últimos 6 meses ───────────────────────────────
+  // For each budget × month combination where spent > budgeted, produce one row.
+  // Both CC and cash budgets are included here (spending reality check).
+
+  interface ExceededRow {
+    budgetId: string;
+    name: string;
+    emoji: string;
+    color: string;
+    isCreditCard: boolean;
+    month: string;
+    label: string;
+    budgeted: number;
+    spent: number;
+    overage: number;
+    pct: number;
+  }
+
+  const exceededBudgets = useMemo((): ExceededRow[] => {
+    const rows: ExceededRow[] = [];
+    for (const b of budgets) {
+      for (const month of last6) {
+        if (b.start_month > month) continue;
+        if (b.end_month && b.end_month < month) continue;
+        const bmKey = `${b.id}|${month}`;
+        const bmRow = bmIdMap.get(bmKey);
+        if (!bmRow) continue;
+        const spent = expenseByBmId.get(bmRow.id) ?? 0;
+        if (spent <= 0) continue;
+        const budgeted = budgetAmountMap.get(bmKey) ?? b.default_amount;
+        if (spent <= budgeted) continue;
+        const cat = CATEGORY_MAP.get(b.category_id);
+        rows.push({
+          budgetId: b.id,
+          name: b.name,
+          emoji: cat?.emoji ?? '•',
+          color: cat?.color ?? '#cbd5e1',
+          isCreditCard: b.paid_with_credit_card === 1,
+          month,
+          label: shortMonth(month),
+          budgeted,
+          spent,
+          overage: spent - budgeted,
+          pct: budgeted > 0 ? Math.round((spent / budgeted) * 100) : 0,
+        });
+      }
+    }
+    return rows.sort((a, b) => b.overage - a.overage);
+  }, [budgets, last6, bmIdMap, expenseByBmId, budgetAmountMap]);
 
   // ── Format recent expense date ─────────────────────────────────────────────
 
@@ -810,6 +863,51 @@ export function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+          </ChartCard>
+        )}
+
+        {/* ── Rubros excedidos en últimos 6 meses ── */}
+        {exceededBudgets.length > 0 && (
+          <ChartCard
+            title="Rubros excedidos"
+            subtitle={`Presupuestos superados en los últimos 6 meses (${exceededBudgets.length} ocurrencia${exceededBudgets.length !== 1 ? 's' : ''})`}
+          >
+            <div className="space-y-3">
+              {exceededBudgets.map((b, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-primary)] truncate min-w-0">
+                      <span className="shrink-0">{b.emoji}</span>
+                      <span className="truncate">{b.name}</span>
+                      <span className="shrink-0 text-[10px] text-[var(--text-muted)] font-normal">
+                        {b.label}
+                      </span>
+                      {b.isCreditCard && (
+                        <CreditCard size={10} className="shrink-0 text-violet-400" />
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="text-[11px] font-bold tabular-nums text-red-500 dark:text-red-400">
+                        +{formatCOP(b.overage)}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)]">
+                        {b.pct}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-[var(--border-subtle)] overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all bg-red-400"
+                      style={{ width: `${Math.min(b.pct, 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-0.5">
+                    <span className="text-[10px] text-[var(--text-muted)]">Presup. {formatCOP(b.budgeted)}</span>
+                    <span className="text-[10px] text-red-500 dark:text-red-400">Gastado {formatCOP(b.spent)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </ChartCard>
         )}
