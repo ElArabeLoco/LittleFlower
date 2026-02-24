@@ -27,20 +27,24 @@ import { AppSchema } from './schema';
 // IDBBatchAtomicVFS — it causes RangeError: Maximum call stack size exceeded,
 // tab crashes, and excessive CPU usage (device runs hot).
 //
-// OPFSCoopSyncVFS is the VFS explicitly recommended by PowerSync for
-// Safari/iOS stability:
+// OPFSCoopSyncVFS is the VFS recommended by PowerSync for Safari/iOS:
 //   https://docs.powersync.com/client-sdk-references/js-web
 //
-// Notes on flags:
-// - We do NOT set enableMultiTabs manually — the SDK already auto-detects
-//   iOS/Safari/Android and disables it correctly via DEFAULT_WEB_SQL_FLAGS.
-// - We do NOT set useWebWorker — it defaults to true, which is required for
-//   OPFSCoopSyncVFS (FileSystemSyncAccessHandle only works inside a Worker).
+// Chrome/Edge work fine with the default IDBBatchAtomicVFS and already have
+// an existing DB there — switching VFS on them loses the local cache.
+// So: use OPFSCoopSyncVFS only on Safari/iOS, default elsewhere.
+const isSafariOrIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome'));
+
+const vfs = isSafariOrIOS
+  ? WASQLiteVFS.OPFSCoopSyncVFS
+  : WASQLiteVFS.IDBBatchAtomicVFS;
 
 export const db = new PowerSyncDatabase({
   schema: AppSchema,
   database: new WASQLiteOpenFactory({
     dbFilename: 'littleflower.db',
-    vfs: WASQLiteVFS.OPFSCoopSyncVFS,
+    vfs,
   }),
 });
