@@ -26,6 +26,7 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
 import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -137,6 +138,11 @@ interface DebtTxDashRow {
   date: string;
 }
 
+interface DailyExpenseRow {
+  day: string; // 'YYYY-MM-DD'
+  total: number;
+}
+
 // ---------------------------------------------------------------------------
 // Shared chart tooltip styles
 // ---------------------------------------------------------------------------
@@ -219,7 +225,7 @@ function KpiCard({ label, value, icon, highlight = 'default', formatCOP }: KpiCa
         <span className="text-[var(--text-muted)]">{icon}</span>
       </div>
       <p className={cn('font-bold tabular-nums leading-tight', textSize, colorMap[highlight])}>
-        {formatted}
+        <AbbreviatedAmount value={value} />
       </p>
     </div>
   );
@@ -351,6 +357,37 @@ export function DashboardPage() {
     `SELECT month, rate FROM exchange_rates
      WHERE from_currency = 'USD' AND to_currency = 'COP'
      ORDER BY month DESC LIMIT 1`,
+  );
+
+  // ── Daily expense distribution for Restaurantes (current month) ────────────
+  // Join expenses → budget_months → budgets filtered by category_id = 'restaurants'
+  const { data: restaurantesDailyRaw = [] } = useQuery<DailyExpenseRow>(
+    `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     JOIN budgets b ON b.id = bm.budget_id
+     WHERE bm.month = ?
+       AND b.category_id = 'restaurants'
+       AND e.deleted_at IS NULL
+       AND e.amount > 0
+     GROUP BY substr(e.timestamp, 1, 10)
+     ORDER BY day ASC`,
+    [currentMonth],
+  );
+
+  // ── Daily expense distribution for Groceries (current month) ──────────────
+  const { data: groceriesDailyRaw = [] } = useQuery<DailyExpenseRow>(
+    `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     JOIN budgets b ON b.id = bm.budget_id
+     WHERE bm.month = ?
+       AND b.category_id = 'groceries'
+       AND e.deleted_at IS NULL
+       AND e.amount > 0
+     GROUP BY substr(e.timestamp, 1, 10)
+     ORDER BY day ASC`,
+    [currentMonth],
   );
 
   // ── Build lookup maps ──────────────────────────────────────────────────────
@@ -624,6 +661,34 @@ export function DashboardPage() {
 
   const hasDebts = dashDebts.length > 0;
 
+  // ── Daily distribution charts ─────────────────────────────────────────────
+  // Build a full array of days for the current month, filling 0 for days with no spend.
+
+  function buildDailyChartData(rawRows: DailyExpenseRow[]): { day: number; label: string; total: number }[] {
+    const [y, m] = currentMonth.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const rawMap = new Map(rawRows.map(r => [parseInt(r.day.slice(8, 10), 10), r.total]));
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const d = i + 1;
+      return { day: d, label: String(d), total: rawMap.get(d) ?? 0 };
+    });
+  }
+
+  const restaurantesDailyData = useMemo(
+    () => buildDailyChartData(restaurantesDailyRaw),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [restaurantesDailyRaw, currentMonth],
+  );
+
+  const groceriesDailyData = useMemo(
+    () => buildDailyChartData(groceriesDailyRaw),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [groceriesDailyRaw, currentMonth],
+  );
+
+  const hasRestaurantes = restaurantesDailyRaw.length > 0;
+  const hasGroceries = groceriesDailyRaw.length > 0;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const hasSpend = currentData.spent > 0;
@@ -838,7 +903,7 @@ export function DashboardPage() {
                     <span key={i} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ background: d.color }} />
                       {d.name === 'Tarjeta' ? <CreditCard size={12} /> : <Banknote size={12} />}
-                      {d.name} — <span className="font-semibold text-[var(--text-secondary)]">{formatCOP(d.value)}</span>
+                      {d.name} — <AbbreviatedAmount value={d.value} className="font-semibold text-[var(--text-secondary)]" />
                     </span>
                   ))}
                 </div>
@@ -868,11 +933,9 @@ export function DashboardPage() {
                         <span className="truncate">{b.name}</span>
                       </span>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className={cn('text-[11px] font-semibold tabular-nums',
-                          over ? 'text-red-500 dark:text-red-400' : 'text-[var(--text-secondary)]')}>
-                          {formatCOP(b.spent)}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)]">/ {formatCOP(b.budgeted)}</span>
+                        <AbbreviatedAmount value={b.spent} className={cn('text-[11px] font-semibold tabular-nums',
+                          over ? 'text-red-500 dark:text-red-400' : 'text-[var(--text-secondary)]')} />
+                        <span className="text-[10px] text-[var(--text-muted)]">/ <AbbreviatedAmount value={b.budgeted} /></span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full bg-[var(--border-subtle)] overflow-hidden">
@@ -913,7 +976,7 @@ export function DashboardPage() {
                     </span>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span className="text-[11px] font-bold tabular-nums text-red-500 dark:text-red-400">
-                        +{formatCOP(b.overage)}
+                        +<AbbreviatedAmount value={b.overage} />
                       </span>
                       <span className="text-[10px] text-[var(--text-muted)]">
                         {b.pct}%
@@ -927,8 +990,8 @@ export function DashboardPage() {
                     />
                   </div>
                   <div className="flex justify-between mt-0.5">
-                    <span className="text-[10px] text-[var(--text-muted)]">Presup. {formatCOP(b.budgeted)}</span>
-                    <span className="text-[10px] text-red-500 dark:text-red-400">Gastado {formatCOP(b.spent)}</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">Presup. <AbbreviatedAmount value={b.budgeted} /></span>
+                    <span className="text-[10px] text-red-500 dark:text-red-400">Gastado <AbbreviatedAmount value={b.spent} /></span>
                   </div>
                 </div>
               ))}
@@ -957,9 +1020,7 @@ export function DashboardPage() {
                       </p>
                       <p className="text-[10px] text-[var(--text-muted)]">{fmtDate(exp.timestamp)}</p>
                     </div>
-                    <span className="text-xs font-semibold text-[var(--text-primary)] tabular-nums shrink-0">
-                      {formatCOP(exp.amount)}
-                    </span>
+                    <AbbreviatedAmount value={exp.amount} className="text-xs font-semibold text-[var(--text-primary)] tabular-nums shrink-0" />
                   </div>
                 );
               })}
@@ -982,11 +1043,9 @@ export function DashboardPage() {
                       💳 <span className="truncate">{d.name}</span>
                     </span>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className="text-[11px] font-semibold tabular-nums text-rose-500 dark:text-rose-400">
-                        {formatCOP(Math.max(d.balance, 0))}
-                      </span>
+                      <AbbreviatedAmount value={Math.max(d.balance, 0)} className="text-[11px] font-semibold tabular-nums text-rose-500 dark:text-rose-400" />
                       <span className="text-[10px] text-[var(--text-muted)]">
-                        / {formatCOP(d.initial)}
+                        / <AbbreviatedAmount value={d.initial} />
                       </span>
                       <span className="text-[10px] text-[var(--text-muted)] font-medium">
                         ({d.pctPaid.toFixed(0)}% pagado)
@@ -1045,6 +1104,92 @@ export function DashboardPage() {
             </ResponsiveContainer>
           </ChartCard>
         </div>
+        )}
+
+        {/* ── Distribución diaria: Restaurantes + Groceries ── */}
+        {(hasRestaurantes || hasGroceries) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+            {/* Restaurantes */}
+            {hasRestaurantes && (
+              <ChartCard
+                title="🍽️ Restaurantes este mes"
+                subtitle="Gasto diario en restaurantes"
+              >
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={restaurantesDailyData} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                      axisLine={false} tickLine={false}
+                      interval={4}
+                    />
+                    <YAxis
+                      tickFormatter={formatK}
+                      tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                      axisLine={false} tickLine={false} width={44}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        const v = (payload[0]?.value as number) ?? 0;
+                        if (v === 0) return null;
+                        return (
+                          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg px-3 py-2 text-xs">
+                            <p className="font-semibold text-[var(--text-primary)] mb-0.5">Día {label}</p>
+                            <p className="text-[#fb923c] font-semibold">{formatK(v)}</p>
+                          </div>
+                        );
+                      }}
+                      cursor={{ fill: 'var(--bg-hover)' }}
+                    />
+                    <Bar dataKey="total" name="Restaurantes" fill="#fdba74" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            )}
+
+            {/* Groceries */}
+            {hasGroceries && (
+              <ChartCard
+                title="🛍️ Groceries este mes"
+                subtitle="Gasto diario en supermercado"
+              >
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={groceriesDailyData} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                      axisLine={false} tickLine={false}
+                      interval={4}
+                    />
+                    <YAxis
+                      tickFormatter={formatK}
+                      tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                      axisLine={false} tickLine={false} width={44}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        const v = (payload[0]?.value as number) ?? 0;
+                        if (v === 0) return null;
+                        return (
+                          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg px-3 py-2 text-xs">
+                            <p className="font-semibold text-[var(--text-primary)] mb-0.5">Día {label}</p>
+                            <p className="text-[#6ee7b7] font-semibold">{formatK(v)}</p>
+                          </div>
+                        );
+                      }}
+                      cursor={{ fill: 'var(--bg-hover)' }}
+                    />
+                    <Bar dataKey="total" name="Groceries" fill="#6ee7b7" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            )}
+          </div>
         )}
 
         {/* Empty state */}

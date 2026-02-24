@@ -15,6 +15,8 @@ export interface Category {
 export const CATEGORIES: Category[] = [
   { id: 'housing',       name: 'Vivienda',         icon: 'home',          color: '#f9a8d4', emoji: '🏠' },
   { id: 'food',          name: 'Alimentación',      icon: 'shopping-cart', color: '#86efac', emoji: '🛒' },
+  { id: 'restaurants',   name: 'Restaurantes',       icon: 'utensils',      color: '#fdba74', emoji: '🍽️' },
+  { id: 'groceries',     name: 'Groceries',          icon: 'shopping-basket',color: '#6ee7b7', emoji: '🛍️' },
   { id: 'transport',     name: 'Transporte',        icon: 'car',           color: '#93c5fd', emoji: '🚗' },
   { id: 'health',        name: 'Salud',             icon: 'heart-pulse',   color: '#f87171', emoji: '❤️‍🩹' },
   { id: 'education',     name: 'Educación',         icon: 'graduation-cap',color: '#a78bfa', emoji: '🎓' },
