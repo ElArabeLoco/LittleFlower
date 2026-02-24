@@ -412,15 +412,20 @@ export function DashboardPage() {
         if (bmRow) spent += expenseByBmId.get(bmRow.id) ?? 0;
       }
 
-      const balance = available - spent;
+      // Balance real = Disponible − Presupuestado (efectivo)
+      // "¿cuánto del ingreso queda libre después de comprometer el presupuesto?"
+      const balance = available - budgeted;
+      // Por ejecutar = Presupuestado − Ejecutado (efectivo, floor at 0)
+      // "¿cuánto del presupuesto comprometido aún no se ha gastado?"
+      const pending = Math.max(0, budgeted - spent);
 
-      return { month, label: shortMonth(month), available, budgeted, spent, balance };
+      return { month, label: shortMonth(month), available, budgeted, spent, balance, pending };
     });
   }, [last6, budgets, incomes, budgetAmountMap, bmIdMap, expenseByBmId, imMap, trmMap]);
 
   // Current month metrics
   const currentData = monthlyData.find(d => d.month === currentMonth) ?? {
-    available: 0, budgeted: 0, spent: 0, balance: 0,
+    available: 0, budgeted: 0, spent: 0, balance: 0, pending: 0,
   };
 
   // ── Pie: spending by category (current month) ──────────────────────────────
@@ -630,7 +635,12 @@ export function DashboardPage() {
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-5 space-y-5">
 
         {/* ── KPI strip ── */}
-        <div className={`grid grid-cols-2 gap-3 ${hasDebts ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
+        {/* All cash-only metrics (paid_with_credit_card = 0):                    */}
+        {/* Balance real    = Disponible − Presupuestado                           */}
+        {/* Presupuestado   = total presupuesto efectivo comprometido              */}
+        {/* Ejecutado       = gasto real registrado en efectivo                   */}
+        {/* Por ejecutar    = Presupuestado − Ejecutado (pendiente del presupuesto)*/}
+        <div className={`grid grid-cols-2 gap-3 ${hasDebts ? 'sm:grid-cols-6' : 'sm:grid-cols-5'}`}>
           <KpiCard
             label="Balance real"
             value={currentData.balance}
@@ -653,10 +663,17 @@ export function DashboardPage() {
             formatCOP={formatCOP}
           />
           <KpiCard
-            label="Gastado"
+            label="Ejecutado"
             value={currentData.spent}
             icon={<TrendingDown size={16} />}
             highlight={currentData.spent > currentData.budgeted ? 'negative' : 'default'}
+            formatCOP={formatCOP}
+          />
+          <KpiCard
+            label="Por ejecutar"
+            value={currentData.pending ?? 0}
+            icon={<TrendingDown size={16} />}
+            highlight="default"
             formatCOP={formatCOP}
           />
           {hasDebts && (
@@ -702,7 +719,7 @@ export function DashboardPage() {
 
           <ChartCard
             title="Balance real mes a mes"
-            subtitle="Ingresos disponibles menos gasto real"
+            subtitle="Disponible − Presupuestado (efectivo)"
           >
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={monthlyData}>
