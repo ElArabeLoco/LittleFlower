@@ -388,7 +388,12 @@ interface BalanceCardProps {
 
 function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTrm }: BalanceCardProps) {
   const { formatCOP } = useNumberFormat();
+  // Balance real = Disponible − Presupuestado (efectivo)
+  // Answers: "¿cuánto del ingreso queda libre después de comprometer el presupuesto?"
   const balance = available - totalBudgeted;
+  // Por ejecutar = Presupuestado − Ejecutado (efectivo)
+  // Answers: "¿cuánto del presupuesto comprometido aún no se ha gastado?"
+  const pending = Math.max(0, totalBudgeted - totalSpent);
   const positive = balance >= 0;
 
   return (
@@ -411,6 +416,7 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
           <p className="text-3xl font-bold tabular-nums leading-none tracking-tight">
             {balance > 0 ? '+' : ''}{formatCOP(balance)}
           </p>
+          <p className="text-[10px] opacity-60 mt-0.5">Disponible − Presupuestado</p>
         </div>
         <Wallet size={28} className="opacity-25 mb-1" />
       </div>
@@ -422,19 +428,23 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
         </div>
       )}
 
-      {/* Three-stat strip */}
-      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/20 mt-1">
+      {/* Four-stat strip — solo efectivo */}
+      <div className="grid grid-cols-4 gap-1 pt-3 border-t border-white/20 mt-1">
         <div className="text-center">
-          <p className="text-[10px] opacity-55 mb-0.5 uppercase tracking-wide">Disponible</p>
-          <p className="text-sm font-bold tabular-nums">{formatCOP(available)}</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Disponible</p>
+          <p className="text-xs font-bold tabular-nums">{formatCOP(available)}</p>
         </div>
         <div className="text-center border-x border-white/20">
-          <p className="text-[10px] opacity-55 mb-0.5 uppercase tracking-wide">Presupuest.</p>
-          <p className="text-sm font-bold tabular-nums">{formatCOP(totalBudgeted)}</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Presupuest.</p>
+          <p className="text-xs font-bold tabular-nums">{formatCOP(totalBudgeted)}</p>
+        </div>
+        <div className="text-center border-r border-white/20">
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Ejecutado</p>
+          <p className="text-xs font-bold tabular-nums">{formatCOP(totalSpent)}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] opacity-55 mb-0.5 uppercase tracking-wide">Ejecutado</p>
-          <p className="text-sm font-bold tabular-nums">{formatCOP(totalSpent)}</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Por ejecutar</p>
+          <p className="text-xs font-bold tabular-nums">{formatCOP(pending)}</p>
         </div>
       </div>
     </div>
@@ -647,8 +657,9 @@ export function MonthViewPage() {
 
   const ccTotals = groupTotals(creditCardBudgets);
   const cashTotals = groupTotals(cashBudgets);
-  const totalBudgeted = ccTotals.budgeted + cashTotals.budgeted;
-  const totalSpent = ccTotals.spent + cashTotals.spent;
+  // Balance real uses cash-only figures: CC budgets are not real cash outflows.
+  const totalBudgeted = cashTotals.budgeted;
+  const totalSpent = cashTotals.spent;
 
   // ── Active income sources ─────────────────────────────────────────────────
 
