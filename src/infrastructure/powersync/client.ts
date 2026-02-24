@@ -24,28 +24,23 @@ import { PowerSyncDatabase, WASQLiteOpenFactory, WASQLiteVFS } from '@powersync/
 import { AppSchema } from './schema';
 
 // Safari (desktop and iOS) has known stability issues with the default
-// IDBBatchAtomicVFS — it causes stack overflow crashes and tab terminations,
-// especially on low-memory devices like iPhones.
+// IDBBatchAtomicVFS — it causes RangeError: Maximum call stack size exceeded,
+// tab crashes, and excessive CPU usage (device runs hot).
 //
-// OPFSCoopSyncVFS is the PowerSync-recommended VFS for Safari/iOS:
+// OPFSCoopSyncVFS is the VFS explicitly recommended by PowerSync for
+// Safari/iOS stability:
 //   https://docs.powersync.com/client-sdk-references/js-web
 //
-// Multi-tab sync via SharedWorker is disabled on iOS Safari because
-// SharedWorker is not reliably supported there. Disabling it prevents
-// PowerSync from attempting to spawn a SharedWorker and failing silently,
-// which can cause memory pressure and tab crashes.
-const multiTabsEnabled = typeof SharedWorker !== 'undefined';
+// Notes on flags:
+// - We do NOT set enableMultiTabs manually — the SDK already auto-detects
+//   iOS/Safari/Android and disables it correctly via DEFAULT_WEB_SQL_FLAGS.
+// - We do NOT set useWebWorker — it defaults to true, which is required for
+//   OPFSCoopSyncVFS (FileSystemSyncAccessHandle only works inside a Worker).
 
 export const db = new PowerSyncDatabase({
   schema: AppSchema,
   database: new WASQLiteOpenFactory({
     dbFilename: 'littleflower.db',
     vfs: WASQLiteVFS.OPFSCoopSyncVFS,
-    flags: {
-      enableMultiTabs: multiTabsEnabled,
-    },
   }),
-  flags: {
-    enableMultiTabs: multiTabsEnabled,
-  },
 });
