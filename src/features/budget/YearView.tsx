@@ -25,7 +25,8 @@ import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCategoryEmoji } from '@/domain/budget/categories';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
-import { formatCOPStatic, useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 
 // ---------------------------------------------------------------------------
 // Constants & helpers
@@ -37,9 +38,7 @@ function yearMonths(year: number): string[] {
   return MONTHS.map((_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
 }
 
-// formatCOP is provided by useNumberFormat() hook in YearView,
-// and by formatCOPStatic in standalone sub-components (BudgetCell, TotalsRow).
-const formatCOP = formatCOPStatic;
+
 
 
 function getCurrentYear(): number {
@@ -219,7 +218,7 @@ function BudgetCell({
         onClick={() => { if (!isExecuted) { setDraft(String(amount)); setEditing(true); } }}
         title={isExecuted ? 'Ejecutado ✓ — clic derecho para desmarcar' : 'Clic para editar · clic derecho para marcar ejecutado'}
       >
-        {formatCOP(amount)}
+        <AbbreviatedAmount value={amount} />
         {isExecuted && <span className="ml-1 text-green-600">✓</span>}
         {!isExecuted && (
           <span className="ml-1 text-gray-300 opacity-0 group-hover/cell:opacity-100 transition-opacity text-[10px]">☑</span>
@@ -238,7 +237,7 @@ function BudgetCell({
         title="Ver / registrar gastos"
       >
         {hasExpenses ? (
-          <>{formatCOP(spentAmount)}{overBudget && ' ⚠'}</>
+          <><AbbreviatedAmount value={spentAmount} />{overBudget && ' ⚠'}</>
         ) : (
           <Plus size={9} />
         )}
@@ -289,7 +288,7 @@ function TotalsRow({ months, metricsMap }: {
             const v = metricsMap.get(month)?.[m.key] ?? 0;
             return (
               <td key={month} className={cn('border-r border-[var(--border-subtle)] px-2 py-1 text-right text-xs tabular-nums font-medium', m.color)}>
-                {formatCOP(v)}
+                <AbbreviatedAmount value={v} />
               </td>
             );
           })}
@@ -480,7 +479,10 @@ export function YearView() {
         {visibleBudgets.map((budget, bIdx) => (
           <tr key={budget.id} className="border-b border-[var(--border-subtle)] hover:bg-[var(--bg-hover)] transition-colors group">
             {/* Budget name — sticky first column */}
-            <td className="sticky left-0 z-10 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-hover)] px-3 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-[var(--border-subtle)] max-w-[160px] truncate">
+            <td
+              className="sticky left-0 z-10 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-hover)] px-3 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-[var(--border-subtle)] max-w-[160px] truncate"
+              title={budget.name}
+            >
               <span className="mr-1.5">{getCategoryEmoji(budget.category_id)}</span>{budget.name}
             </td>
 

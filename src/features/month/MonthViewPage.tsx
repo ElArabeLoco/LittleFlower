@@ -23,6 +23,7 @@ import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -132,7 +133,6 @@ interface BudgetCardProps {
 }
 
 function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: BudgetCardProps) {
-  const { formatCOP } = useNumberFormat();
   const [expenseOpen, setExpenseOpen] = useState(false);
   const expenseOpenKeyRef = useRef(0);
 
@@ -199,7 +199,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
           <div>
             <p className="text-[10px] text-[var(--text-muted)] mb-0.5">Presupuesto</p>
             <p className="text-sm font-medium text-[var(--text-secondary)] tabular-nums">
-              {formatCOP(amount)}
+              <AbbreviatedAmount value={amount} />
             </p>
           </div>
           <div>
@@ -212,7 +212,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
                   : 'text-violet-600 dark:text-violet-400'
                 : 'text-[var(--text-muted)]',
             )}>
-              {hasExpenses ? formatCOP(spentAmount) : '—'}
+              {hasExpenses ? <AbbreviatedAmount value={spentAmount} /> : '—'}
             </p>
           </div>
           <div>
@@ -225,7 +225,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
                   ? 'text-red-500 dark:text-red-400'
                   : 'text-green-600 dark:text-green-400',
             )}>
-              {hasExpenses ? formatCOP(remaining) : '—'}
+              {hasExpenses ? <AbbreviatedAmount value={remaining} /> : '—'}
             </p>
           </div>
         </button>
@@ -280,7 +280,6 @@ function GroupSection({
   label, icon, accent, budgets, bmMap, expenseMap,
   month, householdId, userId, totalBudgeted, totalSpent,
 }: GroupSectionProps) {
-  const { formatCOP } = useNumberFormat();
   const [collapsed, setCollapsed] = useState(false);
 
   if (budgets.length === 0) return null;
@@ -318,7 +317,7 @@ function GroupSection({
           'text-xs font-semibold tabular-nums shrink-0',
           over ? 'text-red-500' : accent === 'violet' ? 'text-[var(--group-cc-text)]' : 'text-[var(--group-cash-text)]',
         )}>
-          {totalSpent > 0 ? `${pct}%` : formatCOP(totalBudgeted)}
+          {totalSpent > 0 ? `${pct}%` : <AbbreviatedAmount value={totalBudgeted} />}
         </span>
         <span className={cn(
           'shrink-0 transition-transform duration-200',
@@ -339,13 +338,13 @@ function GroupSection({
             'text-xs font-medium tabular-nums shrink-0',
             over ? 'text-red-500 dark:text-red-400' : 'text-violet-600 dark:text-violet-400',
           )}>
-            {formatCOP(totalSpent)} / {formatCOP(totalBudgeted)}
+            <AbbreviatedAmount value={totalSpent} /> / <AbbreviatedAmount value={totalBudgeted} />
           </span>
           <span className={cn(
             'text-xs font-semibold tabular-nums shrink-0',
             remaining < 0 ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400',
           )}>
-            {remaining >= 0 ? '+' : ''}{formatCOP(remaining)}
+            {remaining >= 0 ? '+' : ''}<AbbreviatedAmount value={remaining} />
           </span>
         </div>
       )}
@@ -387,7 +386,6 @@ interface BalanceCardProps {
 }
 
 function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTrm }: BalanceCardProps) {
-  const { formatCOP } = useNumberFormat();
   // Balance real = Disponible − Presupuestado (efectivo)
   // Answers: "¿cuánto del ingreso queda libre después de comprometer el presupuesto?"
   const balance = available - totalBudgeted;
@@ -414,7 +412,7 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
         <div>
           <p className="text-xs opacity-70 mb-0.5">Balance real</p>
           <p className="text-3xl font-bold tabular-nums leading-none tracking-tight">
-            {balance > 0 ? '+' : ''}{formatCOP(balance)}
+            {balance > 0 ? '+' : ''}<AbbreviatedAmount value={balance} />
           </p>
           <p className="text-[10px] opacity-60 mt-0.5">Disponible − Presupuestado</p>
         </div>
@@ -432,19 +430,19 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
       <div className="grid grid-cols-4 gap-1 pt-3 border-t border-white/20 mt-1">
         <div className="text-center">
           <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Disponible</p>
-          <p className="text-xs font-bold tabular-nums">{formatCOP(available)}</p>
+          <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={available} /></p>
         </div>
         <div className="text-center border-x border-white/20">
           <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Presupuest.</p>
-          <p className="text-xs font-bold tabular-nums">{formatCOP(totalBudgeted)}</p>
+          <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={totalBudgeted} /></p>
         </div>
         <div className="text-center border-r border-white/20">
           <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Ejecutado</p>
-          <p className="text-xs font-bold tabular-nums">{formatCOP(totalSpent)}</p>
+          <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={totalSpent} /></p>
         </div>
         <div className="text-center">
           <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Por ejecutar</p>
-          <p className="text-xs font-bold tabular-nums">{formatCOP(pending)}</p>
+          <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={pending} /></p>
         </div>
       </div>
     </div>
@@ -464,7 +462,7 @@ interface IncomeSectionProps {
 }
 
 function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: IncomeSectionProps) {
-  const { formatCOP, formatNumber } = useNumberFormat();
+  const { formatNumber } = useNumberFormat();
   const [collapsed, setCollapsed] = useState(true);
 
   return (
@@ -483,7 +481,7 @@ function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: I
           </span>
         )}
         <span className="text-sm font-semibold tabular-nums text-[var(--group-available-text)] shrink-0">
-          {formatCOP(totalAvailable)}
+          <AbbreviatedAmount value={totalAvailable} />
         </span>
         <span className={cn(
           'shrink-0 text-[var(--group-available-text)] transition-transform duration-200',
@@ -537,7 +535,7 @@ function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: I
                   </p>
                   {copEquiv !== null && (
                     <p className="text-xs text-[var(--text-muted)] tabular-nums">
-                      ≈ {formatCOP(copEquiv)}
+                      ≈ <AbbreviatedAmount value={copEquiv} />
                     </p>
                   )}
                 </div>
