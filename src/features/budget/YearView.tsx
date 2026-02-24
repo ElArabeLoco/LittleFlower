@@ -409,9 +409,12 @@ export function YearView() {
 
   // Compute metrics per month for each group.
   // executed = SUM of real expenses recorded against each budget_month.
+  // Only budgets active in `month` are counted (start_month <= month <= end_month).
   function groupMetrics(groupBudgets: BudgetRow[], month: string): MonthMetrics {
     let budgeted = 0, executed = 0;
     for (const b of groupBudgets) {
+      if (b.start_month > month) continue;
+      if (b.end_month && b.end_month < month) continue;
       const bm = bmMap.get(`${b.id}|${month}`);
       budgeted += bm?.amount ?? b.default_amount;
       if (bm) executed += expenseMap.get(bm.id) ?? 0;
