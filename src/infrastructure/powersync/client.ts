@@ -24,28 +24,27 @@ import { PowerSyncDatabase, WASQLiteOpenFactory, WASQLiteVFS } from '@powersync/
 import { AppSchema } from './schema';
 
 // Safari (desktop and iOS) has known stability issues with the default
-// IDBBatchAtomicVFS — it causes stack overflow crashes and tab terminations,
-// especially on low-memory devices like iPhones.
+// IDBBatchAtomicVFS — it causes RangeError: Maximum call stack size exceeded,
+// tab crashes, and excessive CPU usage (device runs hot).
 //
-// OPFSCoopSyncVFS is the PowerSync-recommended VFS for Safari/iOS:
+// OPFSCoopSyncVFS is the VFS recommended by PowerSync for Safari/iOS:
 //   https://docs.powersync.com/client-sdk-references/js-web
 //
-// Multi-tab sync via SharedWorker is disabled on iOS Safari because
-// SharedWorker is not reliably supported there. Disabling it prevents
-// PowerSync from attempting to spawn a SharedWorker and failing silently,
-// which can cause memory pressure and tab crashes.
-const multiTabsEnabled = typeof SharedWorker !== 'undefined';
+// Chrome/Edge work fine with the default IDBBatchAtomicVFS and already have
+// an existing DB there — switching VFS on them loses the local cache.
+// So: use OPFSCoopSyncVFS only on Safari/iOS, default elsewhere.
+const isSafariOrIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome'));
+
+const vfs = isSafariOrIOS
+  ? WASQLiteVFS.OPFSCoopSyncVFS
+  : WASQLiteVFS.IDBBatchAtomicVFS;
 
 export const db = new PowerSyncDatabase({
   schema: AppSchema,
   database: new WASQLiteOpenFactory({
     dbFilename: 'littleflower.db',
-    vfs: WASQLiteVFS.OPFSCoopSyncVFS,
-    flags: {
-      enableMultiTabs: multiTabsEnabled,
-    },
+    vfs,
   }),
-  flags: {
-    enableMultiTabs: multiTabsEnabled,
-  },
 });
