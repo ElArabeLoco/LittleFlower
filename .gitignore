@@ -45,3 +45,4 @@ vite.config.ts.timestamp-*
 # PWA (generated at build time)
 sw.js
 workbox-*.js
+package-lock.json
