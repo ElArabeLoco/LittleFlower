@@ -215,7 +215,7 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="inc-amount">Monto por defecto</Label>
-              <Input id="inc-amount" inputMode="numeric" placeholder="0"
+              <Input id="inc-amount" inputMode="numeric" enterKeyHint="done" placeholder="0"
                 value={form.default_amount} onChange={e => set('default_amount', e.target.value)} />
             </div>
             <div className="space-y-1.5">
@@ -350,6 +350,7 @@ function TrmSection({ month, householdId, userId, exchangeRate }: TrmSectionProp
             <Input
               className="h-8 w-36 text-sm text-right"
               inputMode="decimal"
+              enterKeyHint="done"
               placeholder="ej: 4200"
               value={value}
               onChange={e => setValue(e.target.value)}
@@ -536,6 +537,7 @@ function SalaryBreakdownDialog({
               <Input
                 id="sb-base"
                 inputMode="numeric"
+                enterKeyHint="done"
                 placeholder="0"
                 value={baseSalary}
                 onChange={e => setBaseSalary(e.target.value)}
@@ -554,6 +556,7 @@ function SalaryBreakdownDialog({
               <Input
                 id="sb-ded"
                 inputMode="numeric"
+                enterKeyHint="done"
                 placeholder="0"
                 value={deductions}
                 onChange={e => setDeductions(e.target.value)}
@@ -568,6 +571,7 @@ function SalaryBreakdownDialog({
               <Input
                 id="sb-extra"
                 inputMode="numeric"
+                enterKeyHint="done"
                 placeholder="0"
                 value={extraDays}
                 onChange={e => setExtraDays(e.target.value)}
@@ -734,6 +738,7 @@ function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEd
             <Input
               className="h-8 text-sm w-36 text-right"
               inputMode="numeric"
+              enterKeyHint="done"
               value={value}
               onChange={e => setValue(e.target.value)}
               onKeyDown={e => {

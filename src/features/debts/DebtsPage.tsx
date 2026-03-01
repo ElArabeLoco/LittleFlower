@@ -220,6 +220,7 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
               <Input
                 id="d-amount"
                 inputMode="numeric"
+                enterKeyHint="done"
                 placeholder="0"
                 value={form.initial_amount}
                 onChange={e => set('initial_amount', e.target.value)}
@@ -420,6 +421,7 @@ function DebtTransactionDialog({
               <Input
                 id="tx-amount"
                 inputMode="numeric"
+                enterKeyHint="done"
                 placeholder="0"
                 value={form.amount}
                 onChange={e => set('amount', e.target.value)}
@@ -447,6 +449,7 @@ function DebtTransactionDialog({
               <Input
                 id="tx-trm"
                 inputMode="decimal"
+                enterKeyHint="done"
                 placeholder="4200"
                 value={form.exchange_rate}
                 onChange={e => set('exchange_rate', e.target.value)}
