@@ -45,3 +45,6 @@ vite.config.ts.timestamp-*
 # PWA (generated at build time)
 sw.js
 workbox-*.js
+
+# This project uses pnpm (pnpm-lock.yaml); ignore npm lockfile
+package-lock.json

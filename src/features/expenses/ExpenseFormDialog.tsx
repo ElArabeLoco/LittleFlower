@@ -217,7 +217,7 @@ export function ExpenseFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 gap-0 overflow-y-auto">
 
         {/* ── Header ── */}
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-[var(--border-subtle)] shrink-0">
@@ -349,6 +349,7 @@ export function ExpenseFormDialog({
                   ref={amountInputRef}
                   id="exp-amount"
                   inputMode="numeric"
+                  enterKeyHint="done"
                   placeholder="0"
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
