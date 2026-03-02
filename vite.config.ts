@@ -12,18 +12,27 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: [
+        'favicon.ico',
+        'favicon.svg',
+        'favicon-32x32.png',
+        'favicon-16x16.png',
+        'apple-touch-icon.png',
+      ],
       manifest: {
         name: 'LittleFlower',
         short_name: 'LittleFlower',
         description: 'Family finance tracker',
-        theme_color: '#f9a8d4', // pastel pink
+        theme_color: '#f9a8d4',
         background_color: '#fdf2f8',
         display: 'standalone',
+        orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
@@ -31,12 +40,24 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
         // PowerSync WASM files exceed the default 2 MiB limit — raise to 5 MiB
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // SPA: serve index.html for all navigation requests (offline support)
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.powersync\.journeyapps\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'powersync-api',
+              networkTimeoutSeconds: 10,
+            },
+          },
+          {
+            // Cache Supabase auth/API calls with network-first strategy
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api',
               networkTimeoutSeconds: 10,
             },
           },
