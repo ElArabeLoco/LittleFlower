@@ -6,27 +6,36 @@
  *   1. Crear un hogar nuevo → llama a la función RPC create_household()
  *   2. Unirse a un hogar existente con código de 6 dígitos → join_household()
  *
+ * If the URL has ?code=XXXXXX (from invite link), skips the "choose" screen
+ * and goes directly to join mode with the code pre-filled.
+ *
  * Tras el onboarding, se refresca el JWT de Supabase para que el nuevo
  * household_id quede en los claims, y PowerSync conecta automáticamente.
  */
 
 import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { supabase } from '@/infrastructure/powersync/SupabaseConnector';
 import { useAuth } from './AuthContext';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
+import { Logo } from '@/shared/ui/Logo';
 
 type Mode = 'choose' | 'create' | 'join';
 
 export function OnboardingPage() {
   const { session, refreshSession } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>('choose');
+
+  // Check for invite code in URL search params
+  const search = useSearch({ strict: false }) as { code?: string };
+  const inviteCode = search.code ?? '';
+
+  const [mode, setMode] = useState<Mode>(inviteCode ? 'join' : 'choose');
   const [householdName, setHouseholdName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState(inviteCode);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [joinCodeResult, setJoinCodeResult] = useState<string | null>(null);
@@ -82,7 +91,7 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🏠</div>
+          <Logo size={48} className="mx-auto mb-2" />
           <CardTitle className="text-xl">Configura tu hogar</CardTitle>
           <p className="text-sm text-gray-500">
             Hola{session?.email ? `, ${session.email.split('@')[0]}` : ''}. Antes de continuar,
@@ -94,10 +103,10 @@ export function OnboardingPage() {
           {mode === 'choose' && (
             <div className="space-y-3">
               <Button className="w-full" onClick={() => setMode('create')}>
-                🌸 Crear un hogar nuevo
+                Crear un hogar nuevo
               </Button>
               <Button variant="outline" className="w-full" onClick={() => setMode('join')}>
-                🔑 Unirme a un hogar existente
+                Unirme a un hogar existente
               </Button>
             </div>
           )}
@@ -165,7 +174,7 @@ export function OnboardingPage() {
               )}
 
               <div className="flex gap-2">
-                <Button type="button" variant="outline" className="flex-1" onClick={() => setMode('choose')}>
+                <Button type="button" variant="outline" className="flex-1" onClick={() => { setMode('choose'); setJoinCode(''); }}>
                   Atrás
                 </Button>
                 <Button type="submit" className="flex-1" disabled={isLoading || joinCode.length !== 6}>

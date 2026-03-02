@@ -27,6 +27,7 @@ import { column, Schema, Table } from '@powersync/web';
 
 const households = new Table({
   name: column.text,
+  join_code: column.text,  // 6-digit code for inviting household members
   created_at: column.text, // ISO8601
 });
 
