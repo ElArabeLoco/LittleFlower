@@ -18,6 +18,7 @@ import {
   BarChart3, RefreshCw, Users, ArrowLeftRight,
   ChevronRight, Sparkles, ShieldCheck, Smartphone,
 } from 'lucide-react';
+import { Logo } from '@/shared/ui/Logo';
 
 // ---------------------------------------------------------------------------
 // Feature card data
@@ -218,7 +219,7 @@ export function LandingPage() {
       <nav className="sticky top-0 z-30 bg-[var(--bg-surface)]/80 backdrop-blur-md border-b border-[var(--border-subtle)]">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
           <span className="text-base font-bold text-[var(--text-brand)] flex items-center gap-1.5">
-            🌸 LittleFlower
+            <Logo size={22} /> LittleFlower
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -337,7 +338,7 @@ export function LandingPage() {
           <div className="relative inline-block">
             <div className="absolute inset-0 -z-10 blur-2xl opacity-30 rounded-full"
               style={{ background: 'radial-gradient(ellipse, #f472b6, #a78bfa)' }} />
-            <span className="text-6xl block mb-6">🌸</span>
+            <Logo size={64} className="mx-auto mb-6" />
           </div>
           <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-3 tracking-tight">
             Empieza hoy, gratis.
@@ -358,7 +359,9 @@ export function LandingPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
         <div className="max-w-5xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
-          <span className="font-semibold text-[var(--text-brand)]">🌸 LittleFlower</span>
+          <span className="font-semibold text-[var(--text-brand)] flex items-center gap-1">
+            <Logo size={14} /> LittleFlower
+          </span>
           <span>Hecho con amor para parejas colombianas 🇨🇴</span>
           <span>© {new Date().getFullYear()}</span>
         </div>

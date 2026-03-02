@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
+import { Logo } from '@/shared/ui/Logo';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -40,7 +41,7 @@ export function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🌸</div>
+          <Logo size={48} className="mx-auto mb-2" />
           <CardTitle className="text-2xl">LittleFlower</CardTitle>
           <p className="text-sm text-gray-500">Tu presupuesto familiar</p>
         </CardHeader>
