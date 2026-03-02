@@ -72,7 +72,7 @@ export function FinancesHubPage() {
             key={card.to}
             onClick={() => navigate({ to: card.to })}
             className={cn(
-              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]',
+              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]',
               card.border,
             )}
           >

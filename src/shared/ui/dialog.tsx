@@ -29,11 +29,31 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-[85dvh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 bg-[var(--bg-surface)] p-6 shadow-xl rounded-2xl border border-[var(--border-subtle)] text-[var(--text-primary)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+        // Base
+        'fixed z-50 grid bg-[var(--bg-surface)] shadow-xl border border-[var(--border-subtle)] text-[var(--text-primary)] duration-200 overflow-y-auto',
+        // Shared animations
+        'data-[state=open]:animate-in data-[state=open]:fade-in-0',
+        'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+        // Mobile: bottom sheet anchored at bottom
+        'bottom-0 left-0 right-0 w-full max-h-[90svh] rounded-t-2xl p-4 pt-8 gap-3',
+        'max-sm:data-[state=open]:slide-in-from-bottom',
+        'max-sm:data-[state=closed]:slide-out-to-bottom',
+        // Desktop: centered modal
+        'sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:right-auto',
+        'sm:translate-x-[-50%] sm:translate-y-[-50%]',
+        'sm:w-[calc(100%-2rem)] sm:max-w-lg sm:max-h-[85dvh]',
+        'sm:rounded-2xl sm:p-6 sm:gap-4',
+        'sm:data-[state=open]:zoom-in-95',
+        'sm:data-[state=closed]:zoom-out-95',
         className,
       )}
       {...props}
     >
+      {/* Drag handle — mobile only */}
+      <div
+        className="sm:hidden absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-[var(--border-medium)]"
+        aria-hidden="true"
+      />
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 z-10 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-pink-400">
         <X size={16} />

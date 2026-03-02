@@ -61,7 +61,7 @@ export function BudgetHubPage() {
             key={card.to}
             onClick={() => navigate({ to: card.to })}
             className={cn(
-              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5',
+              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 cursor-pointer',
               'hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.99]',
               card.border,
             )}

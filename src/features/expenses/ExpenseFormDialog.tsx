@@ -101,6 +101,8 @@ export function ExpenseFormDialog({
 
   // Set to true when the user submits with Ctrl+Enter — keeps modal open after save
   const keepOpenRef = useRef(false);
+  // Mobile equivalent of Ctrl+Enter: checkbox toggle
+  const [keepOpenMobile, setKeepOpenMobile] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Track the budgetMonthId — may be created on first expense
@@ -173,7 +175,7 @@ export function ExpenseFormDialog({
       setError('Ingresa un monto válido mayor a 0');
       return;
     }
-    const shouldKeepOpen = keepOpenRef.current;
+    const shouldKeepOpen = keepOpenRef.current || keepOpenMobile;
     keepOpenRef.current = false;
     setSaving(true);
     try {
@@ -265,7 +267,7 @@ export function ExpenseFormDialog({
               Gastos registrados
             </p>
 
-            <div className="overflow-y-auto overflow-x-hidden px-5 pb-4" style={{ maxHeight: '280px' }}>
+            <div className="overflow-y-auto overflow-x-hidden px-5 pb-4 max-h-44 sm:max-h-72">
               {expenses.length === 0 ? (
                 <div className="text-center py-8 text-[var(--text-muted)]">
                   <p className="text-2xl mb-1">🧾</p>
@@ -289,7 +291,7 @@ export function ExpenseFormDialog({
                       </span>
                       <button
                         onClick={() => handleDelete(exp.id)}
-                        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                         title="Eliminar gasto"
                       >
                         <Trash2 size={13} />
@@ -398,11 +400,22 @@ export function ExpenseFormDialog({
                     <Plus size={13} />
                     {saving ? '...' : 'Registrar'}
                   </span>
-                  <span className="text-[9px] font-normal opacity-60 leading-none">
+                  <span className="hidden sm:block text-[9px] font-normal opacity-60 leading-none">
                     Ctrl+↵ sin cerrar
                   </span>
                 </Button>
               </div>
+
+              {/* Mobile: "Seguir añadiendo" toggle (desktop uses Ctrl+Enter) */}
+              <label className="sm:hidden flex items-center gap-2 cursor-pointer select-none -mt-1">
+                <input
+                  type="checkbox"
+                  checked={keepOpenMobile}
+                  onChange={e => setKeepOpenMobile(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-violet-500"
+                />
+                <span className="text-xs text-[var(--text-muted)]">Seguir añadiendo</span>
+              </label>
             </form>
           </div>
         </div>
