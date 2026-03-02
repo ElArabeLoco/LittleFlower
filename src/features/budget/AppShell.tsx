@@ -17,6 +17,7 @@ import { ChevronLeft, ChevronRight, LogOut, Wifi, WifiOff } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
+import { Logo } from '@/shared/ui/Logo';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -237,7 +238,10 @@ export function AppShell() {
       {/* Header */}
       <header className="bg-white border-b border-pink-100 shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="text-lg font-semibold text-pink-700">🌸 LittleFlower</span>
+          <span className="text-lg font-semibold text-pink-700 flex items-center gap-1.5">
+            <Logo size={24} />
+            LittleFlower
+          </span>
           <div className="flex items-center gap-3">
             <SyncIndicator />
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesión">

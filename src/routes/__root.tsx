@@ -6,6 +6,7 @@ import { AppSettingsProvider } from '@/features/settings/AppSettingsContext';
 import { AlertCircle, AlertTriangle, CloudOff, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/shared/ui/cn';
+import { Logo } from '@/shared/ui/Logo';
 
 // ---------------------------------------------------------------------------
 // SyncPill — singleton at root, never remounts on navigation.
@@ -120,7 +121,7 @@ function RootInner() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-pink-50">
         <div className="text-center">
-          <div className="text-4xl mb-3">🌸</div>
+          <Logo size={48} className="mx-auto mb-3" />
           <p className="text-gray-500 text-sm">Cargando...</p>
         </div>
       </div>
