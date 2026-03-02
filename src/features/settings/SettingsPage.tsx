@@ -16,7 +16,7 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
-import { LogOut, Sun, Moon, SunMoon, Copy, Check, Home, Share2 } from 'lucide-react';
+import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2 } from 'lucide-react';
 import { cn } from '@/shared/ui/cn';
 import { useQuery } from '@powersync/react';
 

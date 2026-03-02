@@ -17,7 +17,6 @@ import {
   logout as supabaseLogout,
   type AuthSession,
   type AuthError,
-  type PendingConfirmation,
 } from '@/infrastructure/auth/SupabaseAuthAdapter';
 
 interface AuthContextValue {
