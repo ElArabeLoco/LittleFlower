@@ -16,7 +16,7 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
-import { LogOut, Sun, Moon, SunMoon, Copy, Check, Home } from 'lucide-react';
+import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2 } from 'lucide-react';
 import { cn } from '@/shared/ui/cn';
 import { useQuery } from '@powersync/react';
 
@@ -27,6 +27,7 @@ import { useQuery } from '@powersync/react';
 interface HouseholdRow {
   id: string;
   name: string;
+  join_code: string | null;
 }
 
 interface UserRow {
@@ -95,16 +96,36 @@ function ProfileCard({ email, userName }: { email: string; userName: string | nu
 // Household card — nombre + ID read-only con copy
 // ---------------------------------------------------------------------------
 
-function HouseholdCard({ householdId, householdName }: { householdId: string; householdName: string }) {
+function HouseholdCard({ householdName, joinCode }: { householdName: string; joinCode: string | null }) {
   const [copied, setCopied] = useState(false);
 
-  async function handleCopy() {
+  const inviteLink = joinCode ? `${window.location.origin}/join?code=${joinCode}` : null;
+
+  async function handleInvite() {
+    if (!inviteLink || !joinCode) return;
+
+    const shareData = {
+      title: 'LittleFlower',
+      text: `Únete a nuestro hogar en LittleFlower. Tu código: ${joinCode}`,
+      url: inviteLink,
+    };
+
+    // Try Web Share API first (mobile), fall back to clipboard
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
+
     try {
-      await navigator.clipboard.writeText(householdId);
+      await navigator.clipboard.writeText(inviteLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // clipboard API not available — nothing critical
+      // clipboard API not available
     }
   }
 
@@ -119,30 +140,29 @@ function HouseholdCard({ householdId, householdName }: { householdId: string; ho
         </div>
       </div>
 
-      {/* Household ID — read-only with copy button */}
+      {/* Join code + invite button */}
       <div className="px-5 py-3">
         <p className="text-xs text-[var(--text-muted)] mb-1.5">Código de unión</p>
         <div className="flex items-center gap-2">
-          <code className="flex-1 text-xs font-mono text-[var(--text-secondary)] bg-[var(--bg-surface-2)] px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] truncate select-all">
-            {householdId}
+          <code className="flex-1 text-center text-lg font-mono font-bold tracking-widest text-[var(--text-secondary)] bg-[var(--bg-surface-2)] px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] select-all">
+            {joinCode ?? '------'}
           </code>
+        </div>
+        {joinCode && (
           <button
             type="button"
-            onClick={handleCopy}
-            title={copied ? '¡Copiado!' : 'Copiar código'}
+            onClick={handleInvite}
             className={cn(
-              'shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border transition-all',
+              'w-full mt-3 flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all',
               copied
                 ? 'border-green-400 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400'
-                : 'border-[var(--border-medium)] bg-[var(--bg-surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]',
+                : 'border-[var(--color-primary)] text-[var(--text-brand)] hover:bg-[var(--bg-hover)]',
             )}
           >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? <Check size={16} /> : <Share2 size={16} />}
+            {copied ? '¡Enlace copiado!' : 'Invitar a mi pareja'}
           </button>
-        </div>
-        <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
-          Comparte este código para que otros se unan a tu hogar
-        </p>
+        )}
       </div>
     </>
   );
@@ -272,16 +292,17 @@ export function SettingsPage() {
     userId ? [userId] : [],
   );
 
-  // Query household name from PowerSync
+  // Query household name + join_code from PowerSync
   const { data: householdRows = [] } = useQuery<HouseholdRow>(
     householdId
-      ? `SELECT id, name FROM households WHERE id = ? LIMIT 1`
-      : `SELECT id, name FROM households WHERE 1=0`,
+      ? `SELECT id, name, join_code FROM households WHERE id = ? LIMIT 1`
+      : `SELECT id, name, join_code FROM households WHERE 1=0`,
     householdId ? [householdId] : [],
   );
 
   const userName = userRows[0]?.name ?? null;
   const householdName = householdRows[0]?.name ?? 'Mi hogar';
+  const joinCode = householdRows[0]?.join_code ?? null;
 
   async function handleLogout() {
     await logout();
@@ -311,7 +332,7 @@ export function SettingsPage() {
           <section>
             <SectionTitle>Hogar</SectionTitle>
             <SettingsCard>
-              <HouseholdCard householdId={householdId} householdName={householdName} />
+              <HouseholdCard householdName={householdName} joinCode={joinCode} />
             </SettingsCard>
           </section>
         )}

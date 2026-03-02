@@ -23,7 +23,7 @@ interface AuthContextValue {
   session: AuthSession | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error?: AuthError }>;
-  register: (email: string, password: string, name: string) => Promise<{ error?: AuthError }>;
+  register: (email: string, password: string, name: string) => Promise<{ error?: AuthError; pendingConfirmation?: true }>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -104,11 +104,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: result.error };
   }
 
-  async function register(email: string, password: string, name: string): Promise<{ error?: AuthError }> {
+  async function register(email: string, password: string, name: string): Promise<{ error?: AuthError; pendingConfirmation?: true }> {
     const result = await supabaseRegister(email, password, name);
     if ('session' in result) {
       setSession(result.session);
       return {};
+    }
+    if ('pendingConfirmation' in result) {
+      return { pendingConfirmation: true };
     }
     return { error: result.error };
   }

@@ -29,6 +29,10 @@ export interface AuthError {
   message: string;
 }
 
+export interface PendingConfirmation {
+  pendingConfirmation: true;
+}
+
 // ---------------------------------------------------------------------------
 // Login
 // ---------------------------------------------------------------------------
@@ -68,13 +72,14 @@ export async function register(
   email: string,
   password: string,
   name: string,
-): Promise<{ session: AuthSession } | { error: AuthError }> {
+): Promise<{ session: AuthSession } | { error: AuthError } | PendingConfirmation> {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name }, // stored in user_metadata
+        emailRedirectTo: window.location.origin,
       },
     });
 
@@ -86,13 +91,8 @@ export async function register(
     }
 
     if (!data.session) {
-      // Supabase requires email confirmation — inform the user
-      return {
-        error: {
-          code: 'UNKNOWN',
-          message: 'Revisa tu correo para confirmar la cuenta antes de iniciar sesión.',
-        },
-      };
+      // Supabase requires email confirmation — signal the UI to show a friendly message
+      return { pendingConfirmation: true };
     }
 
     await db.connect(new SupabaseConnector());
