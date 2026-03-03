@@ -18,6 +18,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { Logo } from '@/shared/ui/Logo';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -58,12 +59,13 @@ function formatCOP(amount: number): string {
 // ---------------------------------------------------------------------------
 
 function SyncIndicator() {
+  const { t } = useI18n();
   const status = useStatus();
   const connected = status.connected;
   return (
     <span className={cn('flex items-center gap-1 text-xs', connected ? 'text-green-600' : 'text-gray-400')}>
       {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
-      {connected ? 'Sincronizado' : 'Sin conexión'}
+      {connected ? t.appShell.synced : t.appShell.offline}
     </span>
   );
 }
@@ -111,11 +113,12 @@ function BudgetRow({ row }: { row: BudgetRowData }) {
 // Budget group section
 // ---------------------------------------------------------------------------
 
-function BudgetGroup({ title, rows, totalBudgeted, totalExecuted }: {
+function BudgetGroup({ title, rows, totalBudgeted, totalExecuted, headers }: {
   title: string;
   rows: BudgetRowData[];
   totalBudgeted: number;
   totalExecuted: number;
+  headers: { item: string; budget: string; executed: string; pending: string };
 }) {
   if (rows.length === 0) return null;
   return (
@@ -129,10 +132,10 @@ function BudgetGroup({ title, rows, totalBudgeted, totalExecuted }: {
       <table className="w-full">
         <thead>
           <tr className="text-xs text-gray-400 border-b border-pink-100">
-            <th className="py-2 px-4 text-left font-medium">Ítem</th>
-            <th className="py-2 px-4 text-right font-medium">Presupuesto</th>
-            <th className="py-2 px-4 text-right font-medium">Ejecutado</th>
-            <th className="py-2 px-4 text-right font-medium">Pendiente</th>
+            <th className="py-2 px-4 text-left font-medium">{headers.item}</th>
+            <th className="py-2 px-4 text-right font-medium">{headers.budget}</th>
+            <th className="py-2 px-4 text-right font-medium">{headers.executed}</th>
+            <th className="py-2 px-4 text-right font-medium">{headers.pending}</th>
             <th className="py-2 px-4 text-center font-medium">✓</th>
           </tr>
         </thead>
@@ -170,6 +173,7 @@ function MetricCard({ label, amount, highlight }: { label: string; amount: numbe
 
 export function AppShell() {
   const { logout } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [month, setMonth] = useState(getCurrentMonth());
 
@@ -244,7 +248,7 @@ export function AppShell() {
           </span>
           <div className="flex items-center gap-3">
             <SyncIndicator />
-            <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesión">
+            <Button variant="ghost" size="icon" onClick={handleLogout} title={t.appShell.signOut}>
               <LogOut size={16} />
             </Button>
           </div>
@@ -267,10 +271,10 @@ export function AppShell() {
 
         {/* Metric cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricCard label="Ingresos disponibles" amount={availableIncome} highlight="neutral" />
-          <MetricCard label="Total presupuestado" amount={totalBudgeted} highlight="neutral" />
-          <MetricCard label="Balance presupuestado" amount={budgetedBalance} highlight={budgetedBalance >= 0 ? 'positive' : 'negative'} />
-          <MetricCard label="Balance real" amount={realBalance} highlight={realBalance >= 0 ? 'positive' : 'negative'} />
+          <MetricCard label={t.appShell.availableIncome} amount={availableIncome} highlight="neutral" />
+          <MetricCard label={t.appShell.totalBudgeted} amount={totalBudgeted} highlight="neutral" />
+          <MetricCard label={t.appShell.budgetBalance} amount={budgetedBalance} highlight={budgetedBalance >= 0 ? 'positive' : 'negative'} />
+          <MetricCard label={t.appShell.realBalance} amount={realBalance} highlight={realBalance >= 0 ? 'positive' : 'negative'} />
         </div>
 
         {/* Budget table */}
@@ -278,22 +282,24 @@ export function AppShell() {
           {(budgetRows ?? []).length === 0 ? (
             <div className="py-16 text-center text-gray-400">
               <p className="text-3xl mb-2">📋</p>
-              <p className="text-sm">No hay ítems de presupuesto aún.</p>
-              <p className="text-xs mt-1">Agrega presupuestos desde la configuración.</p>
+              <p className="text-sm">{t.appShell.noItems}</p>
+              <p className="text-xs mt-1">{t.appShell.addFromSettings}</p>
             </div>
           ) : (
             <>
               <BudgetGroup
-                title="💳 Tarjeta de Crédito"
+                title={`💳 ${t.appShell.creditCardGroup}`}
                 rows={creditCardRows}
                 totalBudgeted={creditCardRows.reduce((s, r) => s + (r.bm_amount ?? r.default_amount), 0)}
                 totalExecuted={creditCardRows.reduce((s, r) => s + r.total_expenses, 0)}
+                headers={{ item: t.appShell.itemHeader, budget: t.appShell.budgetHeader, executed: t.appShell.executedHeader, pending: t.appShell.pendingHeader }}
               />
               <BudgetGroup
-                title="💵 Efectivo"
+                title={`💵 ${t.appShell.cashGroup}`}
                 rows={cashRows}
                 totalBudgeted={cashRows.reduce((s, r) => s + (r.bm_amount ?? r.default_amount), 0)}
                 totalExecuted={cashRows.reduce((s, r) => s + r.total_expenses, 0)}
+                headers={{ item: t.appShell.itemHeader, budget: t.appShell.budgetHeader, executed: t.appShell.executedHeader, pending: t.appShell.pendingHeader }}
               />
             </>
           )}
@@ -301,7 +307,7 @@ export function AppShell() {
 
         {trm === null && incomeRows && incomeRows.some(r => r.currency !== 'COP') && (
           <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-4 py-2">
-            ⚠️ No hay TRM registrada para {formatMonth(month)}. Los ingresos en USD no se incluyen en los cálculos.
+            ⚠️ {t.appShell.noTrmWarning(formatMonth(month))}
           </p>
         )}
       </main>

@@ -27,15 +27,14 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Constants & helpers
 // ---------------------------------------------------------------------------
 
-const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
 function yearMonths(year: number): string[] {
-  return MONTHS.map((_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
+  return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
 }
 
 
@@ -124,6 +123,7 @@ function BudgetCell({
   householdId, userId, isCurrent, isFuture, hasStarted,
   onTabNext, onTabPrev, onEnterDown, onOpenExpenses,
 }: BudgetCellProps) {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -217,7 +217,7 @@ function BudgetCell({
           isCurrent && !isExecuted && 'font-semibold',
         )}
         onClick={() => { if (!isExecuted) { setDraft(String(amount)); setEditing(true); } }}
-        title={isExecuted ? 'Ejecutado ✓ — clic derecho para desmarcar' : 'Clic para editar · clic derecho para marcar ejecutado'}
+        title={isExecuted ? t.yearView.executedHint : t.yearView.editHint}
       >
         <AbbreviatedAmount value={amount} />
         {isExecuted && <span className="ml-1 text-green-600">✓</span>}
@@ -235,7 +235,7 @@ function BudgetCell({
             : 'text-[var(--text-muted)] opacity-0 group-hover/cell:opacity-60',
         )}
         onClick={onOpenExpenses}
-        title="Ver / registrar gastos"
+        title={t.yearView.viewExpenses}
       >
         {hasExpenses ? (
           <><AbbreviatedAmount value={spentAmount} />{overBudget && ' ⚠'}</>
@@ -272,10 +272,11 @@ function TotalsRow({ months, metricsMap }: {
   months: string[];
   metricsMap: Map<string, MonthMetrics>;
 }) {
+  const { t } = useI18n();
   const metrics = [
-    { key: 'budgeted' as const, label: 'Presupuestado', color: 'text-[var(--text-secondary)] dark:text-[var(--text-secondary)]' },
-    { key: 'executed' as const, label: 'Ejecutado', color: 'text-violet-700 dark:text-violet-400' },
-    { key: 'pending' as const, label: 'Por ejecutar', color: 'text-amber-600 dark:text-amber-400' },
+    { key: 'budgeted' as const, label: t.yearView.budgetedRow, color: 'text-[var(--text-secondary)] dark:text-[var(--text-secondary)]' },
+    { key: 'executed' as const, label: t.yearView.executedRow, color: 'text-violet-700 dark:text-violet-400' },
+    { key: 'pending' as const, label: t.yearView.toExecuteRow, color: 'text-amber-600 dark:text-amber-400' },
   ];
 
   return (
@@ -305,6 +306,7 @@ function TotalsRow({ months, metricsMap }: {
 
 export function YearView() {
   const { session } = useAuth();
+  const { t } = useI18n();
   const [year, setYear] = useState(getCurrentYear());
   const months = yearMonths(year);
   const currentMonth = getCurrentMonth();
@@ -537,8 +539,8 @@ export function YearView() {
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
         emoji="📅"
-        title="Vista Anual"
-        subtitle={`Presupuesto ${year}`}
+        title={t.yearView.title}
+        subtitle={t.yearView.budgetYear(year)}
         maxWidth="max-w-full"
       />
 
@@ -560,7 +562,7 @@ export function YearView() {
           <thead className="sticky top-0 z-10 bg-[var(--bg-surface)] shadow-sm">
             <tr className="border-b-2 border-[var(--border-medium)]">
               <th className="sticky left-0 z-20 bg-[var(--bg-surface)] px-3 py-2 text-left text-xs font-semibold text-[var(--text-secondary)] w-40 border-r border-[var(--border-subtle)]">
-                Rubro
+                {t.yearView.itemHeader}
               </th>
               {months.map((month, i) => (
                 <th
@@ -572,7 +574,7 @@ export function YearView() {
                       : 'text-[var(--text-secondary)]',
                   )}
                 >
-                  {MONTHS[i]}
+                  {t.months.short[String(i + 1).padStart(2, '0')]}
                   {month === currentMonth && (
                     <span className="block w-1.5 h-1.5 rounded-full bg-[var(--text-brand)] mx-auto mt-0.5" />
                   )}
@@ -590,7 +592,7 @@ export function YearView() {
                     colSpan={13}
                     className="sticky left-0 px-3 py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide"
                   >
-                    💳 Tarjeta de Crédito
+                    💳 {t.yearView.creditCardGroup}
                   </td>
                 </tr>
                 <BudgetTableSection
@@ -609,7 +611,7 @@ export function YearView() {
                     colSpan={13}
                     className="sticky left-0 px-3 py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide"
                   >
-                    💵 Efectivo
+                    💵 {t.yearView.cashGroup}
                   </td>
                 </tr>
                 <BudgetTableSection
@@ -623,7 +625,7 @@ export function YearView() {
             {/* Available income row */}
             <tr className="bg-[var(--group-available-bg)] border-t-2 border-[var(--border-medium)]">
               <td className="sticky left-0 z-10 bg-[var(--group-available-sticky)] px-3 py-1.5 text-xs font-bold text-[var(--group-available-text)] whitespace-nowrap border-r border-[var(--border-medium)]">
-                💰 Disponible
+                💰 {t.yearView.availableRow}
               </td>
               {months.map(month => (
                 <td key={month} className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-right text-xs tabular-nums font-bold text-[var(--group-available-text)]">
@@ -635,7 +637,7 @@ export function YearView() {
             {/* Total presupuestado efectivo */}
             <tr className="bg-[var(--group-total-bg)] border-b border-[var(--border-subtle)]">
               <td className="sticky left-0 z-10 bg-[var(--group-total-sticky)] px-3 py-1.5 text-xs font-bold text-[var(--group-total-text)] whitespace-nowrap border-r border-[var(--border-medium)]">
-                📋 Total presupuestado
+                📋 {t.yearView.totalBudgetedRow}
               </td>
               {months.map(month => {
                 const cashBudgeted = cashMetricsMap.get(month)?.budgeted ?? 0;
@@ -650,7 +652,7 @@ export function YearView() {
             {/* Balance real = Disponible − Efectivo presupuestado */}
             <tr className="bg-[var(--group-balance-bg)] border-b-2 border-[var(--border-subtle)]">
               <td className="sticky left-0 z-10 bg-[var(--group-balance-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)]">
-                ⚖️ Balance real
+                ⚖️ {t.yearView.realBalanceRow}
               </td>
               {months.map(month => {
                 const available = availableMap.get(month) ?? 0;
@@ -676,8 +678,8 @@ export function YearView() {
               <tr>
                 <td colSpan={13} className="py-20 text-center text-gray-400">
                   <p className="text-3xl mb-2">📋</p>
-                  <p className="text-sm">No hay ítems de presupuesto.</p>
-                  <p className="text-xs mt-1">Agrega presupuestos desde Configuración.</p>
+                  <p className="text-sm">{t.yearView.noItems}</p>
+                  <p className="text-xs mt-1">{t.yearView.addFromSettings}</p>
                 </td>
               </tr>
             )}

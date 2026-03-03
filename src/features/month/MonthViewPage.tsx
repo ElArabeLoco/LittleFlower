@@ -24,6 +24,7 @@ import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,16 +44,6 @@ function nextMonth(m: string): string {
   const [y, mo] = m.split('-').map(Number);
   if (mo === 12) return `${y + 1}-01`;
   return `${y}-${String(mo + 1).padStart(2, '0')}`;
-}
-
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
-
-function formatMonthLabel(m: string): string {
-  const [y, mo] = m.split('-');
-  return `${MONTH_NAMES[parseInt(mo) - 1]} ${y}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,6 +124,7 @@ interface BudgetCardProps {
 }
 
 function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: BudgetCardProps) {
+  const { t } = useI18n();
   const [expenseOpen, setExpenseOpen] = useState(false);
   const expenseOpenKeyRef = useRef(0);
 
@@ -178,7 +170,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
           {/* Execution toggle */}
           <button
             onClick={toggleExecution}
-            title={isExecuted ? 'Desmarcar como ejecutado' : 'Marcar como ejecutado'}
+            title={isExecuted ? t.monthView.unmarkExecuted : t.monthView.markExecuted}
             className={cn(
               'shrink-0 transition-colors rounded-full p-0.5',
               isExecuted
@@ -194,16 +186,16 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
         <button
           className="w-full grid grid-cols-3 gap-1 px-4 pb-3 text-left hover:bg-[var(--bg-hover)] transition-colors rounded-b-xl"
           onClick={() => { expenseOpenKeyRef.current += 1; setExpenseOpen(true); }}
-          title="Ver o registrar gastos"
+          title={t.monthView.viewOrAddExpenses}
         >
           <div>
-            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">Presupuesto</p>
+            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">{t.monthView.budgetLabel}</p>
             <p className="text-sm font-medium text-[var(--text-secondary)] tabular-nums">
               <AbbreviatedAmount value={amount} />
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">Gastado</p>
+            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">{t.monthView.spentLabel}</p>
             <p className={cn(
               'text-sm font-semibold tabular-nums',
               hasExpenses
@@ -216,7 +208,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">Restante</p>
+            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">{t.monthView.remainingLabel}</p>
             <p className={cn(
               'text-sm font-semibold tabular-nums',
               !hasExpenses
@@ -383,9 +375,11 @@ interface BalanceCardProps {
   totalSpent: number;
   month: string;
   hasMissingTrm: boolean;
+  formatMonthLabel: (m: string) => string;
 }
 
-function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTrm }: BalanceCardProps) {
+function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTrm, formatMonthLabel }: BalanceCardProps) {
+  const { t } = useI18n();
   // Balance real = Disponible − Presupuestado (efectivo)
   // Answers: "¿cuánto del ingreso queda libre después de comprometer el presupuesto?"
   const balance = available - totalBudgeted;
@@ -410,11 +404,11 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
       {/* Main balance number */}
       <div className="flex items-end justify-between mb-4">
         <div>
-          <p className="text-xs opacity-70 mb-0.5">Balance real</p>
+          <p className="text-xs opacity-70 mb-0.5">{t.monthView.balanceReal}</p>
           <p className="text-3xl font-bold tabular-nums leading-none tracking-tight">
             {balance > 0 ? '+' : ''}<AbbreviatedAmount value={balance} />
           </p>
-          <p className="text-[10px] opacity-60 mt-0.5">Disponible − Presupuestado</p>
+          <p className="text-[10px] opacity-60 mt-0.5">{t.monthView.availableMinusBudgeted}</p>
         </div>
         <Wallet size={28} className="opacity-25 mb-1" />
       </div>
@@ -422,26 +416,26 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
       {hasMissingTrm && (
         <div className="flex items-center gap-1.5 text-xs opacity-90 bg-black/15 rounded-lg px-3 py-1.5 mb-3">
           <AlertTriangle size={12} />
-          Ingresos USD excluidos — ingresa la TRM en la sección Ingresos
+          {t.monthView.usdExcludedNoTrm}
         </div>
       )}
 
       {/* Four-stat strip — solo efectivo */}
       <div className="grid grid-cols-4 gap-1 pt-3 border-t border-white/20 mt-1">
         <div className="text-center">
-          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Disponible</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">{t.monthView.availableLabel}</p>
           <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={available} /></p>
         </div>
         <div className="text-center border-x border-white/20">
-          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Presupuest.</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">{t.monthView.budgetedLabel}</p>
           <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={totalBudgeted} /></p>
         </div>
         <div className="text-center border-r border-white/20">
-          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Ejecutado</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">{t.monthView.executedLabel}</p>
           <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={totalSpent} /></p>
         </div>
         <div className="text-center">
-          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">Por ejecutar</p>
+          <p className="text-[9px] opacity-55 mb-0.5 uppercase tracking-wide">{t.monthView.toExecuteLabel}</p>
           <p className="text-xs font-bold tabular-nums"><AbbreviatedAmount value={pending} /></p>
         </div>
       </div>
@@ -462,6 +456,7 @@ interface IncomeSectionProps {
 }
 
 function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: IncomeSectionProps) {
+  const { t } = useI18n();
   const { formatNumber } = useNumberFormat();
   const [collapsed, setCollapsed] = useState(true);
 
@@ -473,11 +468,11 @@ function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: I
       >
         <TrendingUp size={15} className="text-[var(--group-available-text)] shrink-0" />
         <span className="flex-1 text-sm font-bold uppercase tracking-wide text-[var(--group-available-text)]">
-          Ingresos
+          {t.monthView.incomeLabel}
         </span>
         {hasMissingTrm && (
           <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium shrink-0">
-            Sin TRM
+            {t.monthView.noTrm}
           </span>
         )}
         <span className="text-sm font-semibold tabular-nums text-[var(--group-available-text)] shrink-0">
@@ -512,17 +507,17 @@ function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: I
                       {inc.name}
                     </p>
                     {isModified && (
-                      <span className="text-[10px] text-violet-400 font-medium shrink-0">editado</span>
+                      <span className="text-[10px] text-violet-400 font-medium shrink-0">{t.monthView.edited}</span>
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    {inc.is_fixed === 1 ? 'Fijo' : 'Variable'}
+                    {inc.is_fixed === 1 ? t.monthView.fixed : t.monthView.variable}
                     {isUSD && (
                       <>
                         {' · '}
                         {trm
                           ? <span>TRM {formatNumber(trm)}</span>
-                          : <span className="text-amber-500">Sin TRM</span>
+                          : <span className="text-amber-500">{t.monthView.noTrm}</span>
                         }
                       </>
                     )}
@@ -554,10 +549,16 @@ function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingTrm }: I
 
 export function MonthViewPage() {
   const { session } = useAuth();
+  const { t } = useI18n();
   const [month, setMonth] = useState(getCurrentMonth());
 
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
+
+  const formatMonthLabel = (m: string) => {
+    const [y, mo] = m.split('-');
+    return `${t.months.full[mo] ?? mo} ${y}`;
+  };
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -672,7 +673,7 @@ export function MonthViewPage() {
 
       <AppHeader
         emoji="🗓️"
-        title="Vista Mensual"
+        title={t.monthView.title}
         subtitle={formatMonthLabel(month)}
         maxWidth="max-w-3xl"
       />
@@ -682,7 +683,7 @@ export function MonthViewPage() {
         <button
           onClick={() => setMonth(m => prevMonth(m))}
           className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-          aria-label="Mes anterior"
+          aria-label={t.monthView.prevMonth}
         >
           <ChevronLeft size={20} />
         </button>
@@ -692,7 +693,7 @@ export function MonthViewPage() {
         <button
           onClick={() => setMonth(m => nextMonth(m))}
           className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-          aria-label="Mes siguiente"
+          aria-label={t.monthView.nextMonth}
         >
           <ChevronRight size={20} />
         </button>
@@ -709,14 +710,15 @@ export function MonthViewPage() {
             totalSpent={totalSpent}
             month={month}
             hasMissingTrm={hasMissingTrm}
+            formatMonthLabel={formatMonthLabel}
           />
 
           {/* Empty state */}
           {activeForMonth.length === 0 && (
             <div className="text-center py-16 text-[var(--text-muted)]">
               <p className="text-4xl mb-3">📋</p>
-              <p className="text-sm font-medium text-[var(--text-secondary)]">Sin presupuestos activos</p>
-              <p className="text-xs mt-1">Agrega presupuestos desde la sección Presupuestos</p>
+              <p className="text-sm font-medium text-[var(--text-secondary)]">{t.monthView.noBudgets}</p>
+              <p className="text-xs mt-1">{t.monthView.addBudgetsHint}</p>
             </div>
           )}
 
@@ -724,7 +726,7 @@ export function MonthViewPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
             {/* Credit Card group */}
             <GroupSection
-              label="Tarjeta de Crédito"
+              label={t.monthView.creditCard}
               icon={<CreditCard size={15} />}
               accent="violet"
               budgets={creditCardBudgets}
@@ -739,7 +741,7 @@ export function MonthViewPage() {
 
             {/* Cash group */}
             <GroupSection
-              label="Efectivo"
+              label={t.monthView.cashLabel}
               icon={<Banknote size={15} />}
               accent="green"
               budgets={cashBudgets}

@@ -31,6 +31,7 @@ import {
   deleteBudget,
 } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -92,6 +93,7 @@ interface BudgetFormDialogProps {
 }
 
 function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, onDone, trigger }: BudgetFormDialogProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BudgetFormState>(initial ?? defaultForm());
   const [isLoading, setIsLoading] = useState(false);
@@ -107,15 +109,15 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
 
     const amount = parseInt(form.default_amount.replace(/\D/g, ''), 10);
     if (isNaN(amount) || amount < 0) {
-      setError('El monto debe ser un número válido en COP');
+      setError(t.budgets.validationAmount);
       return;
     }
     if (!form.name.trim()) {
-      setError('El nombre es obligatorio');
+      setError(t.budgets.validationName);
       return;
     }
     if (form.end_month && form.end_month < form.start_month) {
-      setError('El mes de fin debe ser igual o posterior al mes de inicio');
+      setError(t.budgets.validationEndMonth);
       return;
     }
 
@@ -149,7 +151,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
       setOpen(false);
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setIsLoading(false);
     }
@@ -166,16 +168,16 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Nuevo presupuesto' : 'Editar presupuesto'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? t.budgets.newBudget : t.budgets.editBudget}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="b-name">Nombre *</Label>
+            <Label htmlFor="b-name">{t.budgets.nameLabel}</Label>
             <Input
               id="b-name"
-              placeholder="Ej: Netflix, Cuota apartamento"
+              placeholder={t.budgets.namePlaceholder}
               value={form.name}
               onChange={e => set('name', e.target.value)}
               autoFocus
@@ -185,10 +187,10 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="b-desc">Descripción (opcional)</Label>
+            <Label htmlFor="b-desc">{t.budgets.descriptionLabel}</Label>
             <Input
               id="b-desc"
-              placeholder="Nota adicional"
+              placeholder={t.budgets.descriptionPlaceholder}
               value={form.description}
               onChange={e => set('description', e.target.value)}
             />
@@ -196,10 +198,10 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
 
           {/* Category */}
           <div className="space-y-1.5">
-            <Label>Categoría</Label>
+            <Label>{t.budgets.categoryLabel}</Label>
             <Select value={form.category_id} onValueChange={v => set('category_id', v)}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona una categoría" />
+                <SelectValue placeholder={t.budgets.categoryPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {CATEGORIES.map(cat => (
@@ -216,7 +218,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
 
           {/* Amount */}
           <div className="space-y-1.5">
-            <Label htmlFor="b-amount">Monto mensual por defecto (COP)</Label>
+            <Label htmlFor="b-amount">{t.budgets.amountLabel}</Label>
             <Input
               id="b-amount"
               inputMode="numeric"
@@ -230,7 +232,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
           {/* Start month + End month — side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="b-start">Mes de inicio</Label>
+              <Label htmlFor="b-start">{t.budgets.startMonth}</Label>
               <Input
                 id="b-start"
                 type="month"
@@ -239,7 +241,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="b-end">Mes de fin <span className="text-gray-400 font-normal">(opcional)</span></Label>
+              <Label htmlFor="b-end">{t.budgets.endMonth} <span className="text-gray-400 font-normal">{t.common.optional}</span></Label>
               <Input
                 id="b-end"
                 type="month"
@@ -253,7 +255,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
                   className="text-xs text-gray-400 hover:text-gray-600"
                   onClick={() => set('end_month', '')}
                 >
-                  Quitar fecha de fin
+                  {t.budgets.removeEndDate}
                 </button>
               )}
             </div>
@@ -262,7 +264,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
           {/* Payment method — only on create */}
           {mode === 'create' && (
             <div className="space-y-1.5">
-              <Label>Forma de pago</Label>
+              <Label>{t.budgets.paymentMethod}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -274,7 +276,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
                       : 'border-gray-200 text-gray-500 hover:border-gray-300',
                   )}
                 >
-                  <Banknote size={16} /> Efectivo
+                  <Banknote size={16} /> {t.budgets.cashMethod}
                 </button>
                 <button
                   type="button"
@@ -286,7 +288,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
                       : 'border-gray-200 text-gray-500 hover:border-gray-300',
                   )}
                 >
-                  <CreditCard size={16} /> Tarjeta
+                  <CreditCard size={16} /> {t.budgets.cardMethod}
                 </button>
               </div>
             </div>
@@ -295,20 +297,20 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
           {/* Debt link — shown when category is 'debt' OR when editing and already linked */}
           {(form.category_id === 'debt' || form.debt_id) && debts.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Vincular a deuda (opcional)</Label>
+              <Label>{t.budgets.linkDebt}</Label>
               <Select value={form.debt_id || '__none__'} onValueChange={v => set('debt_id', v === '__none__' ? '' : v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="— Sin vincular —" />
+                  <SelectValue placeholder={t.budgets.noLink} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">— Sin vincular —</SelectItem>
+                  <SelectItem value="__none__">{t.budgets.noLink}</SelectItem>
                   {debts.map(d => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-[var(--text-muted)]">
-                Al registrar un gasto aquí, se abona automáticamente a la deuda vinculada.
+                {t.budgets.debtLinkHint}
               </p>
             </div>
           )}
@@ -319,10 +321,10 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
 
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button type="submit" className="flex-1" disabled={isLoading}>
-              {isLoading ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar'}
+              {isLoading ? t.common.saving : mode === 'create' ? t.common.create : t.common.save}
             </Button>
           </div>
         </form>
@@ -336,6 +338,7 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
 // ---------------------------------------------------------------------------
 
 export function BudgetManagementPage() {
+  const { t } = useI18n();
   const { session } = useAuth();
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
@@ -355,7 +358,7 @@ export function BudgetManagementPage() {
   const { formatCOP } = useNumberFormat();
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`¿Eliminar "${name}"? Los datos históricos se conservan.`)) return;
+    if (!confirm(t.budgets.confirmDelete(name))) return;
     await deleteBudget(id, userId);
   }
 
@@ -375,7 +378,7 @@ export function BudgetManagementPage() {
                 {getCategoryName(b.category_id)} ·{' '}
                 {b.end_month
                   ? `${b.start_month} → ${b.end_month}`
-                  : `desde ${b.start_month}`}{' '}
+                  : `${t.common.from} ${b.start_month}`}{' '}
                 · {formatCOP(b.default_amount)}/mes
               </p>
             </div>
@@ -422,8 +425,8 @@ export function BudgetManagementPage() {
     <div className="min-h-screen bg-[var(--bg-app)]">
       <AppHeader
         emoji="📋"
-        title="Presupuestos"
-        subtitle="Gestiona tus categorías de gasto"
+        title={t.budgets.title}
+        subtitle={t.budgets.subtitle}
         maxWidth="max-w-3xl"
         actions={
           <BudgetFormDialog
@@ -434,7 +437,7 @@ export function BudgetManagementPage() {
             onDone={() => {}}
             trigger={
               <Button size="sm" className="gap-1.5">
-                <Plus size={14} /> Nuevo
+                <Plus size={14} /> {t.common.new}
               </Button>
             }
           />
@@ -445,8 +448,8 @@ export function BudgetManagementPage() {
         {budgets.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">📋</p>
-            <p className="text-sm font-medium">Sin presupuestos aún</p>
-            <p className="text-xs mt-1">Crea el primero con el botón "Nuevo"</p>
+            <p className="text-sm font-medium">{t.budgets.noBudgets}</p>
+            <p className="text-xs mt-1">{t.budgets.createFirst}</p>
           </div>
         )}
 
@@ -456,9 +459,9 @@ export function BudgetManagementPage() {
           {creditCard.length > 0 && (
             <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-4">
               <h2 className="text-sm font-bold text-violet-700 mb-3 flex items-center gap-1.5">
-                <CreditCard size={14} /> Tarjeta de Crédito
+                <CreditCard size={14} /> {t.budgets.creditCardGroup}
               </h2>
-              <BudgetList items={creditCard} emptyLabel="Sin ítems de tarjeta" />
+              <BudgetList items={creditCard} emptyLabel={t.budgets.noCardItems} />
             </div>
           )}
 
@@ -466,9 +469,9 @@ export function BudgetManagementPage() {
           {cash.length > 0 && (
             <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-4">
               <h2 className="text-sm font-bold text-green-700 mb-3 flex items-center gap-1.5">
-                <Banknote size={14} /> Efectivo
+                <Banknote size={14} /> {t.budgets.cashGroup}
               </h2>
-              <BudgetList items={cash} emptyLabel="Sin ítems de efectivo" />
+              <BudgetList items={cash} emptyLabel={t.budgets.noCashItems} />
             </div>
           )}
         </div>

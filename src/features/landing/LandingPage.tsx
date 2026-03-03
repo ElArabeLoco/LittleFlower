@@ -12,6 +12,7 @@
  *   5. Footer     — mínimo
  */
 
+import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/shared/ui/cn';
 import {
@@ -19,67 +20,14 @@ import {
   ChevronRight, Sparkles, ShieldCheck, Smartphone,
 } from 'lucide-react';
 import { Logo } from '@/shared/ui/Logo';
-
-// ---------------------------------------------------------------------------
-// Feature card data
-// ---------------------------------------------------------------------------
-
-const FEATURES = [
-  {
-    icon: <BarChart3 size={22} />,
-    color: 'from-pink-400 to-rose-400',
-    bg: 'bg-pink-50 dark:bg-pink-950/30',
-    border: 'border-pink-100 dark:border-pink-900/40',
-    title: 'Ve en qué gastas',
-    desc: 'Dashboard con gráficas de categorías, tendencias mensuales y comparativas de presupuesto vs. gasto real.',
-  },
-  {
-    icon: <RefreshCw size={22} />,
-    color: 'from-violet-400 to-purple-400',
-    bg: 'bg-violet-50 dark:bg-violet-950/30',
-    border: 'border-violet-100 dark:border-violet-900/40',
-    title: 'Siempre sincronizado',
-    desc: 'Funciona offline. Tus datos se guardan localmente y se sincronizan en segundo plano cuando hay conexión.',
-  },
-  {
-    icon: <Users size={22} />,
-    color: 'from-emerald-400 to-teal-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    border: 'border-emerald-100 dark:border-emerald-900/40',
-    title: 'Hecho para dos',
-    desc: 'Comparte el hogar con tu pareja. Los dos ven y editan el mismo presupuesto en tiempo real.',
-  },
-  {
-    icon: <ArrowLeftRight size={22} />,
-    color: 'from-amber-400 to-orange-400',
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-    border: 'border-amber-100 dark:border-amber-900/40',
-    title: 'USD y COP sin drama',
-    desc: 'Registra ingresos en dólares. La TRM se aplica automáticamente para convertir todo a pesos colombianos.',
-  },
-  {
-    icon: <Sparkles size={22} />,
-    color: 'from-fuchsia-400 to-pink-400',
-    bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/30',
-    border: 'border-fuchsia-100 dark:border-fuchsia-900/40',
-    title: 'Vista anual y mensual',
-    desc: 'Planea el año entero en el spreadsheet anual, o enfócate en el mes con la vista de tarjetas detallada.',
-  },
-  {
-    icon: <ShieldCheck size={22} />,
-    color: 'from-blue-400 to-cyan-400',
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
-    border: 'border-blue-100 dark:border-blue-900/40',
-    title: 'Tus datos, tu control',
-    desc: 'Arquitectura local-first: tus finanzas viven en tu dispositivo. Sin acceso de terceros a tu información.',
-  },
-];
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Mock screen preview — decorative representation of the app UI
 // ---------------------------------------------------------------------------
 
 function AppPreview() {
+  const { t } = useI18n();
   const bars = [65, 90, 45, 78, 55, 82];
   const categories = [
     { name: 'Vivienda', pct: 32, color: '#f9a8d4' },
@@ -113,8 +61,8 @@ function AppPreview() {
           {/* Header */}
           <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-[9px] text-white/50">Dashboard</p>
-              <p className="text-xs font-bold text-white">Febrero 2026</p>
+              <p className="text-[9px] text-white/50">{t.landing.previewDashboard}</p>
+              <p className="text-xs font-bold text-white">{t.landing.previewMonth}</p>
             </div>
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-400 to-violet-400 flex items-center justify-center">
               <span className="text-[7px] font-bold text-white">J</span>
@@ -124,10 +72,10 @@ function AppPreview() {
           {/* KPI strip */}
           <div className="grid grid-cols-2 gap-1.5">
             {[
-              { label: 'Balance', value: '$1.8M', color: 'text-green-400' },
-              { label: 'Disponible', value: '$4.2M', color: 'text-white' },
-              { label: 'Presupuestado', value: '$3.1M', color: 'text-white' },
-              { label: 'Gastado', value: '$2.4M', color: 'text-pink-400' },
+              { label: t.landing.previewBalance, value: '$1.8M', color: 'text-green-400' },
+              { label: t.landing.previewAvailable, value: '$4.2M', color: 'text-white' },
+              { label: t.landing.previewBudgeted, value: '$3.1M', color: 'text-white' },
+              { label: t.landing.previewSpent, value: '$2.4M', color: 'text-pink-400' },
             ].map(kpi => (
               <div key={kpi.label} className="bg-white/5 rounded-xl p-2 border border-white/5">
                 <p className="text-[8px] text-white/40 mb-0.5">{kpi.label}</p>
@@ -138,7 +86,7 @@ function AppPreview() {
 
           {/* Bar chart */}
           <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-            <p className="text-[8px] text-white/40 mb-2">Tendencia 6 meses</p>
+            <p className="text-[8px] text-white/40 mb-2">{t.landing.previewTrend}</p>
             <div className="flex items-end gap-1 h-14">
               {bars.map((h, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
@@ -158,7 +106,7 @@ function AppPreview() {
 
           {/* Category pie legend */}
           <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-            <p className="text-[8px] text-white/40 mb-2">Gasto por categoría</p>
+            <p className="text-[8px] text-white/40 mb-2">{t.landing.previewCategory}</p>
             <div className="space-y-1.5">
               {categories.map(c => (
                 <div key={c.name} className="flex items-center gap-1.5">
@@ -195,11 +143,11 @@ function AppPreview() {
       {/* Floating badges */}
       <div className="absolute -right-4 top-16 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-lg px-3 py-2 text-[10px] font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
         <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-        Sincronizado
+        {t.landing.previewSynced}
       </div>
       <div className="absolute -left-4 bottom-24 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-lg px-3 py-2 text-[10px] font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
         <Smartphone size={11} className="text-violet-400" />
-        Funciona offline
+        {t.landing.previewOffline}
       </div>
     </div>
   );
@@ -211,6 +159,58 @@ function AppPreview() {
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const features = useMemo(() => [
+    {
+      icon: <BarChart3 size={22} />,
+      color: 'from-pink-400 to-rose-400',
+      bg: 'bg-pink-50 dark:bg-pink-950/30',
+      border: 'border-pink-100 dark:border-pink-900/40',
+      title: t.landing.feature1Title,
+      desc: t.landing.feature1Desc,
+    },
+    {
+      icon: <RefreshCw size={22} />,
+      color: 'from-violet-400 to-purple-400',
+      bg: 'bg-violet-50 dark:bg-violet-950/30',
+      border: 'border-violet-100 dark:border-violet-900/40',
+      title: t.landing.feature2Title,
+      desc: t.landing.feature2Desc,
+    },
+    {
+      icon: <Users size={22} />,
+      color: 'from-emerald-400 to-teal-400',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+      border: 'border-emerald-100 dark:border-emerald-900/40',
+      title: t.landing.feature3Title,
+      desc: t.landing.feature3Desc,
+    },
+    {
+      icon: <ArrowLeftRight size={22} />,
+      color: 'from-amber-400 to-orange-400',
+      bg: 'bg-amber-50 dark:bg-amber-950/30',
+      border: 'border-amber-100 dark:border-amber-900/40',
+      title: t.landing.feature4Title,
+      desc: t.landing.feature4Desc,
+    },
+    {
+      icon: <Sparkles size={22} />,
+      color: 'from-fuchsia-400 to-pink-400',
+      bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/30',
+      border: 'border-fuchsia-100 dark:border-fuchsia-900/40',
+      title: t.landing.feature5Title,
+      desc: t.landing.feature5Desc,
+    },
+    {
+      icon: <ShieldCheck size={22} />,
+      color: 'from-blue-400 to-cyan-400',
+      bg: 'bg-blue-50 dark:bg-blue-950/30',
+      border: 'border-blue-100 dark:border-blue-900/40',
+      title: t.landing.feature6Title,
+      desc: t.landing.feature6Desc,
+    },
+  ], [t]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col overflow-x-hidden">
@@ -226,13 +226,13 @@ export function LandingPage() {
               onClick={() => navigate({ to: '/login' })}
               className="px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
-              Iniciar sesión
+              {t.landing.signIn}
             </button>
             <button
               onClick={() => navigate({ to: '/login' })}
               className="px-4 py-1.5 text-sm font-semibold rounded-xl bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity shadow-sm"
             >
-              Empezar gratis
+              {t.landing.startFree}
             </button>
           </div>
         </div>
@@ -247,21 +247,19 @@ export function LandingPage() {
           <div className="flex-1 text-center lg:text-left">
             {/* Pill badge */}
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-brand)] bg-[var(--group-available-bg)] border border-[var(--border-medium)] rounded-full px-3 py-1 mb-6">
-              <Sparkles size={11} /> Para parejas colombianas
+              <Sparkles size={11} /> {t.landing.pill}
             </div>
 
             <h1 className="text-4xl sm:text-5xl font-extrabold text-[var(--text-primary)] leading-tight tracking-tight mb-4">
-              Tu presupuesto
+              {t.landing.heroTitle1}
               <br />
               <span className="bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">
-                siempre en orden.
+                {t.landing.heroTitle2}
               </span>
             </h1>
 
             <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto lg:mx-0 mb-8">
-              LittleFlower es la app de presupuesto familiar para parejas.
-              Planea, registra gastos y analiza tus finanzas —
-              en pesos colombianos, con soporte para ingresos en dólares.
+              {t.landing.heroDesc}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -269,20 +267,20 @@ export function LandingPage() {
                 onClick={() => navigate({ to: '/login' })}
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-violet-500 text-white font-semibold text-sm shadow-lg hover:shadow-pink-200 dark:hover:shadow-pink-900/40 hover:opacity-95 transition-all"
               >
-                Empezar gratis <ChevronRight size={16} />
+                {t.landing.startFree} <ChevronRight size={16} />
               </button>
               <button
                 onClick={() => navigate({ to: '/login' })}
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border-2 border-[var(--border-strong)] text-[var(--text-primary)] font-semibold text-sm hover:bg-[var(--bg-hover)] transition-colors"
               >
-                Iniciar sesión
+                {t.landing.signIn}
               </button>
             </div>
 
             {/* Social proof */}
             <p className="mt-6 text-xs text-[var(--text-muted)] flex items-center gap-1.5 justify-center lg:justify-start">
               <ShieldCheck size={13} className="text-green-500" />
-              Gratis · Sin tarjeta de crédito · Privacidad total
+              {t.landing.socialProof}
             </p>
           </div>
 
@@ -303,15 +301,15 @@ export function LandingPage() {
           <div className="max-w-5xl mx-auto px-5">
             <div className="text-center mb-10">
               <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-                Todo lo que necesitas para controlar tu plata
+                {t.landing.featuresTitle}
               </h2>
               <p className="text-sm text-[var(--text-muted)] max-w-md mx-auto">
-                Sin complicaciones, sin suscripciones, sin datos en la nube de terceros.
+                {t.landing.featuresSubtitle}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {FEATURES.map((f, i) => (
+              {features.map((f, i) => (
                 <div
                   key={i}
                   className={cn(
@@ -341,16 +339,16 @@ export function LandingPage() {
             <Logo size={64} className="mx-auto mb-6" />
           </div>
           <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-3 tracking-tight">
-            Empieza hoy, gratis.
+            {t.landing.ctaTitle}
           </h2>
           <p className="text-sm text-[var(--text-secondary)] mb-8 max-w-sm mx-auto">
-            Invita a tu pareja, configura el hogar en minutos y toma el control de sus finanzas juntos.
+            {t.landing.ctaDesc}
           </p>
           <button
             onClick={() => navigate({ to: '/login' })}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-violet-500 text-white font-bold text-sm shadow-lg hover:opacity-95 transition-all hover:shadow-pink-200 dark:hover:shadow-pink-900/40"
           >
-            Crear mi cuenta gratis <ChevronRight size={16} />
+            {t.landing.ctaButton} <ChevronRight size={16} />
           </button>
         </section>
 
@@ -362,7 +360,7 @@ export function LandingPage() {
           <span className="font-semibold text-[var(--text-brand)] flex items-center gap-1">
             <Logo size={14} /> LittleFlower
           </span>
-          <span>Hecho con amor para parejas colombianas 🇨🇴</span>
+          <span>{t.landing.footer} 🇨🇴</span>
           <span>© {new Date().getFullYear()}</span>
         </div>
       </footer>

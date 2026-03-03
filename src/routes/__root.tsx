@@ -3,6 +3,7 @@ import { PowerSyncContext, useStatus, useQuery } from '@powersync/react';
 import { db } from '@/infrastructure/powersync/client';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { AppSettingsProvider } from '@/features/settings/AppSettingsContext';
+import { I18nProvider, useI18n } from '@/shared/i18n/I18nContext';
 import { AlertCircle, AlertTriangle, CloudOff, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/shared/ui/cn';
@@ -19,6 +20,7 @@ interface CrudCountRow { count: number }
 
 function SyncPill() {
   const { session } = useAuth();
+  const { t } = useI18n();
   const status = useStatus();
   const connected = status.connected;
   const uploading = status.dataFlowStatus?.uploading ?? false;
@@ -30,16 +32,15 @@ function SyncPill() {
   );
   const pendingCount = crudRows[0]?.count ?? 0;
 
-  // Debounce disconnected state: only show "Sin conexión" after 2s offline.
-  // This hides the brief connecting→connected transition on startup/navigation.
+  // Debounce disconnected state: only show offline after 2s.
   const [showDisconnected, setShowDisconnected] = useState(false);
   useEffect(() => {
     if (connected) {
       setShowDisconnected(false);
       return;
     }
-    const t = setTimeout(() => setShowDisconnected(true), 2000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setShowDisconnected(true), 2000);
+    return () => clearTimeout(timer);
   }, [connected]);
 
   // Don't render on public pages (no session)
@@ -50,23 +51,23 @@ function SyncPill() {
   let colorClass: string;
 
   if (showDisconnected) {
-    label = 'Sin conexión';
+    label = t.sync.offline;
     icon = <WifiOff size={9} strokeWidth={2.5} />;
     colorClass = 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-[var(--border-medium)]';
   } else if (uploadError) {
-    label = 'Error sync';
+    label = t.sync.error;
     icon = <AlertCircle size={9} strokeWidth={2.5} />;
     colorClass = 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800';
   } else if (uploading) {
-    label = pendingCount > 0 ? `Subiendo (${pendingCount})` : 'Subiendo...';
+    label = t.sync.uploading(pendingCount);
     icon = <Loader2 size={9} strokeWidth={2.5} className="animate-spin" />;
     colorClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800';
   } else if (pendingCount > 0) {
-    label = `${pendingCount} pendiente${pendingCount !== 1 ? 's' : ''}`;
+    label = t.sync.pending(pendingCount);
     icon = <CloudOff size={9} strokeWidth={2.5} />;
     colorClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800';
   } else {
-    label = 'Sync';
+    label = t.sync.synced;
     icon = <Wifi size={9} strokeWidth={2.5} />;
     colorClass = 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800';
   }
@@ -90,6 +91,7 @@ function SyncPill() {
 
 function SyncErrorBanner() {
   const { session } = useAuth();
+  const { t } = useI18n();
   const status = useStatus();
   const uploadError = status.dataFlowStatus?.uploadError ?? null;
 
@@ -102,9 +104,7 @@ function SyncErrorBanner() {
     >
       <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" strokeWidth={2.5} />
       <span>
-        <strong>Error de sincronización:</strong> los cambios recientes no se están guardando en el
-        servidor. Evita ingresar datos nuevos hasta que esto se resuelva. Si el problema persiste,
-        recarga la página o verifica tu conexión.
+        <strong>{t.sync.syncErrorTitle}</strong> {t.sync.syncErrorBody}
       </span>
     </div>
   );
@@ -116,13 +116,14 @@ function SyncErrorBanner() {
 
 function RootInner() {
   const { isLoading } = useAuth();
+  const { t } = useI18n();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-pink-50">
         <div className="text-center">
           <Logo size={48} className="mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Cargando...</p>
+          <p className="text-gray-500 text-sm">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -144,12 +145,14 @@ function RootInner() {
 
 export const Route = createRootRoute({
   component: () => (
-    <AppSettingsProvider>
-      <PowerSyncContext.Provider value={db}>
-        <AuthProvider>
-          <RootInner />
-        </AuthProvider>
-      </PowerSyncContext.Provider>
-    </AppSettingsProvider>
+    <I18nProvider>
+      <AppSettingsProvider>
+        <PowerSyncContext.Provider value={db}>
+          <AuthProvider>
+            <RootInner />
+          </AuthProvider>
+        </PowerSyncContext.Provider>
+      </AppSettingsProvider>
+    </I18nProvider>
   ),
 });

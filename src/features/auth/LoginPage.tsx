@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from './AuthContext';
+import { useI18n } from '@/shared/i18n/I18nContext';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -15,6 +16,7 @@ interface LoginPageProps {
 export function LoginPage({ joinCode }: LoginPageProps) {
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +35,11 @@ export function LoginPage({ joinCode }: LoginPageProps) {
     try {
       if (mode === 'login') {
         const { error } = await login(email, password);
-        if (error) { setError(error.message); return; }
+        if (error) { setError(t.auth.errors[error.code] ?? t.common.unexpectedError); return; }
         await navigate({ to: redirectTo });
       } else {
         const { error, pendingConfirmation } = await register(email, password, name);
-        if (error) { setError(error.message); return; }
+        if (error) { setError(t.auth.errors[error.code] ?? t.common.unexpectedError); return; }
         if (pendingConfirmation) {
           setPendingConfirmation(true);
           return;
@@ -58,10 +60,9 @@ export function LoginPage({ joinCode }: LoginPageProps) {
               <Mail className="w-8 h-8 text-green-600" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-gray-800">Revisa tu correo</h2>
+              <h2 className="text-xl font-semibold text-gray-800">{t.auth.checkEmail}</h2>
               <p className="text-sm text-gray-500">
-                Enviamos un enlace de confirmación a <strong className="text-gray-700">{email}</strong>.
-                Haz clic en el enlace para activar tu cuenta.
+                {t.auth.confirmationSent} <strong className="text-gray-700">{email}</strong>{t.auth.clickToActivate}
               </p>
             </div>
             <Button
@@ -74,7 +75,7 @@ export function LoginPage({ joinCode }: LoginPageProps) {
                 setError(null);
               }}
             >
-              Volver a iniciar sesión
+              {t.auth.backToLogin}
             </Button>
           </CardContent>
         </Card>
@@ -88,17 +89,17 @@ export function LoginPage({ joinCode }: LoginPageProps) {
         <CardHeader className="text-center">
           <Logo size={48} className="mx-auto mb-2" />
           <CardTitle className="text-2xl">LittleFlower</CardTitle>
-          <p className="text-sm text-gray-500">Tu presupuesto familiar</p>
+          <p className="text-sm text-gray-500">{t.auth.subtitle}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <div className="space-y-1.5">
-                <Label htmlFor="name">Nombre</Label>
+                <Label htmlFor="name">{t.auth.name}</Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Tu nombre"
+                  placeholder={t.auth.namePlaceholder}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   required
@@ -106,18 +107,18 @@ export function LoginPage({ joinCode }: LoginPageProps) {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="email">Correo</Label>
+              <Label htmlFor="email">{t.auth.email}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="correo@ejemplo.com"
+                placeholder={t.auth.emailPlaceholder}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{t.auth.password}</Label>
               <Input
                 id="password"
                 type="password"
@@ -134,17 +135,17 @@ export function LoginPage({ joinCode }: LoginPageProps) {
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Cargando...' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+              {isLoading ? t.common.loading : mode === 'login' ? t.auth.signIn : t.auth.createAccount}
             </Button>
 
             <p className="text-center text-sm text-gray-500">
-              {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
+              {mode === 'login' ? t.auth.noAccount : t.auth.hasAccount}{' '}
               <button
                 type="button"
                 className="text-pink-600 hover:underline font-medium"
                 onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); }}
               >
-                {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
+                {mode === 'login' ? t.auth.signUp : t.auth.logIn}
               </button>
             </p>
           </form>

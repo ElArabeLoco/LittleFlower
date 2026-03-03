@@ -27,6 +27,7 @@ import { cn } from '@/shared/ui/cn';
 import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,15 +47,6 @@ function prevNMonths(n: number): string[] {
   return months;
 }
 
-const MONTH_LABELS: Record<string, string> = {
-  '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr',
-  '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Ago',
-  '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
-};
-
-function shortMonth(ym: string): string {
-  return MONTH_LABELS[ym.slice(5, 7)] ?? ym.slice(5, 7);
-}
 
 function formatK(v: number): string {
   if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
@@ -279,6 +271,11 @@ function PieLabel(props: any) {
 export function DashboardPage() {
   useAuth(); // ensures auth context is available
   const { formatCOP } = useNumberFormat();
+  const { t } = useI18n();
+
+  function shortMonth(ym: string): string {
+    return t.months.short[ym.slice(5, 7)] ?? ym.slice(5, 7);
+  }
 
   const currentMonth = getCurrentMonth();
   const last6 = useMemo(() => prevNMonths(6), []);
@@ -510,10 +507,10 @@ export function DashboardPage() {
       else cash += spent;
     }
     const data = [];
-    if (cc > 0) data.push({ name: 'Tarjeta', value: cc, color: '#a78bfa' });
-    if (cash > 0) data.push({ name: 'Efectivo', value: cash, color: '#34d399' });
+    if (cc > 0) data.push({ name: t.dashboard.card, value: cc, color: '#a78bfa' });
+    if (cash > 0) data.push({ name: t.dashboard.cash, value: cash, color: '#34d399' });
     return data;
-  }, [budgets, bmIdMap, expenseByBmId, currentMonth]);
+  }, [budgets, bmIdMap, expenseByBmId, currentMonth, t]);
 
   // ── Top budgets by spending (current month) ────────────────────────────────
 
@@ -714,35 +711,35 @@ export function DashboardPage() {
         {/* Por ejecutar    = Presupuestado − Ejecutado (pendiente del presupuesto)*/}
         <div className={`grid grid-cols-2 gap-3 ${hasDebts ? 'sm:grid-cols-6' : 'sm:grid-cols-5'}`}>
           <KpiCard
-            label="Balance real"
+            label={t.dashboard.realBalance}
             value={currentData.balance}
             icon={<Scale size={16} />}
             highlight={balanceHighlight}
             formatCOP={formatCOP}
           />
           <KpiCard
-            label="Disponible"
+            label={t.dashboard.available}
             value={currentData.available}
             icon={<Wallet size={16} />}
             highlight="default"
             formatCOP={formatCOP}
           />
           <KpiCard
-            label="Presupuestado"
+            label={t.dashboard.budgeted}
             value={currentData.budgeted}
             icon={<TrendingUp size={16} />}
             highlight="default"
             formatCOP={formatCOP}
           />
           <KpiCard
-            label="Ejecutado"
+            label={t.dashboard.spent}
             value={currentData.spent}
             icon={<TrendingDown size={16} />}
             highlight={currentData.spent > currentData.budgeted ? 'negative' : 'default'}
             formatCOP={formatCOP}
           />
           <KpiCard
-            label="Por ejecutar"
+            label={t.dashboard.toSpend}
             value={currentData.pending ?? 0}
             icon={<TrendingDown size={16} />}
             highlight="default"
@@ -750,7 +747,7 @@ export function DashboardPage() {
           />
           {hasDebts && (
             <KpiCard
-              label="Total adeudado"
+              label={t.dashboard.totalOwed}
               value={totalDebtBalance}
               icon={<AlertCircle size={16} />}
               highlight={totalDebtBalance > 0 ? 'negative' : 'positive'}
@@ -762,8 +759,8 @@ export function DashboardPage() {
         {/* ── Tendencia + Balance — 2-col en lg ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <ChartCard
-            title="Tendencia de los últimos 6 meses"
-            subtitle="Presupuestado vs. gastado real"
+            title={t.dashboard.trend6m}
+            subtitle={t.dashboard.budgetedVsSpent}
           >
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData} barCategoryGap="28%" barGap={3}>
@@ -781,7 +778,7 @@ export function DashboardPage() {
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--bg-hover)' }} />
                 <Legend
                   wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }}
-                  formatter={(v) => v === 'budgeted' ? 'Presupuestado' : 'Gastado'}
+                  formatter={(v) => v === 'budgeted' ? t.dashboard.budgetedLabel : t.dashboard.spentLabel}
                 />
                 <Bar dataKey="budgeted" name="budgeted" fill="#c4b5fd" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="spent" name="spent" fill="#f472b6" radius={[4, 4, 0, 0]} />
@@ -790,8 +787,8 @@ export function DashboardPage() {
           </ChartCard>
 
           <ChartCard
-            title="Balance real mes a mes"
-            subtitle="Disponible − Presupuestado (efectivo)"
+            title={t.dashboard.balanceOverTime}
+            subtitle={t.dashboard.availableMinusBudgeted}
           >
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={monthlyData}>
@@ -833,8 +830,8 @@ export function DashboardPage() {
 
           {/* Pie por categoría */}
           <ChartCard
-            title="Gasto por categoría"
-            subtitle={hasSpend ? 'Distribución este mes' : 'Sin datos este mes'}
+            title={t.dashboard.spendByCategory}
+            subtitle={hasSpend ? t.dashboard.distributionThisMonth : t.dashboard.noDataThisMonth}
           >
             {hasSpend && categoryPieData.length > 0 ? (
               <>
@@ -868,15 +865,15 @@ export function DashboardPage() {
               </>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-[var(--text-muted)] text-sm">
-                Sin gastos registrados
+                {t.dashboard.noExpensesRecorded}
               </div>
             )}
           </ChartCard>
 
           {/* Pie CC vs Efectivo */}
           <ChartCard
-            title="Tarjeta vs. Efectivo"
-            subtitle={hasSpend ? 'Distribución por tipo de pago' : 'Sin datos este mes'}
+            title={t.dashboard.cardVsCash}
+            subtitle={hasSpend ? t.dashboard.paymentTypeDistribution : t.dashboard.noDataThisMonth}
           >
             {hasSpend && paymentPieData.length > 0 ? (
               <>
@@ -902,7 +899,7 @@ export function DashboardPage() {
                   {paymentPieData.map((d, i) => (
                     <span key={i} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ background: d.color }} />
-                      {d.name === 'Tarjeta' ? <CreditCard size={12} /> : <Banknote size={12} />}
+                      {d.name === t.dashboard.card ? <CreditCard size={12} /> : <Banknote size={12} />}
                       {d.name} — <AbbreviatedAmount value={d.value} className="font-semibold text-[var(--text-secondary)]" />
                     </span>
                   ))}
@@ -910,7 +907,7 @@ export function DashboardPage() {
               </>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-[var(--text-muted)] text-sm">
-                Sin gastos registrados
+                {t.dashboard.noExpensesRecorded}
               </div>
             )}
           </ChartCard>
@@ -919,8 +916,8 @@ export function DashboardPage() {
         {/* ── Top presupuestos (barra horizontal de ejecución) ── */}
         {topBudgets.length > 0 && (
           <ChartCard
-            title="Top presupuestos este mes"
-            subtitle="Ejecución: gastado sobre presupuestado"
+            title={t.dashboard.topBudgets}
+            subtitle={t.dashboard.executionLabel}
           >
             <div className="space-y-3">
               {topBudgets.map((b, i) => {
@@ -957,8 +954,8 @@ export function DashboardPage() {
         {/* ── Rubros excedidos en últimos 6 meses ── */}
         {exceededBudgets.length > 0 && (
           <ChartCard
-            title="Rubros excedidos"
-            subtitle={`Presupuestos superados en los últimos 6 meses (${exceededBudgets.length} ocurrencia${exceededBudgets.length !== 1 ? 's' : ''})`}
+            title={t.dashboard.exceededBudgets}
+            subtitle={t.dashboard.exceededDesc(exceededBudgets.length)}
           >
             <div className="space-y-3">
               {exceededBudgets.map((b, i) => (
@@ -990,8 +987,8 @@ export function DashboardPage() {
                     />
                   </div>
                   <div className="flex justify-between mt-0.5">
-                    <span className="text-[10px] text-[var(--text-muted)]">Presup. <AbbreviatedAmount value={b.budgeted} /></span>
-                    <span className="text-[10px] text-red-500 dark:text-red-400">Gastado <AbbreviatedAmount value={b.spent} /></span>
+                    <span className="text-[10px] text-[var(--text-muted)]">{t.dashboard.budgetedShort} <AbbreviatedAmount value={b.budgeted} /></span>
+                    <span className="text-[10px] text-red-500 dark:text-red-400">{t.dashboard.spentShort} <AbbreviatedAmount value={b.spent} /></span>
                   </div>
                 </div>
               ))}
@@ -1001,7 +998,7 @@ export function DashboardPage() {
 
         {/* ── Gastos recientes ── */}
         {recentExpenses.length > 0 && (
-          <ChartCard title="Gastos recientes" subtitle="Últimas transacciones registradas">
+          <ChartCard title={t.dashboard.recentExpenses} subtitle={t.dashboard.recentExpensesDesc}>
             <div className="space-y-1 -mx-1">
               {recentExpenses.map(exp => {
                 const cat = CATEGORY_MAP.get(exp.category_id);
@@ -1032,8 +1029,8 @@ export function DashboardPage() {
         {hasDebts && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           <ChartCard
-            title="Progreso de deudas"
-            subtitle="Saldo pendiente por deuda"
+            title={t.dashboard.debtProgress}
+            subtitle={t.dashboard.debtProgressDesc}
           >
             <div className="space-y-4">
               {debtProgressData.map((d) => (
@@ -1048,7 +1045,7 @@ export function DashboardPage() {
                         / <AbbreviatedAmount value={d.initial} />
                       </span>
                       <span className="text-[10px] text-[var(--text-muted)] font-medium">
-                        ({d.pctPaid.toFixed(0)}% pagado)
+                        ({d.pctPaid.toFixed(0)}{t.dashboard.pctPaid})
                       </span>
                     </div>
                   </div>
@@ -1067,8 +1064,8 @@ export function DashboardPage() {
           </ChartCard>
 
           <ChartCard
-            title="Evolución de deudas"
-            subtitle="Saldo total de deudas en los últimos 6 meses"
+            title={t.dashboard.debtEvolution}
+            subtitle={t.dashboard.debtEvolutionDesc}
           >
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={debtEvolutionData}>
@@ -1093,7 +1090,7 @@ export function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="saldo"
-                  name="Saldo deudas"
+                  name={t.dashboard.debtBalanceLabel}
                   stroke="#fb7185"
                   strokeWidth={2.5}
                   fill="url(#debtGrad)"
@@ -1113,8 +1110,8 @@ export function DashboardPage() {
             {/* Restaurantes */}
             {hasRestaurantes && (
               <ChartCard
-                title="🍽️ Restaurantes este mes"
-                subtitle="Gasto diario en restaurantes"
+                title={`🍽️ ${t.dashboard.restaurantsThisMonth}`}
+                subtitle={t.dashboard.restaurantsDailySpend}
               >
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={restaurantesDailyData} barCategoryGap="30%">
@@ -1137,7 +1134,7 @@ export function DashboardPage() {
                         if (v === 0) return null;
                         return (
                           <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg px-3 py-2 text-xs">
-                            <p className="font-semibold text-[var(--text-primary)] mb-0.5">Día {label}</p>
+                            <p className="font-semibold text-[var(--text-primary)] mb-0.5">{t.dashboard.dayLabel(label ?? '')}</p>
                             <p className="text-[#fb923c] font-semibold">{formatK(v)}</p>
                           </div>
                         );
@@ -1153,8 +1150,8 @@ export function DashboardPage() {
             {/* Groceries */}
             {hasGroceries && (
               <ChartCard
-                title="🛍️ Groceries este mes"
-                subtitle="Gasto diario en supermercado"
+                title={`🛍️ ${t.dashboard.groceriesThisMonth}`}
+                subtitle={t.dashboard.groceriesDailySpend}
               >
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={groceriesDailyData} barCategoryGap="30%">
@@ -1177,7 +1174,7 @@ export function DashboardPage() {
                         if (v === 0) return null;
                         return (
                           <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg px-3 py-2 text-xs">
-                            <p className="font-semibold text-[var(--text-primary)] mb-0.5">Día {label}</p>
+                            <p className="font-semibold text-[var(--text-primary)] mb-0.5">{t.dashboard.dayLabel(label ?? '')}</p>
                             <p className="text-[#6ee7b7] font-semibold">{formatK(v)}</p>
                           </div>
                         );
@@ -1196,8 +1193,8 @@ export function DashboardPage() {
         {budgets.length === 0 && (
           <div className="text-center py-20 text-[var(--text-muted)]">
             <p className="text-5xl mb-4">📊</p>
-            <p className="text-sm font-medium text-[var(--text-secondary)]">Aún no hay datos</p>
-            <p className="text-xs mt-1">Agrega presupuestos e ingresos para ver tus estadísticas</p>
+            <p className="text-sm font-medium text-[var(--text-secondary)]">{t.dashboard.noDataYet}</p>
+            <p className="text-xs mt-1">{t.dashboard.addBudgetsAndIncome}</p>
           </div>
         )}
 

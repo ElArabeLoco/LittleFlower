@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/shared/ui/cn';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { useI18n } from '@/shared/i18n/I18nContext';
 import { computeDebtBalance } from '@/domain/debt/Debt';
 import {
   insertDebt,
@@ -80,11 +81,10 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function formatDate(d: string): string {
+function formatDate(d: string, monthLabels: Record<string, string>): string {
   const [, m, day] = d.split('-');
-  const names = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
-    'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  return `${parseInt(day)} ${names[parseInt(m) - 1]}`;
+  const mm = m.padStart(2, '0');
+  return `${parseInt(day)} ${monthLabels[mm] ?? m}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +118,7 @@ interface DebtFormDialogProps {
 }
 
 function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, trigger }: DebtFormDialogProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<DebtFormState>(initial ?? defaultDebtForm());
   const [saving, setSaving] = useState(false);
@@ -139,15 +140,15 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
 
     const amount = parseInt(form.initial_amount.replace(/\D/g, ''), 10);
     if (isNaN(amount) || amount <= 0) {
-      setError('El monto inicial debe ser mayor a 0');
+      setError(t.debts.validationAmount);
       return;
     }
     if (!form.name.trim()) {
-      setError('El nombre es obligatorio');
+      setError(t.debts.validationName);
       return;
     }
     if (!form.disbursed_at) {
-      setError('La fecha de desembolso es obligatoria');
+      setError(t.debts.validationDate);
       return;
     }
 
@@ -176,7 +177,7 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
       setOpen(false);
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setSaving(false);
     }
@@ -187,15 +188,15 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Nueva deuda' : 'Editar deuda'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? t.debts.newDebt : t.debts.editDebt}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
-            <Label htmlFor="d-name">Nombre *</Label>
+            <Label htmlFor="d-name">{t.debts.nameLabel}</Label>
             <Input
               id="d-name"
-              placeholder="Ej: Banco Bogotá, Préstamo familiar"
+              placeholder={t.debts.namePlaceholder}
               value={form.name}
               onChange={e => set('name', e.target.value)}
               autoFocus
@@ -204,10 +205,10 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="d-desc">Descripción (opcional)</Label>
+            <Label htmlFor="d-desc">{t.debts.descriptionLabel}</Label>
             <Input
               id="d-desc"
-              placeholder="Nota adicional"
+              placeholder={t.debts.descriptionPlaceholder}
               value={form.description}
               onChange={e => set('description', e.target.value)}
             />
@@ -216,7 +217,7 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
           {/* Amount + currency side by side */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="d-amount">Monto original *</Label>
+              <Label htmlFor="d-amount">{t.debts.originalAmount}</Label>
               <Input
                 id="d-amount"
                 inputMode="numeric"
@@ -227,7 +228,7 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Moneda</Label>
+              <Label>{t.debts.currencyLabel}</Label>
               <Select value={form.currency} onValueChange={v => set('currency', v)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -241,7 +242,7 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="d-date">Fecha de desembolso *</Label>
+            <Label htmlFor="d-date">{t.debts.disbursedAt}</Label>
             <Input
               id="d-date"
               type="date"
@@ -256,10 +257,10 @@ function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, tr
 
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button type="submit" className="flex-1" disabled={saving}>
-              {saving ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar'}
+              {saving ? t.common.saving : mode === 'create' ? t.common.create : t.common.save}
             </Button>
           </div>
         </form>
@@ -293,6 +294,7 @@ interface DebtTransactionDialogProps {
 function DebtTransactionDialog({
   debtId, debtCurrency, householdId, userId, currentMonthRate, trigger,
 }: DebtTransactionDialogProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<TransactionFormState>({
     type: 'debit',
@@ -330,7 +332,7 @@ function DebtTransactionDialog({
 
     const rawAmount = parseInt(form.amount.replace(/\D/g, ''), 10);
     if (isNaN(rawAmount) || rawAmount <= 0) {
-      setError('El monto debe ser mayor a 0');
+      setError(t.debts.validationTxAmount);
       return;
     }
 
@@ -342,7 +344,7 @@ function DebtTransactionDialog({
     if (form.currency === 'USD') {
       const rate = parseFloat(form.exchange_rate);
       if (isNaN(rate) || rate <= 0) {
-        setError('Ingresa una TRM válida para convertir USD a COP');
+        setError(t.debts.validationTrmRequired);
         return;
       }
       originalAmount = rawAmount;
@@ -368,7 +370,7 @@ function DebtTransactionDialog({
       await insertDebtTransaction(payload, userId);
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setSaving(false);
     }
@@ -379,13 +381,13 @@ function DebtTransactionDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Registrar transacción</DialogTitle>
+          <DialogTitle>{t.debts.registerTransaction}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           {/* Type selector */}
           <div className="space-y-1.5">
-            <Label>Tipo</Label>
+            <Label>{t.debts.typeLabel}</Label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -397,7 +399,7 @@ function DebtTransactionDialog({
                     : 'border-[var(--border-medium)] text-[var(--text-muted)] hover:border-[var(--border-subtle)]',
                 )}
               >
-                ↓ Abono
+                {t.debts.payment}
               </button>
               <button
                 type="button"
@@ -409,7 +411,7 @@ function DebtTransactionDialog({
                     : 'border-[var(--border-medium)] text-[var(--text-muted)] hover:border-[var(--border-subtle)]',
                 )}
               >
-                ↑ Aumento
+                {t.debts.increase}
               </button>
             </div>
           </div>
@@ -417,7 +419,7 @@ function DebtTransactionDialog({
           {/* Amount + currency */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="tx-amount">Monto *</Label>
+              <Label htmlFor="tx-amount">{t.debts.amountLabel}</Label>
               <Input
                 id="tx-amount"
                 inputMode="numeric"
@@ -429,7 +431,7 @@ function DebtTransactionDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Moneda</Label>
+              <Label>{t.debts.currencyLabel}</Label>
               <Select value={form.currency} onValueChange={v => set('currency', v)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -445,7 +447,7 @@ function DebtTransactionDialog({
           {/* TRM — only when USD selected */}
           {form.currency === 'USD' && (
             <div className="space-y-1.5">
-              <Label htmlFor="tx-trm">TRM (USD → COP) *</Label>
+              <Label htmlFor="tx-trm">{t.debts.trmLabel}</Label>
               <Input
                 id="tx-trm"
                 inputMode="decimal"
@@ -463,7 +465,7 @@ function DebtTransactionDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="tx-date">Fecha</Label>
+            <Label htmlFor="tx-date">{t.debts.dateLabel}</Label>
             <Input
               id="tx-date"
               type="date"
@@ -473,10 +475,10 @@ function DebtTransactionDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tx-note">Nota (opcional)</Label>
+            <Label htmlFor="tx-note">{t.debts.noteLabel}</Label>
             <Input
               id="tx-note"
-              placeholder="Descripción breve"
+              placeholder={t.debts.notePlaceholder}
               value={form.note}
               onChange={e => set('note', e.target.value)}
             />
@@ -488,10 +490,10 @@ function DebtTransactionDialog({
 
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button type="submit" className="flex-1" disabled={saving}>
-              {saving ? 'Guardando...' : 'Registrar'}
+              {saving ? t.common.saving : t.common.register}
             </Button>
           </div>
         </form>
@@ -515,6 +517,7 @@ interface DebtCardProps {
 }
 
 function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, formatCOP, onDelete }: DebtCardProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
 
   // Compute initial amount in COP (convert if USD)
@@ -563,12 +566,12 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
               </span>
               {isFullyPaid && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                  ✓ Saldada
+                  {t.debts.paidOff}
                 </span>
               )}
             </div>
             <p className="text-xs text-[var(--text-muted)]">
-              Desde {formatDate(debt.disbursed_at)}
+              {t.debts.since(formatDate(debt.disbursed_at, t.months.shortLower))}
               {debt.description && ` · ${debt.description}`}
             </p>
           </div>
@@ -608,7 +611,7 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
         {/* Amounts */}
         <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
           <div>
-            <p className="text-[var(--text-muted)] mb-0.5">Original</p>
+            <p className="text-[var(--text-muted)] mb-0.5">{t.debts.originalLabel}</p>
             <p className="font-semibold text-[var(--text-secondary)]">
               {debt.currency === 'COP'
                 ? formatCOP(debt.initial_amount)
@@ -616,7 +619,7 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
             </p>
           </div>
           <div>
-            <p className="text-[var(--text-muted)] mb-0.5">Saldo pendiente</p>
+            <p className="text-[var(--text-muted)] mb-0.5">{t.debts.pendingBalance}</p>
             <p className={cn(
               'font-bold text-sm',
               isFullyPaid ? 'text-green-600 dark:text-green-400' : 'text-[var(--text-primary)]',
@@ -629,8 +632,8 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
         {/* Progress bar */}
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
-            <span>{pctPaid}% pagado</span>
-            <span>{formatCOP(totalPaid)} abonado de {formatCOP(totalBase)}</span>
+            <span>{t.debts.pctPaid(pctPaid)}</span>
+            <span>{t.debts.paidOf(formatCOP(totalPaid), formatCOP(totalBase))}</span>
           </div>
           <div className="h-2 rounded-full bg-[var(--border-medium)] overflow-hidden">
             <div
@@ -649,7 +652,7 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
         onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-subtle)] bg-[var(--bg-surface-2)] hover:bg-[var(--bg-hover)] transition-colors text-xs text-[var(--text-muted)]"
       >
-        <span>{transactions.length} transacción{transactions.length !== 1 ? 'es' : ''}</span>
+        <span>{t.debts.transactions(transactions.length)}</span>
         {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
@@ -666,14 +669,14 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
               currentMonthRate={currentMonthRate}
               trigger={
                 <Button variant="outline" size="sm" className="w-full gap-1.5 h-8 text-xs">
-                  <Plus size={12} /> Agregar transacción
+                  <Plus size={12} /> {t.debts.addTransaction}
                 </Button>
               }
             />
           </div>
 
           {transactions.length === 0 ? (
-            <p className="text-center text-xs text-[var(--text-muted)] py-6">Sin transacciones aún</p>
+            <p className="text-center text-xs text-[var(--text-muted)] py-6">{t.debts.noTransactions}</p>
           ) : (
             <div className="divide-y divide-[var(--border-subtle)]">
               {transactions.map(tx => (
@@ -693,7 +696,7 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
 
                   {/* Date */}
                   <span className="shrink-0 text-[11px] text-[var(--text-muted)] w-12">
-                    {formatDate(tx.date)}
+                    {formatDate(tx.date, t.months.shortLower)}
                   </span>
 
                   {/* Amount */}
@@ -711,7 +714,7 @@ function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, f
 
                   {/* Source badge */}
                   {tx.source === 'expense' && (
-                    <span title="Desde gasto" className="shrink-0 text-[var(--text-muted)]">
+                    <span title={t.debts.fromExpense} className="shrink-0 text-[var(--text-muted)]">
                       <Link2 size={10} />
                     </span>
                   )}
@@ -744,6 +747,7 @@ export function DebtsPage() {
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
   const { formatCOP } = useNumberFormat();
+  const { t } = useI18n();
 
   // Fetch debts
   const { data: debts = [] } = useQuery<DebtRow>(
@@ -801,7 +805,7 @@ export function DebtsPage() {
   });
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`¿Eliminar "${name}"? El historial de transacciones se conservará.`)) return;
+    if (!confirm(t.debts.confirmDelete(name))) return;
     await softDeleteDebt(id, userId);
   }
 
@@ -809,8 +813,8 @@ export function DebtsPage() {
     <div className="min-h-screen bg-[var(--bg-app)]">
       <AppHeader
         emoji="💳"
-        title="Deudas"
-        subtitle="Seguimiento de tus obligaciones financieras"
+        title={t.debts.title}
+        subtitle={t.debts.subtitle}
         actions={
           <DebtFormDialog
             mode="create"
@@ -819,7 +823,7 @@ export function DebtsPage() {
             onDone={() => {}}
             trigger={
               <Button size="sm" className="gap-1.5">
-                <Plus size={14} /> Nueva deuda
+                <Plus size={14} /> {t.debts.newDebt}
               </Button>
             }
           />
@@ -832,13 +836,13 @@ export function DebtsPage() {
         {debts.length > 0 && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] p-4">
-              <p className="text-xs text-[var(--text-muted)] mb-1">Total adeudado</p>
+              <p className="text-xs text-[var(--text-muted)] mb-1">{t.debts.totalOwed}</p>
               <p className="text-lg font-bold text-[var(--text-primary)]">{formatCOP(totalBalance)}</p>
             </div>
             <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] p-4">
-              <p className="text-xs text-[var(--text-muted)] mb-1">Deudas activas</p>
+              <p className="text-xs text-[var(--text-muted)] mb-1">{t.debts.activeDebts}</p>
               <p className="text-lg font-bold text-[var(--text-primary)]">{activeDebts.length}</p>
-              <p className="text-[10px] text-[var(--text-muted)]">de {debts.length} total</p>
+              <p className="text-[10px] text-[var(--text-muted)]">{t.debts.ofTotal(debts.length)}</p>
             </div>
           </div>
         )}
@@ -847,8 +851,8 @@ export function DebtsPage() {
         {debts.length === 0 && (
           <div className="text-center py-20 text-[var(--text-muted)]">
             <p className="text-5xl mb-4">💳</p>
-            <p className="text-sm font-medium text-[var(--text-secondary)]">Sin deudas registradas</p>
-            <p className="text-xs mt-1">Registra tus obligaciones financieras con el botón "Nueva deuda"</p>
+            <p className="text-sm font-medium text-[var(--text-secondary)]">{t.debts.noDebts}</p>
+            <p className="text-xs mt-1">{t.debts.noDebtsHint}</p>
           </div>
         )}
 
