@@ -11,6 +11,7 @@ import { CalendarDays, CalendarRange, ChevronRight } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 interface HubCard {
   emoji: string;
@@ -22,38 +23,39 @@ interface HubCard {
   border: string;
 }
 
-const CARDS: HubCard[] = [
-  {
-    emoji: '🗓️',
-    title: 'Vista Mensual',
-    desc: 'Revisa y registra gastos del mes. Tarjetas por presupuesto con ejecución real y acceso a cada gasto.',
-    to: '/month',
-    icon: <CalendarDays size={22} />,
-    gradient: 'from-pink-400 to-rose-400',
-    border: 'border-pink-100 dark:border-pink-900/30',
-  },
-  {
-    emoji: '📅',
-    title: 'Vista Anual',
-    desc: 'Spreadsheet de los 12 meses. Edita presupuestos por mes, ve totales y balance real del año completo.',
-    to: '/anual',
-    icon: <CalendarRange size={22} />,
-    gradient: 'from-violet-400 to-purple-400',
-    border: 'border-violet-100 dark:border-violet-900/30',
-  },
-];
-
 export function BudgetHubPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const CARDS: HubCard[] = [
+    {
+      emoji: '🗓️',
+      title: t.budgetHub.monthlyTitle,
+      desc: t.budgetHub.monthlyDesc,
+      to: '/month',
+      icon: <CalendarDays size={22} />,
+      gradient: 'from-pink-400 to-rose-400',
+      border: 'border-pink-100 dark:border-pink-900/30',
+    },
+    {
+      emoji: '📅',
+      title: t.budgetHub.yearlyTitle,
+      desc: t.budgetHub.yearlyDesc,
+      to: '/anual',
+      icon: <CalendarRange size={22} />,
+      gradient: 'from-violet-400 to-purple-400',
+      border: 'border-violet-100 dark:border-violet-900/30',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="📊" title="Presupuesto" subtitle="Elige tu vista" />
+      <AppHeader emoji="📊" title={t.budgetHub.title} subtitle={t.budgetHub.subtitle} />
 
       <main className="flex-1 max-w-lg w-full mx-auto px-4 py-8 space-y-4">
 
         <p className="text-xs text-[var(--text-muted)] px-1 mb-2">
-          Dos formas de ver tu presupuesto. Escoge la que mejor se adapte a lo que necesitas ahora.
+          {t.budgetHub.description}
         </p>
 
         {CARDS.map(card => (

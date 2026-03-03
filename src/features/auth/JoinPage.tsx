@@ -15,8 +15,10 @@ import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Logo } from '@/shared/ui/Logo';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 export function JoinPage() {
+  const { t } = useI18n();
   const { session, refreshSession } = useAuth();
   const navigate = useNavigate();
   const { code } = useSearch({ from: '/join' });
@@ -34,7 +36,7 @@ export function JoinPage() {
 
     // No code provided
     if (!code) {
-      setErrorMsg('No se proporcionó un código de invitación.');
+      setErrorMsg(t.join.noCode);
       setStatus('error');
       return;
     }
@@ -54,13 +56,13 @@ export function JoinPage() {
         setTimeout(() => navigate({ to: '/' }), 1500);
       } catch (err) {
         if (cancelled) return;
-        setErrorMsg(err instanceof Error ? err.message : 'Código inválido o expirado.');
+        setErrorMsg(err instanceof Error ? err.message : t.join.invalidCode);
         setStatus('error');
       }
     })();
 
     return () => { cancelled = true; };
-  }, [session, code, refreshSession, navigate]);
+  }, [session, code, refreshSession, navigate, t]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
@@ -71,7 +73,7 @@ export function JoinPage() {
           {status === 'joining' && (
             <>
               <Loader2 className="w-8 h-8 text-pink-500 animate-spin mx-auto" />
-              <p className="text-sm text-gray-500">Uniéndote al hogar...</p>
+              <p className="text-sm text-gray-500">{t.join.joiningHousehold}</p>
             </>
           )}
 
@@ -81,8 +83,8 @@ export function JoinPage() {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">¡Te uniste al hogar!</h2>
-                <p className="text-sm text-gray-500">Redirigiendo...</p>
+                <h2 className="text-xl font-semibold text-gray-800">{t.join.joinedSuccess}</h2>
+                <p className="text-sm text-gray-500">{t.join.redirecting}</p>
               </div>
             </>
           )}
@@ -93,10 +95,10 @@ export function JoinPage() {
                 <AlertCircle className="w-8 h-8 text-amber-600" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">Ya perteneces a un hogar</h2>
-                <p className="text-sm text-gray-500">No puedes unirte a otro hogar.</p>
+                <h2 className="text-xl font-semibold text-gray-800">{t.join.alreadyInHousehold}</h2>
+                <p className="text-sm text-gray-500">{t.join.cannotJoinAnother}</p>
               </div>
-              <Button onClick={() => navigate({ to: '/' })}>Ir al inicio</Button>
+              <Button onClick={() => navigate({ to: '/' })}>{t.join.goHome}</Button>
             </>
           )}
 
@@ -106,11 +108,11 @@ export function JoinPage() {
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">No se pudo unir</h2>
+                <h2 className="text-xl font-semibold text-gray-800">{t.join.couldNotJoin}</h2>
                 <p className="text-sm text-red-600">{errorMsg}</p>
               </div>
               <Button variant="outline" onClick={() => navigate({ to: '/onboarding' })}>
-                Ir al onboarding
+                {t.join.goToOnboarding}
               </Button>
             </>
           )}

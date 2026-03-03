@@ -45,7 +45,7 @@ export async function login(
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error || !data.session) {
-      return { error: { code: 'INVALID_CREDENTIALS', message: 'Correo o contraseña incorrectos.' } };
+      return { error: { code: 'INVALID_CREDENTIALS', message: '' } };
     }
 
     // Connect PowerSync with the fresh session token
@@ -85,7 +85,7 @@ export async function register(
 
     if (error) {
       if (error.message.toLowerCase().includes('already registered')) {
-        return { error: { code: 'USER_EXISTS', message: 'Ya existe una cuenta con ese correo.' } };
+        return { error: { code: 'USER_EXISTS', message: '' } };
       }
       return { error: toAuthError(error) };
     }
@@ -169,14 +169,14 @@ function toAuthError(err: unknown): AuthError {
   if (err instanceof Error) {
     const msg = err.message.toLowerCase();
     if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('password')) {
-      return { code: 'INVALID_CREDENTIALS', message: 'Correo o contraseña incorrectos.' };
+      return { code: 'INVALID_CREDENTIALS', message: '' };
     }
     if (msg.includes('exists') || msg.includes('duplicate') || msg.includes('already')) {
-      return { code: 'USER_EXISTS', message: 'Ya existe una cuenta con ese correo.' };
+      return { code: 'USER_EXISTS', message: '' };
     }
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('offline')) {
-      return { code: 'NETWORK_ERROR', message: 'Sin conexión. Intenta de nuevo.' };
+      return { code: 'NETWORK_ERROR', message: '' };
     }
   }
-  return { code: 'UNKNOWN', message: 'Error inesperado. Intenta de nuevo.' };
+  return { code: 'UNKNOWN', message: '' };
 }

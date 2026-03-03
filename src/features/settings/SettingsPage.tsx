@@ -5,8 +5,9 @@
  *   1. Tarjeta de perfil — avatar grande, email, nombre del usuario
  *   2. Tarjeta de hogar  — nombre del household + ID (solo lectura, con botón de copiar)
  *   3. Apariencia        — tema claro / oscuro / automático
- *   4. Números           — formato abreviado / completo
- *   5. Sesión            — Cerrar sesión
+ *   4. Idioma            — español / english
+ *   5. Números           — formato abreviado / completo
+ *   6. Sesión            — Cerrar sesión
  */
 
 import { useState } from 'react';
@@ -16,9 +17,10 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
-import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2 } from 'lucide-react';
+import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages } from 'lucide-react';
 import { cn } from '@/shared/ui/cn';
 import { useQuery } from '@powersync/react';
+import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -97,6 +99,7 @@ function ProfileCard({ email, userName }: { email: string; userName: string | nu
 // ---------------------------------------------------------------------------
 
 function HouseholdCard({ householdName, joinCode }: { householdName: string; joinCode: string | null }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const inviteLink = joinCode ? `${window.location.origin}/join?code=${joinCode}` : null;
@@ -106,7 +109,7 @@ function HouseholdCard({ householdName, joinCode }: { householdName: string; joi
 
     const shareData = {
       title: 'LittleFlower',
-      text: `Únete a nuestro hogar en LittleFlower. Tu código: ${joinCode}`,
+      text: t.settings.shareText(joinCode),
       url: inviteLink,
     };
 
@@ -135,14 +138,14 @@ function HouseholdCard({ householdName, joinCode }: { householdName: string; joi
       <div className="flex items-center gap-3 px-5 py-4">
         <Home size={18} className="shrink-0 text-[var(--text-muted)]" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-[var(--text-muted)] mb-0.5">Nombre del hogar</p>
+          <p className="text-xs text-[var(--text-muted)] mb-0.5">{t.settings.householdNameLabel}</p>
           <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{householdName}</p>
         </div>
       </div>
 
       {/* Join code + invite button */}
       <div className="px-5 py-3">
-        <p className="text-xs text-[var(--text-muted)] mb-1.5">Código de unión</p>
+        <p className="text-xs text-[var(--text-muted)] mb-1.5">{t.settings.joinCodeLabel}</p>
         <div className="flex items-center gap-2">
           <code className="flex-1 text-center text-lg font-mono font-bold tracking-widest text-[var(--text-secondary)] bg-[var(--bg-surface-2)] px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] select-all">
             {joinCode ?? '------'}
@@ -160,7 +163,7 @@ function HouseholdCard({ householdName, joinCode }: { householdName: string; joi
             )}
           >
             {copied ? <Check size={16} /> : <Share2 size={16} />}
-            {copied ? '¡Enlace copiado!' : 'Invitar a mi pareja'}
+            {copied ? t.settings.linkCopied : t.settings.inviteFamily}
           </button>
         )}
       </div>
@@ -172,14 +175,15 @@ function HouseholdCard({ householdName, joinCode }: { householdName: string; joi
 // Theme selector
 // ---------------------------------------------------------------------------
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: React.ReactNode; desc: string }[] = [
-  { value: 'light', label: 'Claro',      icon: <Sun size={18} />,     desc: 'Siempre modo claro' },
-  { value: 'dark',  label: 'Oscuro',     icon: <Moon size={18} />,    desc: 'Siempre modo oscuro' },
-  { value: 'auto',  label: 'Automático', icon: <SunMoon size={18} />, desc: 'Sigue el sistema' },
-];
-
 function ThemeSelector() {
   const { theme, setTheme } = useAppSettings();
+  const { t } = useI18n();
+
+  const THEME_OPTIONS: { value: Theme; label: string; icon: React.ReactNode; desc: string }[] = [
+    { value: 'light', label: t.settings.themeLight, icon: <Sun size={18} />,     desc: t.settings.themeLightDesc },
+    { value: 'dark',  label: t.settings.themeDark,  icon: <Moon size={18} />,    desc: t.settings.themeDarkDesc },
+    { value: 'auto',  label: t.settings.themeAuto,  icon: <SunMoon size={18} />, desc: t.settings.themeAutoDesc },
+  ];
 
   return (
     <div className="px-4 py-4 space-y-3">
@@ -211,26 +215,63 @@ function ThemeSelector() {
 }
 
 // ---------------------------------------------------------------------------
+// Language selector
+// ---------------------------------------------------------------------------
+
+const LANGUAGE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: 'es', label: 'Español' },
+  { value: 'en', label: 'English' },
+];
+
+function LanguageSelector() {
+  const { locale, setLocale } = useI18n();
+
+  return (
+    <div className="px-4 py-4">
+      <div className="grid grid-cols-2 gap-2">
+        {LANGUAGE_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setLocale(opt.value)}
+            className={cn(
+              'flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 text-xs font-medium transition-all',
+              locale === opt.value
+                ? 'border-[var(--color-primary)] bg-[var(--bg-hover)] text-[var(--text-brand)]'
+                : 'border-[var(--border-medium)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]',
+            )}
+          >
+            <Languages size={18} className={locale === opt.value ? 'text-[var(--text-brand)]' : 'text-[var(--text-muted)]'} />
+            <span>{opt.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Number format selector
 // ---------------------------------------------------------------------------
 
-const NUMBER_FORMATS: { value: NumberFormat; label: string; example: string; desc: string }[] = [
-  {
-    value: 'abbreviated',
-    label: 'Abreviado',
-    example: '$1.2M / $150K',
-    desc: 'Compacto, ideal para el spreadsheet',
-  },
-  {
-    value: 'full',
-    label: 'Completo',
-    example: '$1.200.000',
-    desc: 'Cifra exacta en pesos',
-  },
-];
-
 function NumberFormatSelector() {
   const { numberFormat, setNumberFormat } = useAppSettings();
+  const { t } = useI18n();
+
+  const NUMBER_FORMATS: { value: NumberFormat; label: string; example: string; desc: string }[] = [
+    {
+      value: 'abbreviated',
+      label: t.settings.abbreviated,
+      example: '$1.2M / $150K',
+      desc: t.settings.abbreviatedDesc,
+    },
+    {
+      value: 'full',
+      label: t.settings.full,
+      example: '$1.200.000',
+      desc: t.settings.fullDesc,
+    },
+  ];
 
   return (
     <div className="px-4 py-4 space-y-2">
@@ -280,6 +321,7 @@ function NumberFormatSelector() {
 export function SettingsPage() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const userId = session?.userId ?? '';
   const householdId = session?.householdId ?? '';
@@ -301,7 +343,7 @@ export function SettingsPage() {
   );
 
   const userName = userRows[0]?.name ?? null;
-  const householdName = householdRows[0]?.name ?? 'Mi hogar';
+  const householdName = householdRows[0]?.name ?? t.settings.defaultHousehold;
   const joinCode = householdRows[0]?.join_code ?? null;
 
   async function handleLogout() {
@@ -313,7 +355,7 @@ export function SettingsPage() {
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
         emoji="🌸"
-        title="Perfil"
+        title={t.settings.profileTitle}
         subtitle={session?.email ?? ''}
       />
 
@@ -321,7 +363,7 @@ export function SettingsPage() {
 
         {/* ── Perfil ── */}
         <section>
-          <SectionTitle>Perfil</SectionTitle>
+          <SectionTitle>{t.settings.profileTitle}</SectionTitle>
           <SettingsCard>
             <ProfileCard email={session?.email ?? ''} userName={userName} />
           </SettingsCard>
@@ -330,7 +372,7 @@ export function SettingsPage() {
         {/* ── Hogar ── */}
         {householdId && (
           <section>
-            <SectionTitle>Hogar</SectionTitle>
+            <SectionTitle>{t.settings.householdTitle}</SectionTitle>
             <SettingsCard>
               <HouseholdCard householdName={householdName} joinCode={joinCode} />
             </SettingsCard>
@@ -339,23 +381,35 @@ export function SettingsPage() {
 
         {/* ── Apariencia ── */}
         <section>
-          <SectionTitle>Apariencia</SectionTitle>
+          <SectionTitle>{t.settings.appearanceTitle}</SectionTitle>
           <SettingsCard>
             <div className="px-4 pt-3 pb-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Tema</p>
-              <p className="text-xs text-[var(--text-muted)]">Elige entre modo claro, oscuro o automático según el sistema</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.themeLabel}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t.settings.themeDescription}</p>
             </div>
             <ThemeSelector />
           </SettingsCard>
         </section>
 
-        {/* ── Números ── */}
+        {/* ── Idioma ── */}
         <section>
-          <SectionTitle>Números</SectionTitle>
+          <SectionTitle>{t.settings.languageTitle}</SectionTitle>
           <SettingsCard>
             <div className="px-4 pt-3 pb-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Formato de montos</p>
-              <p className="text-xs text-[var(--text-muted)]">Afecta todos los valores mostrados (no los campos de entrada)</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.languageLabel}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t.settings.languageDescription}</p>
+            </div>
+            <LanguageSelector />
+          </SettingsCard>
+        </section>
+
+        {/* ── Números ── */}
+        <section>
+          <SectionTitle>{t.settings.numbersTitle}</SectionTitle>
+          <SettingsCard>
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.numberFormatLabel}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t.settings.numberFormatDescription}</p>
             </div>
             <NumberFormatSelector />
           </SettingsCard>
@@ -363,7 +417,7 @@ export function SettingsPage() {
 
         {/* ── Sesión ── */}
         <section>
-          <SectionTitle>Sesión</SectionTitle>
+          <SectionTitle>{t.settings.sessionTitle}</SectionTitle>
           <SettingsCard>
             <div className="px-1 py-1">
               <Button
@@ -372,7 +426,7 @@ export function SettingsPage() {
                 onClick={handleLogout}
               >
                 <LogOut size={16} />
-                Cerrar sesión
+                {t.settings.signOut}
               </Button>
             </div>
           </SettingsCard>

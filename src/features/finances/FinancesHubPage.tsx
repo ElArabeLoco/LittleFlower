@@ -7,11 +7,13 @@
  *   - Deudas          → /debts
  */
 
+import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { TrendingUp, LayoutList, CreditCard, ChevronRight } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 interface HubCard {
   emoji: string;
@@ -24,50 +26,51 @@ interface HubCard {
   soon?: boolean;
 }
 
-const CARDS: HubCard[] = [
-  {
-    emoji: '💰',
-    title: 'Ingresos',
-    desc: 'Gestiona las fuentes de ingreso del hogar. Soporta salarios en COP y USD con conversión TRM automática.',
-    to: '/income',
-    icon: <TrendingUp size={22} />,
-    gradient: 'from-emerald-400 to-teal-400',
-    border: 'border-emerald-100 dark:border-emerald-900/30',
-  },
-  {
-    emoji: '📋',
-    title: 'Presupuestos',
-    desc: 'Define y gestiona las categorías de gasto del hogar. Crea, edita y organiza por tipo de pago.',
-    to: '/settings/budgets',
-    icon: <LayoutList size={22} />,
-    gradient: 'from-violet-400 to-purple-400',
-    border: 'border-violet-100 dark:border-violet-900/30',
-  },
-  {
-    emoji: '💳',
-    title: 'Deudas',
-    desc: 'Registra y haz seguimiento de tus deudas. Vincula presupuestos para abonos automáticos.',
-    to: '/debts',
-    icon: <CreditCard size={22} />,
-    gradient: 'from-amber-400 to-orange-400',
-    border: 'border-amber-100 dark:border-amber-900/30',
-  },
-];
-
 export function FinancesHubPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const cards: HubCard[] = useMemo(() => [
+    {
+      emoji: '💰',
+      title: t.finances.incomeTitle,
+      desc: t.finances.incomeDesc,
+      to: '/income',
+      icon: <TrendingUp size={22} />,
+      gradient: 'from-emerald-400 to-teal-400',
+      border: 'border-emerald-100 dark:border-emerald-900/30',
+    },
+    {
+      emoji: '📋',
+      title: t.finances.budgetsTitle,
+      desc: t.finances.budgetsDesc,
+      to: '/settings/budgets',
+      icon: <LayoutList size={22} />,
+      gradient: 'from-violet-400 to-purple-400',
+      border: 'border-violet-100 dark:border-violet-900/30',
+    },
+    {
+      emoji: '💳',
+      title: t.finances.debtsTitle,
+      desc: t.finances.debtsDesc,
+      to: '/debts',
+      icon: <CreditCard size={22} />,
+      gradient: 'from-amber-400 to-orange-400',
+      border: 'border-amber-100 dark:border-amber-900/30',
+    },
+  ], [t]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="💳" title="Finanzas" subtitle="Ingresos · Presupuestos · Deudas" />
+      <AppHeader emoji="💳" title={t.finances.title} subtitle={t.finances.subtitle} />
 
       <main className="flex-1 max-w-lg w-full mx-auto px-4 py-8 space-y-4">
 
         <p className="text-xs text-[var(--text-muted)] px-1 mb-2">
-          Configura y gestiona el lado financiero del hogar: de dónde viene la plata y cómo la organizas.
+          {t.finances.description}
         </p>
 
-        {CARDS.map(card => (
+        {cards.map(card => (
           <button
             key={card.to}
             onClick={() => navigate({ to: card.to })}

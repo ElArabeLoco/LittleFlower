@@ -14,6 +14,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { LayoutDashboard, CalendarDays, Wallet } from 'lucide-react';
 import { cn } from './cn';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // User avatar
@@ -36,7 +37,7 @@ function UserAvatar({ email, size = 20 }: { email: string; size?: number }) {
 // ---------------------------------------------------------------------------
 
 interface NavItem {
-  label: string;
+  labelKey: 'dashboard' | 'budget' | 'finances';
   icon: React.ReactNode;
   to: string;
   /** All paths that should highlight this tab as active */
@@ -45,20 +46,20 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: 'Dashboard',
+    labelKey: 'dashboard',
     icon: <LayoutDashboard size={20} />,
     to: '/dashboard',
     match: ['/dashboard'],
   },
   {
-    label: 'Presupuesto',
+    labelKey: 'budget',
     icon: <CalendarDays size={20} />,
     to: '/budget',
     // Active on the hub AND on the sub-pages it contains
     match: ['/budget', '/month', '/anual'],
   },
   {
-    label: 'Finanzas',
+    labelKey: 'finances',
     icon: <Wallet size={20} />,
     to: '/finances',
     // Active on the hub AND on the sub-pages it contains
@@ -74,6 +75,7 @@ export function AppNav() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const { session } = useAuth();
+  const { t } = useI18n();
 
   const email = session?.email ?? '';
 
@@ -109,7 +111,7 @@ export function AppNav() {
                   >
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  <span>{t.nav[item.labelKey]}</span>
                 </button>
               </li>
             );
@@ -141,7 +143,7 @@ export function AppNav() {
                   <UserAvatar email={email} size={22} />
                 </span>
               </span>
-              <span>Perfil</span>
+              <span>{t.nav.profile}</span>
             </button>
           </li>
         </ul>

@@ -22,12 +22,14 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
 import { Logo } from '@/shared/ui/Logo';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 type Mode = 'choose' | 'create' | 'join';
 
 export function OnboardingPage() {
   const { session, refreshSession } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   // Check for invite code in URL search params
   const search = useSearch({ strict: false }) as { code?: string };
@@ -59,7 +61,7 @@ export function OnboardingPage() {
       // Dar tiempo al usuario para ver el código antes de redirigir
       setTimeout(() => navigate({ to: '/' }), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear el hogar');
+      setError(err instanceof Error ? err.message : t.onboarding.errorCreating);
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +83,7 @@ export function OnboardingPage() {
 
       await navigate({ to: '/' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Código inválido. Intenta de nuevo.');
+      setError(err instanceof Error ? err.message : t.onboarding.invalidCode);
     } finally {
       setIsLoading(false);
     }
@@ -92,10 +94,9 @@ export function OnboardingPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Logo size={48} className="mx-auto mb-2" />
-          <CardTitle className="text-xl">Configura tu hogar</CardTitle>
+          <CardTitle className="text-xl">{t.onboarding.title}</CardTitle>
           <p className="text-sm text-gray-500">
-            Hola{session?.email ? `, ${session.email.split('@')[0]}` : ''}. Antes de continuar,
-            crea un hogar o únete a uno existente.
+            {t.onboarding.greeting}{session?.email ? `, ${session.email.split('@')[0]}` : ''}{t.onboarding.subtitle}
           </p>
         </CardHeader>
 
@@ -103,10 +104,10 @@ export function OnboardingPage() {
           {mode === 'choose' && (
             <div className="space-y-3">
               <Button className="w-full" onClick={() => setMode('create')}>
-                Crear un hogar nuevo
+                {t.onboarding.createNew}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => setMode('join')}>
-                Unirme a un hogar existente
+                {t.onboarding.joinExisting}
               </Button>
             </div>
           )}
@@ -114,10 +115,10 @@ export function OnboardingPage() {
           {mode === 'create' && (
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="household-name">Nombre del hogar</Label>
+                <Label htmlFor="household-name">{t.onboarding.householdName}</Label>
                 <Input
                   id="household-name"
-                  placeholder="Ej: Casa García"
+                  placeholder={t.onboarding.householdPlaceholder}
                   value={householdName}
                   onChange={e => setHouseholdName(e.target.value)}
                   required
@@ -131,19 +132,19 @@ export function OnboardingPage() {
 
               {joinCodeResult && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                  <p className="text-sm text-green-700 mb-1">¡Hogar creado! Código para invitar:</p>
+                  <p className="text-sm text-green-700 mb-1">{t.onboarding.createdSuccess}</p>
                   <p className="text-3xl font-bold tracking-widest text-green-800">{joinCodeResult}</p>
-                  <p className="text-xs text-green-600 mt-1">Compártelo con tu pareja. Redirigiendo...</p>
+                  <p className="text-xs text-green-600 mt-1">{t.onboarding.shareCode}</p>
                 </div>
               )}
 
               {!joinCodeResult && (
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setMode('choose')}>
-                    Atrás
+                    {t.common.back}
                   </Button>
                   <Button type="submit" className="flex-1" disabled={isLoading || !householdName.trim()}>
-                    {isLoading ? 'Creando...' : 'Crear hogar'}
+                    {isLoading ? t.common.creating : t.onboarding.createHousehold}
                   </Button>
                 </div>
               )}
@@ -153,7 +154,7 @@ export function OnboardingPage() {
           {mode === 'join' && (
             <form onSubmit={handleJoin} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="join-code">Código de invitación</Label>
+                <Label htmlFor="join-code">{t.onboarding.inviteCode}</Label>
                 <Input
                   id="join-code"
                   placeholder="000000"
@@ -165,7 +166,7 @@ export function OnboardingPage() {
                   autoFocus
                 />
                 <p className="text-xs text-gray-400 text-center">
-                  Pídele el código de 6 dígitos al administrador del hogar
+                  {t.onboarding.askForCode}
                 </p>
               </div>
 
@@ -175,10 +176,10 @@ export function OnboardingPage() {
 
               <div className="flex gap-2">
                 <Button type="button" variant="outline" className="flex-1" onClick={() => { setMode('choose'); setJoinCode(''); }}>
-                  Atrás
+                  {t.common.back}
                 </Button>
                 <Button type="submit" className="flex-1" disabled={isLoading || joinCode.length !== 6}>
-                  {isLoading ? 'Uniéndome...' : 'Unirme'}
+                  {isLoading ? t.onboarding.joining : t.onboarding.join}
                 </Button>
               </div>
             </form>

@@ -23,6 +23,7 @@ import {
 } from '@/infrastructure/powersync/mutationWrappers';
 import { useQuery } from '@powersync/react';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,20 +55,6 @@ export interface ExpenseFormDialogProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatMonth(m: string): string {
-  const [y, mo] = m.split('-');
-  const names = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return `${names[parseInt(mo) - 1]} ${y}`;
-}
-
-function formatDate(iso: string): string {
-  const [, m, d] = iso.split('T')[0].split('-');
-  const names = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
-    'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  return `${parseInt(d)} ${names[parseInt(m) - 1]}`;
-}
-
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -90,6 +77,7 @@ export function ExpenseFormDialog({
   onClose,
 }: ExpenseFormDialogProps) {
   const { formatCOP } = useNumberFormat();
+  const { t } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
 
   // Form state
@@ -123,6 +111,16 @@ export function ExpenseFormDialog({
     ? Math.min(100, Math.round((totalSpent / budgetMonthAmount) * 100))
     : 0;
   const overBudget = totalSpent > budgetMonthAmount;
+
+  const fmtMonth = (m: string) => {
+    const [y, mo] = m.split('-');
+    return `${t.months.short[mo] ?? mo} ${y}`;
+  };
+
+  const fmtDate = (iso: string) => {
+    const [, m, d] = iso.split('T')[0].split('-');
+    return `${parseInt(d)} ${t.months.shortLower[m] ?? m}`;
+  };
 
   function resetForm() {
     setAmount('');
@@ -170,7 +168,7 @@ export function ExpenseFormDialog({
     setError(null);
     const parsed = parseInt(amount.replace(/\D/g, ''), 10);
     if (isNaN(parsed) || parsed <= 0) {
-      setError('Ingresa un monto válido mayor a 0');
+      setError(t.expenses.validationAmount);
       return;
     }
     const shouldKeepOpen = keepOpenRef.current;
@@ -186,7 +184,7 @@ export function ExpenseFormDialog({
         setTimeout(() => amountInputRef.current?.focus(), 0);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setSaving(false);
     }
@@ -203,7 +201,7 @@ export function ExpenseFormDialog({
       await updateBudgetMonthExecution(bmId, true, userId);
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setQuickPaying(false);
     }
@@ -224,7 +222,7 @@ export function ExpenseFormDialog({
           <DialogTitle className="flex items-center gap-2 text-base">
             <Receipt size={16} className="text-[var(--text-brand)] shrink-0" />
             <span className="truncate">{budgetName}</span>
-            <span className="text-xs font-normal text-[var(--text-muted)] shrink-0">· {formatMonth(month)}</span>
+            <span className="text-xs font-normal text-[var(--text-muted)] shrink-0">· {fmtMonth(month)}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -232,17 +230,17 @@ export function ExpenseFormDialog({
         <div className="px-5 py-3 bg-[var(--group-totals-bg)] border-b border-[var(--border-subtle)] shrink-0">
           <div className="grid grid-cols-3 gap-3 text-center text-xs mb-2">
             <div>
-              <p className="text-[var(--text-muted)] mb-0.5">Presupuesto</p>
+              <p className="text-[var(--text-muted)] mb-0.5">{t.expenses.budgetLabel}</p>
               <p className="font-semibold text-[var(--text-secondary)]">{formatCOP(budgetMonthAmount)}</p>
             </div>
             <div>
-              <p className="text-[var(--text-muted)] mb-0.5">Gastado</p>
+              <p className="text-[var(--text-muted)] mb-0.5">{t.expenses.spentLabel}</p>
               <p className={cn('font-semibold', overBudget ? 'text-red-500 dark:text-red-400' : 'text-violet-600 dark:text-violet-400')}>
                 {formatCOP(totalSpent)}
               </p>
             </div>
             <div>
-              <p className="text-[var(--text-muted)] mb-0.5">Restante</p>
+              <p className="text-[var(--text-muted)] mb-0.5">{t.expenses.remainingLabel}</p>
               <p className={cn('font-semibold', remaining >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400')}>
                 {formatCOP(remaining)}
               </p>
@@ -262,14 +260,14 @@ export function ExpenseFormDialog({
           {/* Left: expense list — scrollable */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
             <p className="px-5 pt-4 pb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide shrink-0">
-              Gastos registrados
+              {t.expenses.recordedExpenses}
             </p>
 
             <div className="overflow-y-auto overflow-x-hidden px-5 pb-4" style={{ maxHeight: '280px' }}>
               {expenses.length === 0 ? (
                 <div className="text-center py-8 text-[var(--text-muted)]">
                   <p className="text-2xl mb-1">🧾</p>
-                  <p className="text-xs">Sin gastos este mes</p>
+                  <p className="text-xs">{t.expenses.noExpensesThisMonth}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[var(--border-subtle)] rounded-lg border border-[var(--border-subtle)] overflow-hidden">
@@ -279,7 +277,7 @@ export function ExpenseFormDialog({
                       className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] group transition-colors min-w-0"
                     >
                       <span className="shrink-0 text-[11px] text-[var(--text-muted)] w-11 text-center bg-[var(--bg-surface-2)] rounded px-1 py-0.5">
-                        {formatDate(exp.timestamp)}
+                        {fmtDate(exp.timestamp)}
                       </span>
                       <span className="font-semibold text-sm text-[var(--text-primary)] tabular-nums shrink-0">
                         {formatCOP(exp.amount)}
@@ -290,7 +288,7 @@ export function ExpenseFormDialog({
                       <button
                         onClick={() => handleDelete(exp.id)}
                         className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
-                        title="Eliminar gasto"
+                        title={t.expenses.deleteExpense}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -330,10 +328,10 @@ export function ExpenseFormDialog({
                 >
                   <div>
                     <p className="text-sm font-semibold text-violet-800 dark:text-violet-300 leading-tight">
-                      {quickPaying ? 'Registrando...' : 'Pago completo'}
+                      {quickPaying ? t.common.registering : t.expenses.quickPayFull}
                     </p>
                     <p className="text-xs text-violet-500 dark:text-violet-400 mt-0.5">
-                      {formatCOP(pendingAmount)} · hoy
+                      {formatCOP(pendingAmount)} · {t.expenses.today}
                     </p>
                   </div>
                   <Zap size={16} className="text-violet-400 shrink-0" />
@@ -344,7 +342,7 @@ export function ExpenseFormDialog({
 
               {/* Amount + date */}
               <div className="space-y-1.5">
-                <Label htmlFor="exp-amount">Monto (COP) *</Label>
+                <Label htmlFor="exp-amount">{t.expenses.amountLabel}</Label>
                 <Input
                   ref={amountInputRef}
                   id="exp-amount"
@@ -357,7 +355,7 @@ export function ExpenseFormDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="exp-date">Fecha</Label>
+                <Label htmlFor="exp-date">{t.expenses.dateLabel}</Label>
                 <Input
                   id="exp-date"
                   type="date"
@@ -367,10 +365,10 @@ export function ExpenseFormDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="exp-note">Nota (opcional)</Label>
+                <Label htmlFor="exp-note">{t.expenses.noteLabel}</Label>
                 <Input
                   id="exp-note"
-                  placeholder="Descripción breve"
+                  placeholder={t.expenses.notePlaceholder}
                   value={note}
                   onChange={e => setNote(e.target.value)}
                 />
@@ -390,15 +388,15 @@ export function ExpenseFormDialog({
                   onClick={() => setOpen(false)}
                 >
                   <X size={13} className="mr-1" />
-                  Cerrar
+                  {t.expenses.closeButton}
                 </Button>
                 <Button type="submit" size="sm" className="flex-1 gap-1 flex-col h-auto py-1.5" disabled={saving}>
                   <span className="flex items-center gap-1">
                     <Plus size={13} />
-                    {saving ? '...' : 'Registrar'}
+                    {saving ? '...' : t.expenses.submitButton}
                   </span>
                   <span className="text-[9px] font-normal opacity-60 leading-none">
-                    Ctrl+↵ sin cerrar
+                    {t.expenses.ctrlEnterHint}
                   </span>
                 </Button>
               </div>

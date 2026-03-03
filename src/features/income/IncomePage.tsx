@@ -29,6 +29,7 @@ import {
   upsertExchangeRate,
 } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
+import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -48,13 +49,6 @@ function nextMonth(m: string): string {
   const [y, mo] = m.split('-').map(Number);
   if (mo === 12) return `${y + 1}-01`;
   return `${y}-${String(mo + 1).padStart(2, '0')}`;
-}
-
-function formatMonth(m: string): string {
-  const [y, mo] = m.split('-');
-  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  return `${months[parseInt(mo) - 1]} ${y}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +123,7 @@ interface IncomeFormDialogProps {
 }
 
 function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone, trigger, defaultOpen = false }: IncomeFormDialogProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
   const [form, setForm] = useState<IncomeFormState>(initial ?? defaultIncomeForm());
   const [isLoading, setIsLoading] = useState(false);
@@ -151,9 +146,9 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!form.name.trim()) { setError('El nombre es obligatorio'); return; }
+    if (!form.name.trim()) { setError(t.income.validationName); return; }
     const amount = parseInt(form.default_amount.replace(/\D/g, ''), 10);
-    if (isNaN(amount) || amount < 0) { setError('Monto inválido'); return; }
+    if (isNaN(amount) || amount < 0) { setError(t.income.validationAmount); return; }
 
     setIsLoading(true);
     try {
@@ -182,7 +177,7 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
       }
       setOpen(false);  // triggers handleOpenChange(false) → onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setIsLoading(false);
     }
@@ -193,33 +188,33 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Nueva fuente de ingreso' : 'Editar ingreso'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? t.income.newIncome : t.income.editIncome}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3 mt-1">
           <div className="space-y-1.5">
-            <Label htmlFor="inc-name">Nombre *</Label>
-            <Input id="inc-name" placeholder="Ej: Salario Jaime" value={form.name}
+            <Label htmlFor="inc-name">{t.income.nameLabel}</Label>
+            <Input id="inc-name" placeholder={t.income.namePlaceholder} value={form.name}
               onChange={e => set('name', e.target.value)} autoFocus required />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Categoría</Label>
+            <Label>{t.income.categoryLabel}</Label>
             <Select value={form.category} onValueChange={v => set('category', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {INCOME_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {INCOME_CATEGORIES.map(c => <SelectItem key={c} value={c}>{t.income.categories[c] ?? c}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="inc-amount">Monto por defecto</Label>
-              <Input id="inc-amount" inputMode="numeric" placeholder="0"
+              <Label htmlFor="inc-amount">{t.income.defaultAmount}</Label>
+              <Input id="inc-amount" inputMode="numeric" enterKeyHint="done" placeholder="0"
                 value={form.default_amount} onChange={e => set('default_amount', e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Moneda</Label>
+              <Label>{t.income.currencyLabel}</Label>
               <Select value={form.currency} onValueChange={v => set('currency', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -231,45 +226,45 @@ function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone
 
           {mode === 'create' && (
             <div className="space-y-1.5">
-              <Label htmlFor="inc-start">Mes de inicio</Label>
+              <Label htmlFor="inc-start">{t.income.startMonth}</Label>
               <Input id="inc-start" type="month" value={form.start_month}
                 onChange={e => set('start_month', e.target.value)} />
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="inc-end">Mes de fin <span className="text-gray-400 font-normal">(opcional)</span></Label>
+            <Label htmlFor="inc-end">{t.income.endMonth} <span className="text-gray-400 font-normal">{t.common.optional}</span></Label>
             <Input id="inc-end" type="month" value={form.end_month}
               min={form.start_month || undefined}
               onChange={e => set('end_month', e.target.value)} />
             {form.end_month && (
               <button type="button" className="text-xs text-gray-400 hover:text-gray-600"
                 onClick={() => set('end_month', '')}>
-                Quitar fecha de fin
+                {t.income.removeEndDate}
               </button>
             )}
           </div>
 
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-gray-500">Tipo:</span>
+            <span className="text-gray-500">{t.income.typeLabel}</span>
             <button type="button"
               onClick={() => set('is_fixed', true)}
               className={cn('px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
                 form.is_fixed ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-200 text-gray-400 hover:border-gray-300'
-              )}>Fijo</button>
+              )}>{t.income.fixed}</button>
             <button type="button"
               onClick={() => set('is_fixed', false)}
               className={cn('px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
                 !form.is_fixed ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-400 hover:border-gray-300'
-              )}>Variable</button>
+              )}>{t.income.variable}</button>
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">{error}</p>}
 
           <div className="flex gap-2 pt-1">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>{t.common.cancel}</Button>
             <Button type="submit" className="flex-1" disabled={isLoading}>
-              {isLoading ? 'Guardando...' : mode === 'create' ? 'Crear' : 'Guardar'}
+              {isLoading ? t.common.saving : mode === 'create' ? t.common.create : t.common.save}
             </Button>
           </div>
         </form>
@@ -290,6 +285,7 @@ interface TrmSectionProps {
 }
 
 function TrmSection({ month, householdId, userId, exchangeRate }: TrmSectionProps) {
+  const { t } = useI18n();
   const { formatNumber } = useNumberFormat();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
@@ -336,10 +332,10 @@ function TrmSection({ month, householdId, userId, exchangeRate }: TrmSectionProp
             ? <TrendingUp size={15} className="text-violet-500" />
             : <AlertTriangle size={15} className="text-amber-500" />
           }
-          <span className="text-sm font-semibold text-gray-700">TRM · USD → COP</span>
+          <span className="text-sm font-semibold text-gray-700">{t.income.trmTitle}</span>
           {hasTrm && exchangeRate.source === 'fallback' && (
             <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-              Estimado
+              {t.income.trmEstimated}
             </span>
           )}
         </div>
@@ -381,14 +377,14 @@ function TrmSection({ month, householdId, userId, exchangeRate }: TrmSectionProp
               </span>
             ) : (
               <span className="text-xs text-amber-700">
-                Sin TRM — los ingresos USD no se convierten
+                {t.income.noTrm}
               </span>
             )}
             <button
               onClick={startEdit}
               className="shrink-0 text-xs font-medium text-pink-600 hover:text-pink-700 hover:underline cursor-pointer"
             >
-              {hasTrm ? 'Editar' : 'Ingresar'}
+              {hasTrm ? t.income.trmEdit : t.income.trmEnter}
             </button>
           </div>
         )}
@@ -424,6 +420,7 @@ interface SalaryBreakdownDialogProps {
 function SalaryBreakdownDialog({
   open, onClose, income, incomeMonth, month, householdId, userId, trm,
 }: SalaryBreakdownDialogProps) {
+  const { t } = useI18n();
   const { formatCOP, formatNumber } = useNumberFormat();
   const [currency, setCurrency] = useState<string>('COP');
   const [baseSalary, setBaseSalary] = useState('');
@@ -433,6 +430,11 @@ function SalaryBreakdownDialog({
   const [error, setError] = useState<string | null>(null);
 
   const isUSD = currency === 'USD';
+
+  const fmtMonth = (m: string) => {
+    const [y, mo] = m.split('-');
+    return `${t.months.full[mo] ?? mo} ${y}`;
+  };
 
   // Re-initialize fields when dialog opens
   function handleOpenChange(v: boolean) {
@@ -465,8 +467,8 @@ function SalaryBreakdownDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (parsedBase <= 0) { setError('El salario base debe ser mayor a 0'); return; }
-    if (isUSD && !trm) { setError('Ingresa la TRM del mes antes de guardar un salario en USD'); return; }
+    if (parsedBase <= 0) { setError(t.income.validationBaseSalary); return; }
+    if (isUSD && !trm) { setError(t.income.validationTrmRequired); return; }
     setSaving(true);
     setError(null);
     try {
@@ -483,7 +485,7 @@ function SalaryBreakdownDialog({
       }, userId);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setSaving(false);
     }
@@ -493,14 +495,14 @@ function SalaryBreakdownDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Desglose salarial — {income.name}</DialogTitle>
-          <p className="text-xs text-gray-400 mt-0.5">{formatMonth(month)}</p>
+          <DialogTitle>{t.income.salaryBreakdown(income.name)}</DialogTitle>
+          <p className="text-xs text-gray-400 mt-0.5">{fmtMonth(month)}</p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-1">
           {/* Selector de moneda */}
           <div className="space-y-1.5">
-            <Label>Moneda</Label>
+            <Label>{t.income.currencyLabel}</Label>
             <div className="flex gap-2">
               {CURRENCIES.map(c => (
                 <button
@@ -521,14 +523,14 @@ function SalaryBreakdownDialog({
             {/* TRM warning when USD selected but no rate available */}
             {isUSD && !trm && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                Sin TRM para {formatMonth(month)} — ingresa la TRM primero
+                {t.income.noTrmForMonth(fmtMonth(month))}
               </p>
             )}
           </div>
 
           {/* Salario Base */}
           <div className="space-y-1.5">
-            <Label htmlFor="sb-base">Salario base</Label>
+            <Label htmlFor="sb-base">{t.income.baseSalary}</Label>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-violet-500 shrink-0 w-8 text-right">
                 {currency}
@@ -546,7 +548,7 @@ function SalaryBreakdownDialog({
 
           {/* Deducciones */}
           <div className="space-y-1.5">
-            <Label htmlFor="sb-ded">Deducciones</Label>
+            <Label htmlFor="sb-ded">{t.income.deductions}</Label>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-red-400 shrink-0 w-8 text-right">
                 −{currency}
@@ -563,7 +565,7 @@ function SalaryBreakdownDialog({
 
           {/* Días extra */}
           <div className="space-y-1.5">
-            <Label htmlFor="sb-extra">Días extra</Label>
+            <Label htmlFor="sb-extra">{t.income.extraDays}</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="sb-extra"
@@ -576,7 +578,7 @@ function SalaryBreakdownDialog({
               <span className="text-xs text-gray-400">
                 {parsedExtra > 0
                   ? `= +${currency} ${fmtNative(extraDaysAmount)}`
-                  : 'días · (base × 12/260)'}
+                  : t.income.extraDaysFormula}
               </span>
             </div>
           </div>
@@ -584,7 +586,7 @@ function SalaryBreakdownDialog({
           {/* Total calculado */}
           <div className="rounded-xl bg-pink-50 border border-pink-200 px-4 py-3 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-pink-700">Total del mes</span>
+              <span className="text-sm font-medium text-pink-700">{t.income.monthTotal}</span>
               <span className="text-lg font-bold text-pink-900 tabular-nums">
                 {isUSD && <span className="text-sm font-medium text-violet-500 mr-1">USD</span>}
                 {fmtNative(total)}
@@ -597,7 +599,7 @@ function SalaryBreakdownDialog({
                   ≈ <span className="font-semibold text-gray-700">{formatCOP(totalCOP)}</span>
                 </p>
               ) : (
-                <p className="text-xs text-right text-amber-500">Sin TRM — conversión no disponible</p>
+                <p className="text-xs text-right text-amber-500">{t.income.noTrmConversion}</p>
               )
             )}
           </div>
@@ -606,10 +608,10 @@ function SalaryBreakdownDialog({
 
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button type="submit" className="flex-1" disabled={saving}>
-              {saving ? 'Guardando...' : 'Guardar'}
+              {saving ? t.common.saving : t.common.save}
             </Button>
           </div>
         </form>
@@ -634,6 +636,7 @@ interface IncomeCardProps {
 }
 
 function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEdit, onDelete }: IncomeCardProps) {
+  const { t } = useI18n();
   const { formatCOP, formatNumber } = useNumberFormat();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
@@ -703,10 +706,10 @@ function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEd
               'text-xs px-1.5 py-0.5 rounded font-medium shrink-0',
               income.is_fixed === 1 ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600',
             )}>
-              {income.is_fixed === 1 ? 'Fijo' : 'Variable'}
+              {income.is_fixed === 1 ? t.income.fixed : t.income.variable}
             </span>
           </div>
-          <p className="text-xs text-gray-400">{income.category} · desde {income.start_month}</p>
+          <p className="text-xs text-gray-400">{t.income.categories[income.category] ?? income.category} · {t.common.from} {income.start_month}</p>
         </div>
 
         {/* Actions (hover) */}
@@ -755,7 +758,7 @@ function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEd
           <div
             className="flex items-end justify-between cursor-pointer"
             onClick={handleAmountClick}
-            title={isSalary ? 'Clic para desglosar el salario de este mes' : 'Clic para editar el monto de este mes'}
+            title={isSalary ? t.income.clickSalaryBreakdown : t.income.clickEditAmount}
           >
             <div>
               {/* Main amount */}
@@ -767,7 +770,7 @@ function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEd
                   {formatNumber(rawAmount)}
                 </span>
                 {isModified && (
-                  <span className="text-[10px] text-violet-400 font-medium">editado</span>
+                  <span className="text-[10px] text-violet-400 font-medium">{t.income.edited}</span>
                 )}
               </div>
 
@@ -787,7 +790,7 @@ function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEd
                     ≈ <span className="font-semibold text-gray-700">{formatCOP(copAmount)}</span>
                   </p>
                 ) : (
-                  <p className="text-xs text-amber-500 mt-0.5">Sin TRM — no se puede convertir</p>
+                  <p className="text-xs text-amber-500 mt-0.5">{t.income.noTrmCannotConvert}</p>
                 )
               )}
             </div>
@@ -808,6 +811,7 @@ function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEd
 // ---------------------------------------------------------------------------
 
 export function IncomePage() {
+  const { t } = useI18n();
   const { formatCOP } = useNumberFormat();
   const { session } = useAuth();
   const [month, setMonth] = useState(getCurrentMonth());
@@ -815,6 +819,11 @@ export function IncomePage() {
 
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
+
+  const fmtMonth = (m: string) => {
+    const [y, mo] = m.split('-');
+    return `${t.months.full[mo] ?? mo} ${y}`;
+  };
 
   // Filter by date range: only show incomes active in the selected month.
   // An income is active when start_month <= month AND (end_month IS NULL OR end_month >= month).
@@ -858,7 +867,7 @@ export function IncomePage() {
   const missingTrm = hasUSDIncome && trm === null;
 
   async function handleDeleteIncome(id: string, name: string) {
-    if (!confirm(`¿Eliminar "${name}"?`)) return;
+    if (!confirm(t.income.confirmDelete(name))) return;
     await deleteIncome(id);
   }
 
@@ -866,8 +875,8 @@ export function IncomePage() {
     <div className="min-h-screen bg-[var(--bg-app)]">
       <AppHeader
         emoji="💰"
-        title="Ingresos"
-        subtitle={formatMonth(month)}
+        title={t.income.title}
+        subtitle={fmtMonth(month)}
         actions={
           <IncomeFormDialog
             mode="create"
@@ -876,7 +885,7 @@ export function IncomePage() {
             onDone={() => {}}
             trigger={
               <Button size="sm" className="gap-1.5">
-                <Plus size={14} /> Nuevo
+                <Plus size={14} /> {t.common.new}
               </Button>
             }
           />
@@ -888,7 +897,7 @@ export function IncomePage() {
         <Button variant="outline" size="icon" onClick={() => setMonth(prevMonth(month))}>
           <ChevronLeft size={16} />
         </Button>
-        <h2 className="text-sm font-semibold text-[var(--text-primary)]">{formatMonth(month)}</h2>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">{fmtMonth(month)}</h2>
         <Button variant="outline" size="icon" onClick={() => setMonth(nextMonth(month))}>
           <ChevronRight size={16} />
         </Button>
@@ -913,9 +922,9 @@ export function IncomePage() {
             missingTrm ? 'bg-amber-500 text-white' : 'bg-pink-600 text-white',
           )}>
             <div>
-              <p className="text-xs font-medium opacity-80">Disponible {formatMonth(month)}</p>
+              <p className="text-xs font-medium opacity-80">{t.income.availableForMonth(fmtMonth(month))}</p>
               {missingTrm && (
-                <p className="text-xs opacity-70 mt-0.5">⚠ Ingresos USD excluidos — falta TRM</p>
+                <p className="text-xs opacity-70 mt-0.5">⚠ {t.income.usdExcludedNoTrm}</p>
               )}
             </div>
             <span className="text-xl font-bold tabular-nums">{formatCOP(totalCOP)}</span>
@@ -926,8 +935,8 @@ export function IncomePage() {
         {incomes.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">💰</p>
-            <p className="text-sm font-medium">Sin fuentes de ingreso</p>
-            <p className="text-xs mt-1">Agrega la primera con el botón "Nuevo"</p>
+            <p className="text-sm font-medium">{t.income.noIncomeSources}</p>
+            <p className="text-xs mt-1">{t.income.addFirstHint}</p>
           </div>
         )}
 
