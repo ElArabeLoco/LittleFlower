@@ -62,7 +62,7 @@ export function DailySpendChart({ categoryId, title, subtitle, barColor, textCol
               if (v === 0) return null;
               return (
                 <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg px-3 py-2 text-xs">
-                  <p className="font-semibold text-[var(--text-primary)] mb-0.5">{t.dashboard.dayLabel(label ?? '')}</p>
+                  <p className="font-semibold text-[var(--text-primary)] mb-0.5">{t.dashboard.dayLabel(String(label ?? ''))}</p>
                   <p style={{ color: textColor }} className="font-semibold">{formatK(v)}</p>
                 </div>
               );

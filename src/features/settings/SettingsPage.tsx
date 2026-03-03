@@ -321,7 +321,7 @@ function NumberFormatSelector() {
 export function SettingsPage() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
 
   const userId = session?.userId ?? '';
   const householdId = session?.householdId ?? '';

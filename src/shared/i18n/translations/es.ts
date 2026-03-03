@@ -530,4 +530,12 @@ export const es = {
   },
 } as const;
 
-export type Translations = typeof es;
+// Recursively widen string literals to `string` so other locales can provide
+// different values while keeping function signatures intact.
+type DeepStringify<T> =
+  T extends (...args: infer A) => infer R ? (...args: A) => R :
+  T extends Record<string, unknown> ? { [K in keyof T]: DeepStringify<T[K]> } :
+  T extends string ? string :
+  T;
+
+export type Translations = DeepStringify<typeof es>;
