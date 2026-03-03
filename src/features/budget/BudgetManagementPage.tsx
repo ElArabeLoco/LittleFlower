@@ -222,7 +222,6 @@ function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts,
             <Input
               id="b-amount"
               inputMode="numeric"
-              enterKeyHint="done"
               placeholder="0"
               value={form.default_amount}
               onChange={e => set('default_amount', e.target.value)}

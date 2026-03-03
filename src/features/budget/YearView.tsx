@@ -184,7 +184,6 @@ function BudgetCell({
           ref={inputRef}
           type="text"
           inputMode="numeric"
-          enterKeyHint="done"
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onBlur={() => save(draft)}
