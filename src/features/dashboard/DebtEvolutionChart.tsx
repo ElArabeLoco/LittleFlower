@@ -26,8 +26,7 @@ export function DebtEvolutionChart() {
       }
       return { month, label: shortMonth(month), saldo: total };
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [last6, dashDebts, dashDebtTxs]);
+  }, [last6, dashDebts, dashDebtTxs, debtInitialCOP]);
 
   if (dashDebts.length === 0) return null;
 
