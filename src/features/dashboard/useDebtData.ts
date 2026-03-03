@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useQuery } from '@powersync/react';
 import type { DebtDashRow, DebtTxDashRow, ExchangeRateRow } from './types';
 
@@ -18,11 +19,12 @@ export function useDebtData() {
 
   const latestTrm = latestTrmRows[0]?.rate ?? null;
 
-  function debtInitialCOP(debt: DebtDashRow): number {
+  // Stable reference — only recreated when latestTrm changes.
+  // This lets child useMemo hooks include it in deps without stale closures.
+  const debtInitialCOP = useCallback((debt: DebtDashRow): number => {
     if (debt.currency === 'COP') return debt.initial_amount;
-    const trm = latestTrm ?? 0;
-    return Math.round(debt.initial_amount * trm);
-  }
+    return Math.round(debt.initial_amount * (latestTrm ?? 0));
+  }, [latestTrm]);
 
   return { dashDebts, dashDebtTxs, latestTrm, debtInitialCOP };
 }

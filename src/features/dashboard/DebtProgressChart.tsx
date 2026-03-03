@@ -23,8 +23,7 @@ export function DebtProgressChart() {
         return { id: debt.id, name: debt.name, balance, initial: totalBase, pctPaid };
       })
       .sort((a, b) => b.balance - a.balance);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashDebts, dashDebtTxs]);
+  }, [dashDebts, dashDebtTxs, debtInitialCOP]);
 
   if (dashDebts.length === 0) return null;
 

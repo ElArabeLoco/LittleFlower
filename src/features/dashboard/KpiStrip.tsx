@@ -29,8 +29,7 @@ export function KpiStrip() {
         const balance   = totalBase - debits;
         return { balance };
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashDebts, dashDebtTxs]);
+  }, [dashDebts, dashDebtTxs, debtInitialCOP]);
 
   const totalDebtBalance = useMemo(
     () => debtProgressData.reduce((s, d) => s + Math.max(d.balance, 0), 0),
