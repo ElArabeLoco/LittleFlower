@@ -215,7 +215,7 @@ export function ExpenseFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl p-0 gap-0">
 
         {/* ── Header ── */}
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-[var(--border-subtle)] shrink-0">
@@ -255,7 +255,7 @@ export function ExpenseFormDialog({
         </div>
 
         {/* ── Two-column body ── */}
-        <div className="flex flex-col sm:flex-row min-h-0 overflow-y-auto">
+        <div className="flex flex-col sm:flex-row min-h-0">
 
           {/* Left: expense list — scrollable */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
