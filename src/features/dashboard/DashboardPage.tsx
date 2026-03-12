@@ -3,6 +3,7 @@ import { useI18n } from '@/shared/i18n/I18nContext';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { getCurrentMonth, makeShortMonth } from './helpers';
+import { getCategoryEmoji } from '@/domain/budget/categories';
 import { KpiStrip } from './KpiStrip';
 import { TrendChart } from './TrendChart';
 import { BalanceChart } from './BalanceChart';
@@ -57,14 +58,14 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <DailySpendChart
             categoryId="restaurants"
-            title={`🛵 ${t.dashboard.restaurantsThisMonth}`}
+            title={`${getCategoryEmoji('restaurants')} ${t.dashboard.restaurantsThisMonth}`}
             subtitle={t.dashboard.restaurantsDailySpend}
             barColor="#fdba74"
             textColor="#fb923c"
           />
           <DailySpendChart
             categoryId="groceries"
-            title={`🛒 ${t.dashboard.groceriesThisMonth}`}
+            title={`${getCategoryEmoji('groceries')} ${t.dashboard.groceriesThisMonth}`}
             subtitle={t.dashboard.groceriesDailySpend}
             barColor="#6ee7b7"
             textColor="#6ee7b7"
@@ -75,21 +76,21 @@ export function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <BudgetBurnUpChart
               budgetName="Domicilios"
-              title={t.dashboard.burnUpDomiciliosTitle}
+              title={`${getCategoryEmoji('restaurants')} ${t.dashboard.burnUpDomiciliosTitle}`}
               subtitle={t.dashboard.burnUpDomiciliosDesc}
               color="#f472b6"
               householdId={session.householdId}
             />
             <BudgetBurnUpChart
               budgetName="Mercado"
-              title={t.dashboard.burnUpMercadoTitle}
+              title={`${getCategoryEmoji('groceries')} ${t.dashboard.burnUpMercadoTitle}`}
               subtitle={t.dashboard.burnUpMercadoDesc}
               color="#34d399"
               householdId={session.householdId}
             />
             <BudgetBurnUpChart
               budgetName="Cosas de Salud"
-              title={t.dashboard.burnUpSaludTitle}
+              title={`${getCategoryEmoji('health')} ${t.dashboard.burnUpSaludTitle}`}
               subtitle={t.dashboard.burnUpSaludDesc}
               color="#60a5fa"
               householdId={session.householdId}
