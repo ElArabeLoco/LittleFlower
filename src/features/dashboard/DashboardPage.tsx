@@ -57,7 +57,7 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <DailySpendChart
             categoryId="restaurants"
-            title={`🍽️ ${t.dashboard.restaurantsThisMonth}`}
+            title={`🛵 ${t.dashboard.restaurantsThisMonth}`}
             subtitle={t.dashboard.restaurantsDailySpend}
             barColor="#fdba74"
             textColor="#fb923c"
