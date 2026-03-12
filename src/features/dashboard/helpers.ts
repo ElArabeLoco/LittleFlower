@@ -1,4 +1,4 @@
-import type { DailyExpenseRow } from './types';
+import type { DailyExpenseRow, BurnUpExpenseRow, BurnUpDataPoint } from './types';
 
 export function getCurrentMonth(): string {
   return new Date().toISOString().slice(0, 7);
@@ -42,4 +42,44 @@ export function fmtDate(iso: string): string {
 
 export function makeShortMonth(t: { months: { short: Record<string, string> } }) {
   return (ym: string): string => t.months.short[ym.slice(5, 7)] ?? ym.slice(5, 7);
+}
+
+export function getPreviousMonth(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 2, 1); // m-2 because months are 0-indexed
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function buildBurnUpData(
+  curRows: BurnUpExpenseRow[],
+  prevRows: BurnUpExpenseRow[],
+  curMonth: string,
+  target: number,
+): BurnUpDataPoint[] {
+  const [y, m] = curMonth.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const today = new Date();
+  const todayDay = today.getFullYear() === y && today.getMonth() + 1 === m
+    ? today.getDate()
+    : daysInMonth;
+
+  const curMap = new Map(curRows.map(r => [parseInt(r.day.slice(8, 10), 10), r.total]));
+  const prevMap = new Map(prevRows.map(r => [parseInt(r.day.slice(8, 10), 10), r.total]));
+
+  let curCumulative = 0;
+  let prevCumulative = 0;
+
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    curCumulative += curMap.get(day) ?? 0;
+    prevCumulative += prevMap.get(day) ?? 0;
+    const ideal = Math.round((day / daysInMonth) * target);
+    return {
+      day,
+      label: String(day),
+      ideal,
+      current: day <= todayDay ? curCumulative : null,
+      previous: prevCumulative > 0 || prevMap.has(day) ? prevCumulative : null,
+    };
+  });
 }
