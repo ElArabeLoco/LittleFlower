@@ -77,6 +77,19 @@ export interface DailyExpenseRow {
   total: number;
 }
 
+export interface BurnUpExpenseRow {
+  day: string; // 'YYYY-MM-DD'
+  total: number;
+}
+
+export interface BurnUpDataPoint {
+  day: number;
+  label: string;
+  ideal: number;
+  current: number | null; // null after today (no data yet)
+  previous: number | null;
+}
+
 export interface ExceededRow {
   budgetId: string;
   name: string;
