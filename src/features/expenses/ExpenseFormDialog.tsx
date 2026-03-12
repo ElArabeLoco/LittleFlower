@@ -178,7 +178,7 @@ export function ExpenseFormDialog({
       await saveExpense(parsed, date, note.trim());
       resetForm();
       if (!shouldKeepOpen) {
-        setOpen(false);
+        handleOpenChange(false);
       } else {
         // Re-focus amount field for the next entry
         setTimeout(() => amountInputRef.current?.focus(), 0);
@@ -199,7 +199,7 @@ export function ExpenseFormDialog({
     try {
       const bmId = await saveExpense(pendingAmount, todayISO(), '');
       await updateBudgetMonthExecution(bmId, true, userId);
-      setOpen(false);
+      handleOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
@@ -215,7 +215,7 @@ export function ExpenseFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden flex flex-col">
 
         {/* ── Header ── */}
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-[var(--border-subtle)] shrink-0">
@@ -255,7 +255,7 @@ export function ExpenseFormDialog({
         </div>
 
         {/* ── Two-column body ── */}
-        <div className="flex flex-col sm:flex-row min-h-0 overflow-hidden">
+        <div className="flex flex-col sm:flex-row min-h-0 overflow-y-auto">
 
           {/* Left: expense list — scrollable */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0 border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]">
@@ -385,7 +385,7 @@ export function ExpenseFormDialog({
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => setOpen(false)}
+                  onClick={() => handleOpenChange(false)}
                 >
                   <X size={13} className="mr-1" />
                   {t.expenses.closeButton}
