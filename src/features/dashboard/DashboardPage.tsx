@@ -64,7 +64,7 @@ export function DashboardPage() {
           />
           <DailySpendChart
             categoryId="groceries"
-            title={`🛍️ ${t.dashboard.groceriesThisMonth}`}
+            title={`🛒 ${t.dashboard.groceriesThisMonth}`}
             subtitle={t.dashboard.groceriesDailySpend}
             barColor="#6ee7b7"
             textColor="#6ee7b7"
