@@ -176,6 +176,8 @@ export const en: Translations = {
     burnUpMercadoDesc: 'Cumulative spend vs ideal pace',
     burnUpSaludTitle: 'Health',
     burnUpSaludDesc: 'Cumulative spend vs ideal pace',
+    burnUpCreditCardTitle: '💳 Credit Card',
+    burnUpCreditCardDesc: 'Total credit card budget spend vs ideal pace',
     noDataYet: 'No data yet',
     addBudgetsAndIncome: 'Add budgets and income to see your stats',
   },
