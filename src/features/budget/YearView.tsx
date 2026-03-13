@@ -15,7 +15,6 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@powersync/react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
@@ -28,6 +27,7 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { useYearViewData, type BudgetRow } from '@/application/useYearViewData';
 
 // ---------------------------------------------------------------------------
 // Constants & helpers
@@ -48,53 +48,7 @@ function getCurrentMonth(): string {
   return new Date().toISOString().slice(0, 7);
 }
 
-// ---------------------------------------------------------------------------
-// Raw row types from SQLite
-// ---------------------------------------------------------------------------
-
-interface BudgetRow {
-  id: string;
-  name: string;
-  category_id: string;
-  paid_with_credit_card: number;
-  default_amount: number;
-  household_id: string;
-  start_month: string;
-  end_month: string | null;
-  debt_id: string | null;
-}
-
-interface BudgetMonthRow {
-  id: string;
-  budget_id: string;
-  month: string;
-  amount: number;
-  is_executed: number;
-}
-
-interface IncomeRow {
-  id: string;
-  default_amount: number;
-  currency: string;
-  start_month: string;
-}
-
-interface IncomeMonthRow {
-  income_id: string;
-  month: string;
-  real_amount: number;
-  currency: string;
-}
-
-interface ExchangeRateRow {
-  month: string;
-  rate: number;
-}
-
-interface ExpenseSumRow {
-  budget_month_id: string;
-  total: number;
-}
+// Types are imported from the application layer (BudgetRow, BudgetMonthRow)
 
 // ---------------------------------------------------------------------------
 // BudgetCell — editable inline
@@ -328,104 +282,18 @@ export function YearView() {
   } | null>(null);
   const expenseModalKeyRef = useRef(0);
 
-  // All active budgets
-  const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month, debt_id
-     FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
-  );
+  // ── Data via application hook ──────────────────────────────────────────────
 
-  // All budget_months for this year
-  const { data: budgetMonths = [] } = useQuery<BudgetMonthRow>(
-    `SELECT id, budget_id, month, amount, is_executed
-     FROM budget_months
-     WHERE month >= ? AND month <= ?`,
-    [`${year}-01`, `${year}-12`],
-  );
-
-  // All active income sources (to get default_amount as fallback)
-  const { data: incomes = [] } = useQuery<IncomeRow>(
-    `SELECT id, default_amount, currency, start_month FROM incomes WHERE deleted_at IS NULL`,
-  );
-
-  // Income months for this year (only rows where real_amount was explicitly set)
-  const { data: incomeMonths = [] } = useQuery<IncomeMonthRow>(
-    `SELECT income_id, month, real_amount, currency FROM income_months WHERE month >= ? AND month <= ?`,
-    [`${year}-01`, `${year}-12`],
-  );
-
-  // Exchange rates for this year
-  const { data: exchangeRates = [] } = useQuery<ExchangeRateRow>(
-    `SELECT month, rate FROM exchange_rates WHERE from_currency = 'USD' AND to_currency = 'COP' AND month >= ? AND month <= ?`,
-    [`${year}-01`, `${year}-12`],
-  );
-
-  // Sum of expenses per budget_month for this year (excluding soft-deleted)
-  const { data: expenseSums = [] } = useQuery<ExpenseSumRow>(
-    `SELECT e.budget_month_id, SUM(e.amount) as total
-     FROM expenses e
-     JOIN budget_months bm ON bm.id = e.budget_month_id
-     WHERE bm.month >= ? AND bm.month <= ?
-       AND e.deleted_at IS NULL
-     GROUP BY e.budget_month_id`,
-    [`${year}-01`, `${year}-12`],
-  );
-
-  // Build lookup maps
-  const bmMap = new Map<string, BudgetMonthRow>(); // key: `${budgetId}|${month}`
-  for (const bm of budgetMonths) bmMap.set(`${bm.budget_id}|${bm.month}`, bm);
-
-  // Expenses lookup: key = budget_month_id → total spent (COP)
-  const expenseMap = new Map<string, number>();
-  for (const es of expenseSums) expenseMap.set(es.budget_month_id, es.total);
-
-  const rateMap = new Map<string, number>(); // key: month
-  for (const r of exchangeRates) rateMap.set(r.month, r.rate);
-
-  // income_months lookup: key = `${incomeId}|${month}`
-  const imMap = new Map<string, IncomeMonthRow>();
-  for (const im of incomeMonths) imMap.set(`${im.income_id}|${im.month}`, im);
-
-  // Available income per month:
-  // For each active income source, use real_amount from income_months if it exists,
-  // otherwise fall back to income.default_amount (the source of truth for fixed incomes).
-  const availableMap = new Map<string, number>();
-  for (const month of months) {
-    const trm = rateMap.get(month);
-    const total = incomes.reduce((sum, inc) => {
-      // Skip income sources that hadn't started yet this month
-      if (inc.start_month > month) return sum;
-      const im = imMap.get(`${inc.id}|${month}`);
-      const amount = im ? im.real_amount : inc.default_amount;
-      const currency = im ? im.currency : inc.currency;
-      if (currency === 'COP') return sum + amount;
-      if (trm) return sum + Math.round(amount * trm);
-      return sum; // USD income with no TRM → exclude from total
-    }, 0);
-    availableMap.set(month, total);
-  }
-
-  // Groups
-  const creditCardBudgets = budgets.filter(b => b.paid_with_credit_card === 1);
-  const cashBudgets = budgets.filter(b => b.paid_with_credit_card === 0);
-
-  // Compute metrics per month for each group.
-  // executed = SUM of real expenses recorded against each budget_month.
-  // Only budgets active in `month` are counted (start_month <= month <= end_month).
-  function groupMetrics(groupBudgets: BudgetRow[], month: string): MonthMetrics {
-    let budgeted = 0, executed = 0;
-    for (const b of groupBudgets) {
-      if (b.start_month > month) continue;
-      if (b.end_month && b.end_month < month) continue;
-      const bm = bmMap.get(`${b.id}|${month}`);
-      budgeted += bm?.amount ?? b.default_amount;
-      if (bm) executed += expenseMap.get(bm.id) ?? 0;
-    }
-    const pending = Math.max(0, budgeted - executed);
-    return { available: availableMap.get(month) ?? 0, budgeted, executed, pending };
-  }
-
-  const ccMetricsMap = new Map(months.map(m => [m, groupMetrics(creditCardBudgets, m)]));
-  const cashMetricsMap = new Map(months.map(m => [m, groupMetrics(cashBudgets, m)]));
+  const {
+    budgets,
+    creditCardBudgets,
+    cashBudgets,
+    bmMap,
+    expenseMap,
+    availableMap,
+    ccMetricsMap,
+    cashMetricsMap,
+  } = useYearViewData(year, months);
 
   // Navigation: track which cell has focus for Tab/Enter
   const allBudgets = [...creditCardBudgets, ...cashBudgets];

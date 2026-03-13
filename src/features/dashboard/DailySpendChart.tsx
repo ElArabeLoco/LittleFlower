@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { useQuery } from '@powersync/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { ChartCard } from './shared';
 import { formatK, buildDailyChartData, getCurrentMonth } from './helpers';
-import type { DailyExpenseRow } from './types';
+import { useDailyExpensesByCategory } from '@/infrastructure/powersync/queries/useExpenseQueries';
 
 interface DailySpendChartProps {
   categoryId: string;
@@ -18,19 +17,7 @@ export function DailySpendChart({ categoryId, title, subtitle, barColor, textCol
   const { t } = useI18n();
   const currentMonth = getCurrentMonth();
 
-  const { data: dailyRaw = [] } = useQuery<DailyExpenseRow>(
-    `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
-     FROM expenses e
-     JOIN budget_months bm ON bm.id = e.budget_month_id
-     JOIN budgets b ON b.id = bm.budget_id
-     WHERE bm.month = ?
-       AND b.category_id = ?
-       AND e.deleted_at IS NULL
-       AND e.amount > 0
-     GROUP BY substr(e.timestamp, 1, 10)
-     ORDER BY day ASC`,
-    [currentMonth, categoryId],
-  );
+  const { data: dailyRaw = [] } = useDailyExpensesByCategory(currentMonth, categoryId);
 
   const dailyData = useMemo(
     () => buildDailyChartData(dailyRaw, currentMonth),

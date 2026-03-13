@@ -5,13 +5,13 @@ import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { ChartCard } from './shared';
 import { makeShortMonth } from './helpers';
-import { useBudgetBaseData } from './useBudgetBaseData';
+import { useMonthlyData } from './useMonthlyData';
 import type { ExceededRow } from './types';
 
 export function ExceededBudgetsChart() {
   const { t } = useI18n();
   const shortMonth = makeShortMonth(t);
-  const { budgets, bmIdMap, expenseByBmId, budgetAmountMap, last6 } = useBudgetBaseData();
+  const { budgets, bmIdMap, expenseByBmId, budgetAmountMap, last6 } = useMonthlyData();
 
   const exceededBudgets = useMemo((): ExceededRow[] => {
     const rows: ExceededRow[] = [];

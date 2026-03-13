@@ -1,4 +1,3 @@
-import { useQuery } from '@powersync/react';
 import { Plus, CreditCard, Banknote } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
@@ -6,9 +5,10 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { deleteBudget } from '@/infrastructure/powersync/mutationWrappers';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { useBudgetsQuery } from '@/infrastructure/powersync/queries/useBudgetQueries';
+import { useDebtOptionsQuery } from '@/infrastructure/powersync/queries/useDebtQueries';
 import { BudgetFormDialog } from './BudgetFormDialog';
 import { BudgetList } from './BudgetList';
-import type { BudgetRow, DebtOption } from './types';
 
 export function BudgetManagementPage() {
   const { t } = useI18n();
@@ -16,14 +16,8 @@ export function BudgetManagementPage() {
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
 
-  const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, description, category_id, start_month, end_month, default_amount, paid_with_credit_card, household_id, debt_id
-     FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
-  );
-
-  const { data: debtOptions = [] } = useQuery<DebtOption>(
-    `SELECT id, name FROM debts WHERE deleted_at IS NULL ORDER BY name ASC`,
-  );
+  const { data: budgets = [] } = useBudgetsQuery();
+  const { data: debtOptions = [] } = useDebtOptionsQuery();
 
   const creditCard = budgets.filter(b => b.paid_with_credit_card === 1);
   const cash = budgets.filter(b => b.paid_with_credit_card === 0);

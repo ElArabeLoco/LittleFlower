@@ -9,7 +9,6 @@
  */
 
 import { useState, useRef } from 'react';
-import { useQuery } from '@powersync/react';
 import {
   ChevronLeft, ChevronRight, CreditCard, Banknote,
   TrendingUp, AlertTriangle, Wallet,
@@ -25,6 +24,13 @@ import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import {
+  useMonthViewData,
+  type BudgetRow,
+  type BudgetMonthRow,
+  type IncomeRow,
+  type IncomeMonthRow,
+} from '@/application/useMonthViewData';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,54 +52,7 @@ function nextMonth(m: string): string {
   return `${y}-${String(mo + 1).padStart(2, '0')}`;
 }
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface BudgetRow {
-  id: string;
-  name: string;
-  category_id: string;
-  paid_with_credit_card: number;
-  default_amount: number;
-  household_id: string;
-  start_month: string;
-  end_month: string | null;
-  debt_id: string | null;
-}
-
-interface BudgetMonthRow {
-  id: string;
-  budget_id: string;
-  month: string;
-  amount: number;
-  is_executed: number;
-}
-
-interface ExpenseSumRow {
-  budget_month_id: string;
-  total: number;
-}
-
-interface IncomeRow {
-  id: string;
-  default_amount: number;
-  currency: string;
-  start_month: string;
-  end_month: string | null;
-  name: string;
-  is_fixed: number;
-}
-
-interface IncomeMonthRow {
-  income_id: string;
-  real_amount: number;
-  currency: string;
-}
-
-interface ExchangeRateRow {
-  rate: number;
-}
+// Types are imported from the application layer (BudgetRow, BudgetMonthRow)
 
 // ---------------------------------------------------------------------------
 // MiniProgressBar
@@ -560,111 +519,25 @@ export function MonthViewPage() {
     return `${t.months.full[mo] ?? mo} ${y}`;
   };
 
-  // ── Queries ────────────────────────────────────────────────────────────────
+  // ── Data via application hook ──────────────────────────────────────────────
 
-  const { data: budgets = [] } = useQuery<BudgetRow>(
-    `SELECT id, name, category_id, paid_with_credit_card, default_amount, household_id, start_month, end_month, debt_id
-     FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
-  );
+  const {
+    creditCardBudgets,
+    cashBudgets,
+    bmMap,
+    expenseMap,
+    activeIncomes,
+    imMap,
+    trm,
+    totalAvailable,
+    hasMissingTrm,
+    ccTotals,
+    cashTotals,
+  } = useMonthViewData(month);
 
-  const { data: budgetMonths = [] } = useQuery<BudgetMonthRow>(
-    `SELECT id, budget_id, month, amount, is_executed
-     FROM budget_months WHERE month = ?`,
-    [month],
-  );
-
-  const { data: expenseSums = [] } = useQuery<ExpenseSumRow>(
-    `SELECT e.budget_month_id, SUM(e.amount) as total
-     FROM expenses e
-     JOIN budget_months bm ON bm.id = e.budget_month_id
-     WHERE bm.month = ? AND e.deleted_at IS NULL
-     GROUP BY e.budget_month_id`,
-    [month],
-  );
-
-  const { data: incomes = [] } = useQuery<IncomeRow>(
-    `SELECT id, default_amount, currency, start_month, end_month, name, is_fixed
-     FROM incomes WHERE deleted_at IS NULL`,
-  );
-
-  const { data: incomeMonths = [] } = useQuery<IncomeMonthRow>(
-    `SELECT income_id, real_amount, currency
-     FROM income_months WHERE month = ?`,
-    [month],
-  );
-
-  const { data: exchangeRates = [] } = useQuery<ExchangeRateRow>(
-    `SELECT rate FROM exchange_rates
-     WHERE from_currency = 'USD' AND to_currency = 'COP' AND month = ?`,
-    [month],
-  );
-
-  // ── Build lookup maps ──────────────────────────────────────────────────────
-
-  const bmMap = new Map<string, BudgetMonthRow>();
-  for (const bm of budgetMonths) bmMap.set(`${bm.budget_id}|${bm.month}`, bm);
-
-  const expenseMap = new Map<string, number>();
-  for (const es of expenseSums) expenseMap.set(es.budget_month_id, es.total);
-
-  const imMap = new Map<string, IncomeMonthRow>();
-  for (const im of incomeMonths) imMap.set(im.income_id, im);
-
-  const trm = exchangeRates[0]?.rate ?? null;
-
-  // ── Compute available income ───────────────────────────────────────────────
-
-  let totalAvailable = 0;
-  let hasMissingTrm = false;
-
-  for (const inc of incomes) {
-    if (inc.start_month > month) continue;
-    if (inc.end_month != null && inc.end_month < month) continue;
-    const im = imMap.get(inc.id);
-    const amount = im ? im.real_amount : inc.default_amount;
-    const currency = im ? im.currency : inc.currency;
-    if (currency === 'COP') {
-      totalAvailable += amount;
-    } else if (trm) {
-      totalAvailable += Math.round(amount * trm);
-    } else {
-      hasMissingTrm = true;
-    }
-  }
-
-  // ── Filter budgets active in this month ───────────────────────────────────
-
-  const activeForMonth = budgets.filter(b =>
-    b.start_month <= month &&
-    (b.end_month == null || b.end_month >= month),
-  );
-
-  const creditCardBudgets = activeForMonth.filter(b => b.paid_with_credit_card === 1);
-  const cashBudgets = activeForMonth.filter(b => b.paid_with_credit_card === 0);
-
-  // ── Group totals ───────────────────────────────────────────────────────────
-
-  function groupTotals(group: BudgetRow[]) {
-    let budgeted = 0, spent = 0;
-    for (const b of group) {
-      const bm = bmMap.get(`${b.id}|${month}`);
-      budgeted += bm?.amount ?? b.default_amount;
-      spent += bm ? (expenseMap.get(bm.id) ?? 0) : 0;
-    }
-    return { budgeted, spent };
-  }
-
-  const ccTotals = groupTotals(creditCardBudgets);
-  const cashTotals = groupTotals(cashBudgets);
   // Balance real uses cash-only figures: CC budgets are not real cash outflows.
   const totalBudgeted = cashTotals.budgeted;
   const totalSpent = cashTotals.spent;
-
-  // ── Active income sources ─────────────────────────────────────────────────
-
-  const activeIncomes = incomes.filter(inc =>
-    inc.start_month <= month && (inc.end_month == null || inc.end_month >= month),
-  );
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -714,7 +587,7 @@ export function MonthViewPage() {
           />
 
           {/* Empty state */}
-          {activeForMonth.length === 0 && (
+          {creditCardBudgets.length === 0 && cashBudgets.length === 0 && (
             <div className="text-center py-16 text-[var(--text-muted)]">
               <p className="text-4xl mb-3">📋</p>
               <p className="text-sm font-medium text-[var(--text-secondary)]">{t.monthView.noBudgets}</p>
