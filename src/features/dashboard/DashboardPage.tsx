@@ -16,6 +16,7 @@ import { DebtProgressChart } from './DebtProgressChart';
 import { DebtEvolutionChart } from './DebtEvolutionChart';
 import { DailySpendChart } from './DailySpendChart';
 import { BudgetBurnUpChart } from './BudgetBurnUpChart';
+import { CreditCardBurnUpChart } from './CreditCardBurnUpChart';
 import { EmptyState } from './EmptyState';
 
 export function DashboardPage() {
@@ -73,29 +74,32 @@ export function DashboardPage() {
         </div>
 
         {session?.householdId && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <BudgetBurnUpChart
-              budgetName="Domicilios"
-              title={`${getCategoryEmoji('restaurants')} ${t.dashboard.burnUpDomiciliosTitle}`}
-              subtitle={t.dashboard.burnUpDomiciliosDesc}
-              color="#f472b6"
-              householdId={session.householdId}
-            />
-            <BudgetBurnUpChart
-              budgetName="Mercado"
-              title={`${getCategoryEmoji('groceries')} ${t.dashboard.burnUpMercadoTitle}`}
-              subtitle={t.dashboard.burnUpMercadoDesc}
-              color="#34d399"
-              householdId={session.householdId}
-            />
-            <BudgetBurnUpChart
-              budgetName="Cosas de Salud"
-              title={`${getCategoryEmoji('health')} ${t.dashboard.burnUpSaludTitle}`}
-              subtitle={t.dashboard.burnUpSaludDesc}
-              color="#60a5fa"
-              householdId={session.householdId}
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <BudgetBurnUpChart
+                budgetName="Domicilios"
+                title={`${getCategoryEmoji('restaurants')} ${t.dashboard.burnUpDomiciliosTitle}`}
+                subtitle={t.dashboard.burnUpDomiciliosDesc}
+                color="#f472b6"
+                householdId={session.householdId}
+              />
+              <BudgetBurnUpChart
+                budgetName="Mercado"
+                title={`${getCategoryEmoji('groceries')} ${t.dashboard.burnUpMercadoTitle}`}
+                subtitle={t.dashboard.burnUpMercadoDesc}
+                color="#34d399"
+                householdId={session.householdId}
+              />
+              <BudgetBurnUpChart
+                budgetName="Cosas de Salud"
+                title={`${getCategoryEmoji('health')} ${t.dashboard.burnUpSaludTitle}`}
+                subtitle={t.dashboard.burnUpSaludDesc}
+                color="#60a5fa"
+                householdId={session.householdId}
+              />
+            </div>
+            <CreditCardBurnUpChart householdId={session.householdId} />
+          </>
         )}
 
         <EmptyState />
