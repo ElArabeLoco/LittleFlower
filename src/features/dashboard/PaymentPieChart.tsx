@@ -4,11 +4,11 @@ import { CreditCard, Banknote } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { ChartCard, PieTooltip, PieLabel } from './shared';
-import { useBudgetBaseData } from './useBudgetBaseData';
+import { useMonthlyData } from './useMonthlyData';
 
 export function PaymentPieChart() {
   const { t } = useI18n();
-  const { budgets, bmIdMap, expenseByBmId, currentMonth } = useBudgetBaseData();
+  const { budgets, bmIdMap, expenseByBmId, currentMonth } = useMonthlyData();
 
   const paymentPieData = useMemo(() => {
     let cc = 0, cash = 0;

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useQuery } from '@powersync/react';
 import {
   ComposedChart,
   Area,
@@ -14,11 +13,8 @@ import {
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { ChartCard } from './shared';
 import { formatK, getCurrentMonth, getPreviousMonth, buildBurnUpData } from './helpers';
-import type { BurnUpExpenseRow } from './types';
-
-interface TargetRow {
-  total: number;
-}
+import { useDailyExpensesByCreditCard } from '@/infrastructure/powersync/queries/useExpenseQueries';
+import { useCreditCardBudgetTarget } from '@/infrastructure/powersync/queries/useBudgetQueries';
 
 interface CreditCardBurnUpChartProps {
   householdId: string;
@@ -32,37 +28,9 @@ export function CreditCardBurnUpChart({ householdId }: CreditCardBurnUpChartProp
   const currentMonth = getCurrentMonth();
   const prevMonth = getPreviousMonth(currentMonth);
 
-  const { data: targetRows = [] } = useQuery<TargetRow>(
-    `SELECT SUM(COALESCE(bm.amount, b.default_amount)) as total
-     FROM budgets b
-     LEFT JOIN budget_months bm ON bm.budget_id = b.id AND bm.month = ?
-     WHERE b.paid_with_credit_card = 1 AND b.household_id = ?`,
-    [currentMonth, householdId],
-  );
-
-  const { data: curRaw = [] } = useQuery<BurnUpExpenseRow>(
-    `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
-     FROM expenses e
-     JOIN budget_months bm ON bm.id = e.budget_month_id
-     JOIN budgets b ON b.id = bm.budget_id
-     WHERE bm.month = ? AND b.paid_with_credit_card = 1 AND b.household_id = ?
-       AND e.deleted_at IS NULL AND e.amount > 0
-     GROUP BY substr(e.timestamp, 1, 10)
-     ORDER BY day ASC`,
-    [currentMonth, householdId],
-  );
-
-  const { data: prevRaw = [] } = useQuery<BurnUpExpenseRow>(
-    `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
-     FROM expenses e
-     JOIN budget_months bm ON bm.id = e.budget_month_id
-     JOIN budgets b ON b.id = bm.budget_id
-     WHERE bm.month = ? AND b.paid_with_credit_card = 1 AND b.household_id = ?
-       AND e.deleted_at IS NULL AND e.amount > 0
-     GROUP BY substr(e.timestamp, 1, 10)
-     ORDER BY day ASC`,
-    [prevMonth, householdId],
-  );
+  const { data: targetRows = [] } = useCreditCardBudgetTarget(currentMonth, householdId);
+  const { data: curRaw = [] } = useDailyExpensesByCreditCard(currentMonth, householdId);
+  const { data: prevRaw = [] } = useDailyExpensesByCreditCard(prevMonth, householdId);
 
   const target = targetRows[0]?.total ?? 0;
 

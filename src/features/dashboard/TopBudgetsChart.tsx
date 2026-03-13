@@ -4,11 +4,11 @@ import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { cn } from '@/shared/ui/cn';
 import { ChartCard } from './shared';
-import { useBudgetBaseData } from './useBudgetBaseData';
+import { useMonthlyData } from './useMonthlyData';
 
 export function TopBudgetsChart() {
   const { t } = useI18n();
-  const { budgets, bmIdMap, budgetAmountMap, expenseByBmId, currentMonth } = useBudgetBaseData();
+  const { budgets, bmIdMap, budgetAmountMap, expenseByBmId, currentMonth } = useMonthlyData();
 
   const topBudgets = useMemo(() => {
     return budgets

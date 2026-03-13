@@ -1,22 +1,14 @@
-import { useQuery } from '@powersync/react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { ChartCard } from './shared';
 import { fmtDate } from './helpers';
-import type { RecentExpenseRow } from './types';
+import { useRecentExpenses } from '@/infrastructure/powersync/queries/useExpenseQueries';
 
 export function RecentExpensesFeed() {
   const { t } = useI18n();
 
-  const { data: recentExpenses = [] } = useQuery<RecentExpenseRow>(
-    `SELECT e.id, e.amount, e.note, e.timestamp, b.name as budget_name, b.category_id
-     FROM expenses e
-     JOIN budgets b ON b.id = e.budget_id
-     WHERE e.deleted_at IS NULL AND e.amount > 0
-     ORDER BY e.timestamp DESC, e.created_at DESC
-     LIMIT 10`,
-  );
+  const { data: recentExpenses = [] } = useRecentExpenses();
 
   if (recentExpenses.length === 0) return null;
 

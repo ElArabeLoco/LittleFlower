@@ -19,24 +19,8 @@ import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
 import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages } from 'lucide-react';
 import { cn } from '@/shared/ui/cn';
-import { useQuery } from '@powersync/react';
+import { useHouseholdQuery, useUserQuery } from '@/infrastructure/powersync/queries/useHouseholdQueries';
 import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface HouseholdRow {
-  id: string;
-  name: string;
-  join_code: string | null;
-}
-
-interface UserRow {
-  id: string;
-  name: string;
-  color: string | null;
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -326,21 +310,8 @@ export function SettingsPage() {
   const userId = session?.userId ?? '';
   const householdId = session?.householdId ?? '';
 
-  // Query user name from PowerSync
-  const { data: userRows = [] } = useQuery<UserRow>(
-    userId
-      ? `SELECT id, name, color FROM users WHERE id = ? LIMIT 1`
-      : `SELECT id, name, color FROM users WHERE 1=0`,
-    userId ? [userId] : [],
-  );
-
-  // Query household name + join_code from PowerSync
-  const { data: householdRows = [] } = useQuery<HouseholdRow>(
-    householdId
-      ? `SELECT id, name, join_code FROM households WHERE id = ? LIMIT 1`
-      : `SELECT id, name, join_code FROM households WHERE 1=0`,
-    householdId ? [householdId] : [],
-  );
+  const { data: userRows = [] } = useUserQuery(userId);
+  const { data: householdRows = [] } = useHouseholdQuery(householdId);
 
   const userName = userRows[0]?.name ?? null;
   const householdName = householdRows[0]?.name ?? t.settings.defaultHousehold;

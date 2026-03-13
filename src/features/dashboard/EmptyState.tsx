@@ -1,11 +1,9 @@
-import { useQuery } from '@powersync/react';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { useHasBudgets } from '@/infrastructure/powersync/queries/useBudgetQueries';
 
 export function EmptyState() {
   const { t } = useI18n();
-  const { data: budgets = [] } = useQuery<{ id: string }>(
-    `SELECT id FROM budgets WHERE deleted_at IS NULL LIMIT 1`,
-  );
+  const { data: budgets = [] } = useHasBudgets();
 
   if (budgets.length > 0) return null;
 

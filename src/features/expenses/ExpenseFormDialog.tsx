@@ -21,20 +21,13 @@ import {
   softDeleteExpense,
   updateBudgetMonthExecution,
 } from '@/infrastructure/powersync/mutationWrappers';
-import { useQuery } from '@powersync/react';
+import { useExpensesForBudgetMonth } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface ExpenseRow {
-  id: string;
-  amount: number;
-  note: string | null;
-  timestamp: string;
-}
 
 export interface ExpenseFormDialogProps {
   budgetId: string;
@@ -95,15 +88,7 @@ export function ExpenseFormDialog({
   const [resolvedBmId, setResolvedBmId] = useState<string | null>(initialBudgetMonthId);
 
   // Reactive expense list for this budget_month
-  const { data: expenses = [] } = useQuery<ExpenseRow>(
-    resolvedBmId
-      ? `SELECT id, amount, note, timestamp
-         FROM expenses
-         WHERE budget_month_id = ? AND deleted_at IS NULL
-         ORDER BY timestamp DESC, created_at DESC`
-      : `SELECT id, amount, note, timestamp FROM expenses WHERE 1=0`,
-    resolvedBmId ? [resolvedBmId] : [],
-  );
+  const { data: expenses = [] } = useExpensesForBudgetMonth(resolvedBmId);
 
   const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
   const remaining = budgetMonthAmount - totalSpent;

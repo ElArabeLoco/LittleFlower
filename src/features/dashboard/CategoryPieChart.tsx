@@ -3,11 +3,11 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { ChartCard, PieTooltip, PieLabel } from './shared';
-import { useBudgetBaseData } from './useBudgetBaseData';
+import { useMonthlyData } from './useMonthlyData';
 
 export function CategoryPieChart() {
   const { t } = useI18n();
-  const { budgets, bmIdMap, expenseByBmId, currentMonth } = useBudgetBaseData();
+  const { budgets, bmIdMap, expenseByBmId, currentMonth } = useMonthlyData();
 
   const categoryPieData = useMemo(() => {
     const catSpend = new Map<string, number>();
