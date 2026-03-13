@@ -47,15 +47,6 @@ export function DashboardPage() {
           <PaymentPieChart />
         </div>
 
-        <TopBudgetsChart />
-        <ExceededBudgetsChart />
-        <RecentExpensesFeed />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-          <DebtProgressChart />
-          <DebtEvolutionChart />
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <DailySpendChart
             categoryId="restaurants"
@@ -101,6 +92,15 @@ export function DashboardPage() {
             <CreditCardBurnUpChart householdId={session.householdId} />
           </>
         )}
+
+        <TopBudgetsChart />
+        <ExceededBudgetsChart />
+        <RecentExpensesFeed />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+          <DebtProgressChart />
+          <DebtEvolutionChart />
+        </div>
 
         <EmptyState />
       </main>
