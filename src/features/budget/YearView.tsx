@@ -350,7 +350,7 @@ export function YearView() {
           <tr key={budget.id} className="border-b border-[var(--border-subtle)] hover:bg-[var(--bg-hover)] transition-colors group">
             {/* Budget name — sticky first column */}
             <td
-              className="sticky left-0 z-10 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-hover)] px-3 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-[var(--border-subtle)] max-w-[160px] truncate"
+              className="sticky left-0 z-10 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-hover-solid)] px-3 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-[var(--border-subtle)] max-w-[160px] truncate"
               title={budget.name}
             >
               <span className="mr-1.5">{getCategoryEmoji(budget.category_id)}</span>{budget.name}
@@ -403,7 +403,7 @@ export function YearView() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
+    <div className="h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
         emoji="📅"
         title={t.yearView.title}
@@ -424,21 +424,21 @@ export function YearView() {
 
       {/* Spreadsheet */}
       <div className="flex-1 overflow-auto">
-        <table className="border-collapse text-sm bg-[var(--bg-surface)] min-w-max w-full">
+        <table className="border-separate border-spacing-0 text-sm bg-[var(--bg-surface)] min-w-max w-full">
           {/* Header row */}
-          <thead className="sticky top-0 z-10 bg-[var(--bg-surface)] shadow-sm">
+          <thead className="bg-[var(--bg-surface)] shadow-sm">
             <tr className="border-b-2 border-[var(--border-medium)]">
-              <th className="sticky left-0 z-20 bg-[var(--bg-surface)] px-3 py-2 text-left text-xs font-semibold text-[var(--text-secondary)] w-40 border-r border-[var(--border-subtle)]">
+              <th className="sticky top-0 left-0 z-30 bg-[var(--bg-surface)] px-3 py-2 text-left text-xs font-semibold text-[var(--text-secondary)] w-40 border-r border-[var(--border-subtle)]">
                 {t.yearView.itemHeader}
               </th>
               {months.map((month, i) => (
                 <th
                   key={month}
                   className={cn(
-                    'px-2 py-2 text-center text-xs font-semibold w-20 border-r border-[var(--border-subtle)]',
+                    'sticky top-0 z-10 px-2 py-2 text-center text-xs font-semibold w-20 border-r border-[var(--border-subtle)]',
                     month === currentMonth
                       ? 'text-[var(--text-brand)] bg-[var(--group-available-bg)]'
-                      : 'text-[var(--text-secondary)]',
+                      : 'text-[var(--text-secondary)] bg-[var(--bg-surface)]',
                   )}
                 >
                   {t.months.short[String(i + 1).padStart(2, '0')]}
@@ -455,12 +455,10 @@ export function YearView() {
             {creditCardBudgets.length > 0 && (
               <>
                 <tr className="bg-[var(--group-cc-bg)] border-t border-[var(--group-cc-border)]">
-                  <td
-                    colSpan={13}
-                    className="sticky left-0 px-3 py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide"
-                  >
+                  <td className="sticky left-0 z-10 bg-[var(--group-cc-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide">
                     💳 {t.yearView.creditCardGroup}
                   </td>
+                  <td colSpan={12} className="bg-[var(--group-cc-bg)]" />
                 </tr>
                 <BudgetTableSection
                   budgets={creditCardBudgets}
@@ -474,12 +472,10 @@ export function YearView() {
             {cashBudgets.length > 0 && (
               <>
                 <tr className="bg-[var(--group-cash-bg)] border-t border-[var(--group-cash-border)]">
-                  <td
-                    colSpan={13}
-                    className="sticky left-0 px-3 py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide"
-                  >
+                  <td className="sticky left-0 z-10 bg-[var(--group-cash-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide">
                     💵 {t.yearView.cashGroup}
                   </td>
+                  <td colSpan={12} className="bg-[var(--group-cash-bg)]" />
                 </tr>
                 <BudgetTableSection
                   budgets={cashBudgets}

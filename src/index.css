@@ -15,6 +15,7 @@
   --bg-surface: #ffffff;              /* card / header surface */
   --bg-surface-2: #fdf4ff;            /* subtle secondary surface */
   --bg-hover: rgba(249,168,212,0.15); /* pink-300/15 */
+  --bg-hover-solid: #FEF2F9;          /* solid equivalent of --bg-hover over white */
 
   /* Text */
   --text-primary: #1e1b4b;            /* indigo-950 */
@@ -42,12 +43,12 @@
   --group-cash-text: #15803d;         /* green-700 */
   --group-cash-border: #dcfce7;       /* green-100 */
   --group-totals-bg: rgba(253,242,248,0.5);  /* pink-50/50 */
-  --group-totals-sticky: rgba(253,242,248,0.85);
+  --group-totals-sticky: #FDF2F8;     /* pink-50, opaque */
   --group-available-bg: #fdf2f8;      /* pink-50 */
-  --group-available-sticky: rgba(252,231,243,0.9);  /* pink-100/90 */
+  --group-available-sticky: #FCE7F3;  /* pink-100, opaque */
   --group-available-text: #9d174d;    /* pink-800 */
   --group-total-bg: #f9fafb;          /* gray-50 */
-  --group-total-sticky: rgba(243,244,246,0.9); /* gray-100/90 */
+  --group-total-sticky: #F3F4F6;      /* gray-100, opaque */
   --group-total-text: #4b5563;        /* gray-600 */
   --group-balance-bg: #ffffff;
   --group-balance-text: #374151;      /* gray-700 */
@@ -63,6 +64,7 @@
   --bg-surface: #1a1826;              /* dark violet-tinted card */
   --bg-surface-2: #201e30;            /* slightly lighter surface */
   --bg-hover: rgba(244,114,182,0.08); /* pink-400/8 */
+  --bg-hover-solid: #231b31;          /* solid equivalent of --bg-hover over bg-surface */
 
   /* Text */
   --text-primary: #f1e9f5;            /* near-white, lavender tint */
@@ -90,12 +92,12 @@
   --group-cash-text: #86efac;         /* green-300 */
   --group-cash-border: #14362a;
   --group-totals-bg: rgba(45,38,64,0.45);   /* violet-tinted subtle */
-  --group-totals-sticky: rgba(45,38,64,0.80);
+  --group-totals-sticky: #2D2640;     /* opaque */
   --group-available-bg: #2a1d36;      /* dark pink-violet */
-  --group-available-sticky: rgba(52,28,55,0.92);
+  --group-available-sticky: #341C37;  /* opaque */
   --group-available-text: #f9a8d4;    /* pink-300 */
   --group-total-bg: #1e1c2e;          /* slightly lighter than bg-surface */
-  --group-total-sticky: rgba(32,30,48,0.92);
+  --group-total-sticky: #201E30;      /* opaque */
   --group-total-text: #a09ab8;        /* text-secondary */
   --group-balance-bg: #1a1826;        /* same as bg-surface */
   --group-balance-text: #c4b5fd;      /* violet-300 */
