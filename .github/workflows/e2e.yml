@@ -5,60 +5,103 @@ on:
     branches: [main]
   push:
     branches: [main]
-  # Allow manual trigger
   workflow_dispatch:
 
 jobs:
-  e2e:
-    name: Playwright E2E
+  # ── Job 1: Public tests — no credentials needed ─────────────────────────────
+  # Covers: login form, validation, route redirects.
+  # Uses placeholder Supabase vars so the app boots (no real API calls happen).
+  no-auth:
+    name: Public E2E (no credentials)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install
+      - run: pnpm install
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+      - run: pnpm exec playwright install chromium --with-deps
 
-      - name: Create .env.local for Vite dev server
+      # Supabase client crashes on empty URL — use placeholders so the app
+      # boots. No real API calls are made in the no-auth project tests.
+      - name: Create .env.local (placeholder Supabase vars)
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}" >> .env.local
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}" >> .env.local
+          echo "VITE_POWERSYNC_URL=${{ secrets.VITE_POWERSYNC_URL || 'https://placeholder.powersync.journeyapps.com' }}" >> .env.local
+
+      - name: Run public E2E tests
+        run: pnpm exec playwright test --project=no-auth
+        env:
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-no-auth
+          path: playwright-report/
+          retention-days: 30
+
+  # ── Job 2: Authenticated tests — requires GitHub Secrets ───────────────────
+  # Requires: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_POWERSYNC_URL,
+  #           E2E_EMAIL, E2E_PASSWORD
+  # Skipped entirely when secrets are not configured.
+  authenticated:
+    name: Authenticated E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Only run when all required secrets are present
+    if: >
+      secrets.E2E_EMAIL != '' &&
+      secrets.E2E_PASSWORD != '' &&
+      secrets.VITE_SUPABASE_URL != ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install
+
+      - run: pnpm exec playwright install chromium --with-deps
+
+      - name: Create .env.local
         run: |
           echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env.local
           echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env.local
           echo "VITE_POWERSYNC_URL=${{ secrets.VITE_POWERSYNC_URL }}" >> .env.local
 
-      - name: Create .env.e2e.local for test credentials
+      - name: Create .env.e2e.local
         run: |
           echo "E2E_EMAIL=${{ secrets.E2E_EMAIL }}" >> .env.e2e.local
           echo "E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}" >> .env.e2e.local
 
-      - name: Run E2E tests
-        run: pnpm run test:e2e
+      - name: Run authenticated E2E tests
+        run: pnpm exec playwright test --project=setup --project=authenticated
         env:
           CI: true
 
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-authenticated
           path: playwright-report/
           retention-days: 30
 
-      - name: Upload test screenshots (on failure)
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-screenshots
