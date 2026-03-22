@@ -45,3 +45,8 @@ vite.config.ts.timestamp-*
 # PWA (generated at build time)
 sw.js
 workbox-*.js
+
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
