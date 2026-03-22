@@ -12,11 +12,19 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
-      include: ['src/domain/**'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/routeTree.gen.ts',
+        'src/main.tsx',
+        'src/**/*.test.{ts,tsx}',
+        'src/infrastructure/powersync/schema.ts',
+      ],
       reporter: ['text', 'html'],
     },
   },
