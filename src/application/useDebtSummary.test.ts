@@ -21,7 +21,7 @@ import {
 import { useLatestExchangeRate } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
 import { useDebtManagementSummary, useDashboardDebtSummary } from './useDebtSummary';
 import type { DebtRow, DebtTransactionRow } from '@/infrastructure/powersync/queries/types';
-import type { DashboardDebtRow, DashboardDebtTxRow } from '@/infrastructure/powersync/queries/useDebtQueries';
+import type { DashboardDebtRow } from '@/infrastructure/powersync/queries/useDebtQueries';
 
 function makeDebtRow(overrides: Partial<DebtRow> = {}): DebtRow {
   return {
@@ -63,19 +63,6 @@ function makeDashDebtRow(overrides: Partial<DashboardDebtRow> = {}): DashboardDe
     initial_amount: 50_000_000,
     currency: 'COP',
     ...overrides,
-  };
-}
-
-function makeDashTxRow(
-  type: 'debit' | 'credit',
-  amount: number,
-  debtId = 'debt-1',
-): DashboardDebtTxRow {
-  return {
-    debt_id: debtId,
-    type,
-    amount,
-    date: '2025-03-01',
   };
 }
 
