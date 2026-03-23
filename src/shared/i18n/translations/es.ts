@@ -459,6 +459,8 @@ export const es = {
     abbreviatedDesc: 'Compacto, ideal para el spreadsheet',
     full: 'Completo',
     fullDesc: 'Cifra exacta en pesos',
+    // Version
+    versionTitle: 'Versión',
     // Session
     sessionTitle: 'Sesión',
     signOut: 'Cerrar sesión',

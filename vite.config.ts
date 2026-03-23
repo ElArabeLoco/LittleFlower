@@ -4,8 +4,17 @@ import tailwindcss from '@tailwindcss/vite';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
+
+// Read version from package.json at build time so it is inlined as a string
+// constant — no runtime fs access, works in the browser.
+const { version } = JSON.parse(readFileSync('./package.json', 'utf-8')) as { version: string };
 
 export default defineConfig({
+  define: {
+    // Inlined at build time — use as __APP_VERSION__ in source code.
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [
     TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
     react(),

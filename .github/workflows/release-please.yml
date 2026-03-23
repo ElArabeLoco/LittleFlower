@@ -1,0 +1,32 @@
+name: Release Please
+
+# Runs on every push to main (including merged PRs).
+# release-please inspects conventional commits since the last release tag,
+# determines the SemVer bump (feat→minor, fix→patch, feat!→major), and
+# either creates/updates a "Release PR" or, when that PR is merged, creates
+# the GitHub Release + git tag and updates package.json + CHANGELOG.md.
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write      # needed to create tags and GitHub Releases
+  pull-requests: write # needed to create/update the Release PR
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
