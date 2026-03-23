@@ -1,5 +1,5 @@
 /**
- * Thin adapter — re-exports useDashboardDebtSummary for the dashboard widget.
- * SQL and calculations live in the application layer.
+ * Thin adapter — reads debt data from DashboardContext for dashboard widget components.
+ * SQL and calculations live in the application layer; the context runs the queries once.
  */
-export { useDashboardDebtSummary as useDebtData } from '@/application/useDebtSummary';
+export { useDashboardCtx as useDebtData } from './DashboardContext';

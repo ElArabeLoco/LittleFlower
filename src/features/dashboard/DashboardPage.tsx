@@ -18,6 +18,7 @@ import { DailySpendChart } from './DailySpendChart';
 import { BudgetBurnUpChart } from './BudgetBurnUpChart';
 import { CreditCardBurnUpChart } from './CreditCardBurnUpChart';
 import { EmptyState } from './EmptyState';
+import { DashboardDataProvider } from './DashboardContext';
 
 export function DashboardPage() {
   const { session } = useAuth();
@@ -26,6 +27,7 @@ export function DashboardPage() {
   const shortMonth = makeShortMonth(t);
 
   return (
+    <DashboardDataProvider>
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
         emoji="✨"
@@ -107,5 +109,6 @@ export function DashboardPage() {
 
       <AppNav />
     </div>
+    </DashboardDataProvider>
   );
 }
