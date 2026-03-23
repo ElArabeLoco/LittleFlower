@@ -13,7 +13,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true,
+        // Keep SW disabled in dev — it intercepts navigation responses and strips
+        // the COOP/COEP headers that PowerSync needs for SharedArrayBuffer/WASM.
+        // Without those headers, PowerSync fails to initialise and retries in a tight
+        // loop that saturates the JS thread and crashes the tab.
+        enabled: false,
       },
       includeAssets: [
         'favicon.ico',
