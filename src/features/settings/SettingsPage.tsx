@@ -17,7 +17,7 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
-import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages } from 'lucide-react';
+import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages, Tag } from 'lucide-react';
 import { cn } from '@/shared/ui/cn';
 import { useHouseholdQuery, useUserQuery } from '@/infrastructure/powersync/queries/useHouseholdQueries';
 import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
@@ -383,6 +383,20 @@ export function SettingsPage() {
               <p className="text-xs text-[var(--text-muted)]">{t.settings.numberFormatDescription}</p>
             </div>
             <NumberFormatSelector />
+          </SettingsCard>
+        </section>
+
+        {/* ── Versión ── */}
+        <section>
+          <SectionTitle>{t.settings.versionTitle}</SectionTitle>
+          <SettingsCard>
+            <div className="flex items-center gap-3 px-5 py-4">
+              <Tag size={16} className="shrink-0 text-[var(--text-muted)]" />
+              <div className="flex-1">
+                <p className="text-sm text-[var(--text-primary)]">Florecita</p>
+                <p className="text-xs text-[var(--text-muted)]">v{__APP_VERSION__}</p>
+              </div>
+            </div>
           </SettingsCard>
         </section>
 

@@ -460,6 +460,8 @@ export const en: Translations = {
     abbreviatedDesc: 'Compact, great for the spreadsheet',
     full: 'Full',
     fullDesc: 'Exact amount in pesos',
+    // Version
+    versionTitle: 'Version',
     // Session
     sessionTitle: 'Session',
     signOut: 'Sign out',
