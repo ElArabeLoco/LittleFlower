@@ -50,3 +50,12 @@ workbox-*.js
 playwright-report/
 test-results/
 e2e/.auth/
+
+# TanStack Router generated temp files
+.tanstack/
+
+# VitePWA dev-mode service worker output (generated, not needed in repo)
+dev-dist/
+
+# npm lock file — project uses pnpm (pnpm-lock.yaml is the lock file)
+package-lock.json
