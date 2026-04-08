@@ -15,7 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Search, X, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
@@ -23,16 +23,35 @@ import { upsertBudgetMonth, updateBudgetMonthExecution } from '@/infrastructure/
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 
-type YearSortKey = 'name' | 'category' | 'value-desc';
+type YearSortKey = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc' | 'value-asc' | 'value-desc';
+
+const YEAR_DEFAULT_SORT: YearSortKey = 'name-asc';
+
+const YEAR_SORT_CHIPS: {
+  dimension: 'value' | 'name' | 'category';
+  ascKey: YearSortKey;
+  descKey: YearSortKey;
+  defaultDir: 'asc' | 'desc';
+}[] = [
+  { dimension: 'name',     ascKey: 'name-asc',     descKey: 'name-desc',     defaultDir: 'asc'  },
+  { dimension: 'value',    ascKey: 'value-asc',    descKey: 'value-desc',    defaultDir: 'desc' },
+  { dimension: 'category', ascKey: 'category-asc', descKey: 'category-desc', defaultDir: 'asc'  },
+];
 
 function sortYearBudgets(budgets: BudgetRow[], sortKey: YearSortKey): BudgetRow[] {
   return [...budgets].sort((a, b) => {
     switch (sortKey) {
-      case 'name': return a.name.localeCompare(b.name);
-      case 'category': {
+      case 'name-asc': return a.name.localeCompare(b.name);
+      case 'name-desc': return b.name.localeCompare(a.name);
+      case 'category-asc': {
         const cmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
         return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
       }
+      case 'category-desc': {
+        const cmp = getCategoryName(b.category_id).localeCompare(getCategoryName(a.category_id));
+        return cmp !== 0 ? cmp : b.name.localeCompare(a.name);
+      }
+      case 'value-asc': return a.default_amount - b.default_amount;
       case 'value-desc': return b.default_amount - a.default_amount;
       default: return 0;
     }
@@ -278,7 +297,7 @@ export function YearView() {
   const { t } = useI18n();
   const [year, setYear] = useState(getCurrentYear());
   const [yearFilter, setYearFilter] = useState('');
-  const [yearSortKey, setYearSortKey] = useState<YearSortKey>('name');
+  const [yearSortKey, setYearSortKey] = useState<YearSortKey>(YEAR_DEFAULT_SORT);
   const months = yearMonths(year);
   const currentMonth = getCurrentMonth();
 
@@ -478,25 +497,60 @@ export function YearView() {
             )}
           </div>
 
-          {/* Sort chips */}
-          {(['name', 'value-desc', 'category'] as YearSortKey[]).map(key => (
+          {/* Toggleable sort chips */}
+          {YEAR_SORT_CHIPS.map(chip => {
+            const isActive = yearSortKey === chip.ascKey || yearSortKey === chip.descKey;
+            const isAsc = yearSortKey === chip.ascKey;
+
+            function handleChipClick() {
+              if (yearSortKey === chip.ascKey)  setYearSortKey(chip.descKey);
+              else if (yearSortKey === chip.descKey) setYearSortKey(chip.ascKey);
+              else setYearSortKey(chip.defaultDir === 'desc' ? chip.descKey : chip.ascKey);
+            }
+
+            function label() {
+              if (!isActive) {
+                if (chip.dimension === 'name')     return t.yearView.sortName;
+                if (chip.dimension === 'value')    return t.yearView.sortValue;
+                return t.yearView.sortCategory;
+              }
+              if (chip.dimension === 'value')    return isAsc ? `↑ ${t.yearView.sortValue}` : `↓ ${t.yearView.sortValue}`;
+              if (chip.dimension === 'name')     return isAsc ? `A→Z ${t.yearView.sortName}` : `Z→A ${t.yearView.sortName}`;
+              return isAsc ? `${t.yearView.sortCategory} A→Z` : `${t.yearView.sortCategory} Z→A`;
+            }
+
+            return (
+              <button
+                key={chip.dimension}
+                onClick={handleChipClick}
+                className={cn(
+                  'px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all duration-150 whitespace-nowrap shrink-0',
+                  isActive
+                    ? 'bg-violet-600 dark:bg-violet-500 text-white border-violet-600 dark:border-violet-500'
+                    : 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40',
+                )}
+                title={isActive ? 'Toca para invertir el orden' : undefined}
+              >
+                {label()}
+              </button>
+            );
+          })}
+
+          {/* Reset — only when not on default sort */}
+          {yearSortKey !== YEAR_DEFAULT_SORT && (
             <button
-              key={key}
-              onClick={() => setYearSortKey(key)}
-              className={cn(
-                'px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors whitespace-nowrap shrink-0',
-                yearSortKey === key
-                  ? 'bg-violet-600 dark:bg-violet-500 text-white border-violet-600 dark:border-violet-500'
-                  : 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40',
-              )}
+              onClick={() => setYearSortKey(YEAR_DEFAULT_SORT)}
+              className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-violet-600 dark:hover:text-violet-400 transition-colors shrink-0"
+              title={t.yearView.sortReset}
             >
-              {key === 'name' ? t.yearView.sortName : key === 'value-desc' ? t.yearView.sortValueDesc : t.yearView.sortCategory}
+              <RotateCcw size={10} />
+              <span>{t.yearView.sortReset}</span>
             </button>
-          ))}
+          )}
 
           {/* Match count when filtering */}
           {yearFilter && (
-            <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+            <span className="text-[10px] text-[var(--text-muted)] shrink-0 ml-auto">
               {t.yearView.matchCount(yearMatchCount)}
             </span>
           )}

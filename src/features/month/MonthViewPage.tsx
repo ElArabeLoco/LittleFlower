@@ -12,7 +12,7 @@ import { useState, useRef, useMemo } from 'react';
 import {
   ChevronLeft, ChevronRight, CreditCard, Banknote,
   TrendingUp, AlertTriangle, Wallet,
-  CheckCircle2, Circle, ChevronUp, SlidersHorizontal, Search, X,
+  CheckCircle2, Circle, ChevronUp, SlidersHorizontal, Search, X, RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { AppNav } from '@/shared/ui/AppNav';
@@ -24,7 +24,20 @@ import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 // Types
 // ---------------------------------------------------------------------------
 
-type SortKey = 'pending-desc' | 'value-desc' | 'value-asc' | 'name' | 'category';
+type SortKey = 'pending-desc' | 'value-desc' | 'value-asc' | 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc';
+
+type SortDimension = 'value' | 'name' | 'category';
+
+const SORT_CHIPS: {
+  dimension: SortDimension;
+  ascKey: SortKey;
+  descKey: SortKey;
+  defaultDir: 'asc' | 'desc';
+}[] = [
+  { dimension: 'value',    ascKey: 'value-asc',    descKey: 'value-desc',    defaultDir: 'desc' },
+  { dimension: 'name',     ascKey: 'name-asc',     descKey: 'name-desc',     defaultDir: 'asc'  },
+  { dimension: 'category', ascKey: 'category-asc', descKey: 'category-desc', defaultDir: 'asc'  },
+];
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -95,11 +108,17 @@ function sortAndFilterBudgets(
         const amtB = bmMap.get(`${b.id}|${month}`)?.amount ?? b.default_amount;
         return amtA - amtB;
       }
-      case 'name':
+      case 'name-asc':
         return a.name.localeCompare(b.name);
-      case 'category': {
-        const catCmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
-        return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
+      case 'name-desc':
+        return b.name.localeCompare(a.name);
+      case 'category-asc': {
+        const cmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
+        return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
+      }
+      case 'category-desc': {
+        const cmp = getCategoryName(b.category_id).localeCompare(getCategoryName(a.category_id));
+        return cmp !== 0 ? cmp : b.name.localeCompare(a.name);
       }
       default:
         return 0;
@@ -152,18 +171,12 @@ interface FilterSortBarProps {
   matchCount: number;
 }
 
-const SORT_OPTIONS: { key: SortKey; labelKey: 'sortPendingDesc' | 'sortValueAsc' | 'sortName' | 'sortCategory' }[] = [
-  { key: 'pending-desc', labelKey: 'sortPendingDesc' },
-  { key: 'value-asc',    labelKey: 'sortValueAsc' },
-  { key: 'name',         labelKey: 'sortName' },
-  { key: 'category',     labelKey: 'sortCategory' },
-];
-
 function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChange, matchCount }: FilterSortBarProps) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasFilter = filterText.trim().length > 0;
+  const isDefault = sortKey === 'pending-desc';
 
   function toggleExpanded() {
     setExpanded(v => {
@@ -177,7 +190,37 @@ function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChange, matc
     inputRef.current?.focus();
   }
 
-  const activeLabel = t.monthView[SORT_OPTIONS.find(o => o.key === sortKey)!.labelKey];
+  function handleChipClick(chip: typeof SORT_CHIPS[number]) {
+    if (sortKey === chip.ascKey) {
+      onSortChange(chip.descKey);   // active asc → toggle to desc
+    } else if (sortKey === chip.descKey) {
+      onSortChange(chip.ascKey);    // active desc → toggle to asc
+    } else {
+      // inactive → activate with default direction for this dimension
+      onSortChange(chip.defaultDir === 'desc' ? chip.descKey : chip.ascKey);
+    }
+  }
+
+  function chipLabel(chip: typeof SORT_CHIPS[number]): string {
+    const active = sortKey === chip.ascKey || sortKey === chip.descKey;
+    const isAsc = sortKey === chip.ascKey;
+    if (!active) {
+      if (chip.dimension === 'value')    return t.monthView.sortValue;
+      if (chip.dimension === 'name')     return t.monthView.sortName;
+      return t.monthView.sortCategory;
+    }
+    if (chip.dimension === 'value')    return isAsc ? `↑ ${t.monthView.sortValue}` : `↓ ${t.monthView.sortValue}`;
+    if (chip.dimension === 'name')     return isAsc ? `A→Z ${t.monthView.sortName}` : `Z→A ${t.monthView.sortName}`;
+    return isAsc ? `${t.monthView.sortCategory} A→Z` : `${t.monthView.sortCategory} Z→A`;
+  }
+
+  /** Badge shown in the collapsed strip */
+  function activeBadgeLabel(): string {
+    if (isDefault) return t.monthView.sortDefault;
+    const chip = SORT_CHIPS.find(c => sortKey === c.ascKey || sortKey === c.descKey);
+    if (chip) return chipLabel(chip);
+    return t.monthView.sortDefault;
+  }
 
   return (
     <div className="mx-4 mb-2">
@@ -199,14 +242,18 @@ function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChange, matc
           {t.monthView.sortAndFilter}
         </span>
 
-        {/* Show match count when filtering, otherwise show active sort */}
         {hasFilter ? (
           <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full shrink-0">
             {t.monthView.matchCount(matchCount)}
           </span>
         ) : (
-          <span className="text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 px-2 py-0.5 rounded-full shrink-0">
-            {activeLabel}
+          <span className={cn(
+            'text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0',
+            isDefault
+              ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-500 dark:text-violet-400'
+              : 'bg-violet-600 dark:bg-violet-500 text-white',
+          )}>
+            {activeBadgeLabel()}
           </span>
         )}
 
@@ -243,22 +290,38 @@ function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChange, matc
             )}
           </div>
 
-          {/* Sort chips */}
+          {/* Sort chips + reset */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            {SORT_OPTIONS.map(opt => (
+            {SORT_CHIPS.map(chip => {
+              const isActive = sortKey === chip.ascKey || sortKey === chip.descKey;
+              return (
+                <button
+                  key={chip.dimension}
+                  onClick={() => handleChipClick(chip)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all duration-150',
+                    isActive
+                      ? 'bg-violet-600 dark:bg-violet-500 text-white border-violet-600 dark:border-violet-500'
+                      : 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40',
+                  )}
+                  title={isActive ? 'Toca para invertir el orden' : undefined}
+                >
+                  {chipLabel(chip)}
+                </button>
+              );
+            })}
+
+            {/* Reset — only shown when a non-default sort is active */}
+            {!isDefault && (
               <button
-                key={opt.key}
-                onClick={() => onSortChange(opt.key)}
-                className={cn(
-                  'px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors',
-                  sortKey === opt.key
-                    ? 'bg-violet-600 dark:bg-violet-500 text-white border-violet-600 dark:border-violet-500'
-                    : 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40',
-                )}
+                onClick={() => onSortChange('pending-desc')}
+                className="flex items-center gap-1 ml-auto text-[10px] text-[var(--text-muted)] hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                title={t.monthView.sortReset}
               >
-                {t.monthView[opt.labelKey]}
+                <RotateCcw size={11} />
+                <span>{t.monthView.sortReset}</span>
               </button>
-            ))}
+            )}
           </div>
         </div>
       )}
