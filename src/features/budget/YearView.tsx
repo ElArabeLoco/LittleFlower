@@ -14,14 +14,30 @@
  *   Disponible | Presupuestado | Balance pres. | Ejecutado | Restante | Por ejecutar | Balance real
  */
 
-import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { upsertBudgetMonth, updateBudgetMonthExecution } from '@/infrastructure/powersync/mutationWrappers';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
-import { getCategoryEmoji } from '@/domain/budget/categories';
+import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
+
+type YearSortKey = 'name' | 'category' | 'value-desc';
+
+function sortYearBudgets(budgets: BudgetRow[], sortKey: YearSortKey): BudgetRow[] {
+  return [...budgets].sort((a, b) => {
+    switch (sortKey) {
+      case 'name': return a.name.localeCompare(b.name);
+      case 'category': {
+        const cmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
+        return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
+      }
+      case 'value-desc': return b.default_amount - a.default_amount;
+      default: return 0;
+    }
+  });
+}
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -261,6 +277,8 @@ export function YearView() {
   const { session } = useAuth();
   const { t } = useI18n();
   const [year, setYear] = useState(getCurrentYear());
+  const [yearFilter, setYearFilter] = useState('');
+  const [yearSortKey, setYearSortKey] = useState<YearSortKey>('name');
   const months = yearMonths(year);
   const currentMonth = getCurrentMonth();
 
@@ -294,6 +312,21 @@ export function YearView() {
     ccMetricsMap,
     cashMetricsMap,
   } = useYearViewData(year, months);
+
+  // Sort + filter budgets for year view
+  const displayCCBudgets = useMemo(() => {
+    const q = yearFilter.toLowerCase().trim();
+    const filtered = q ? creditCardBudgets.filter(b => b.name.toLowerCase().includes(q)) : creditCardBudgets;
+    return sortYearBudgets(filtered, yearSortKey);
+  }, [creditCardBudgets, yearFilter, yearSortKey]);
+
+  const displayCashBudgets = useMemo(() => {
+    const q = yearFilter.toLowerCase().trim();
+    const filtered = q ? cashBudgets.filter(b => b.name.toLowerCase().includes(q)) : cashBudgets;
+    return sortYearBudgets(filtered, yearSortKey);
+  }, [cashBudgets, yearFilter, yearSortKey]);
+
+  const yearMatchCount = displayCCBudgets.length + displayCashBudgets.length;
 
   // Navigation: track which cell has focus for Tab/Enter
   const allBudgets = [...creditCardBudgets, ...cashBudgets];
@@ -422,6 +455,54 @@ export function YearView() {
         </Button>
       </div>
 
+      {/* Sort & filter bar */}
+      {budgets.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+          {/* Search */}
+          <div className={cn(
+            'flex items-center gap-2 flex-1 bg-[var(--bg-app)] border rounded-lg px-3',
+            yearFilter ? 'border-violet-400 dark:border-violet-600' : 'border-[var(--border-medium)]',
+          )}>
+            <Search size={13} className="text-[var(--text-muted)] shrink-0" />
+            <input
+              type="text"
+              value={yearFilter}
+              onChange={e => setYearFilter(e.target.value)}
+              placeholder={t.yearView.searchPlaceholder}
+              className="flex-1 bg-transparent py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+            />
+            {yearFilter && (
+              <button onClick={() => setYearFilter('')} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Sort chips */}
+          {(['name', 'value-desc', 'category'] as YearSortKey[]).map(key => (
+            <button
+              key={key}
+              onClick={() => setYearSortKey(key)}
+              className={cn(
+                'px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors whitespace-nowrap shrink-0',
+                yearSortKey === key
+                  ? 'bg-violet-600 dark:bg-violet-500 text-white border-violet-600 dark:border-violet-500'
+                  : 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40',
+              )}
+            >
+              {key === 'name' ? t.yearView.sortName : key === 'value-desc' ? t.yearView.sortValueDesc : t.yearView.sortCategory}
+            </button>
+          ))}
+
+          {/* Match count when filtering */}
+          {yearFilter && (
+            <span className="text-[10px] text-[var(--text-muted)] shrink-0">
+              {t.yearView.matchCount(yearMatchCount)}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Spreadsheet */}
       <div className="flex-1 overflow-auto">
         <table className="border-separate border-spacing-0 text-sm bg-[var(--bg-surface)] min-w-max w-full">
@@ -452,7 +533,7 @@ export function YearView() {
 
           <tbody>
             {/* Credit Card group */}
-            {creditCardBudgets.length > 0 && (
+            {displayCCBudgets.length > 0 && (
               <>
                 <tr className="bg-[var(--group-cc-bg)] border-t border-[var(--group-cc-border)]">
                   <td className="sticky left-0 z-10 bg-[var(--group-cc-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide">
@@ -461,7 +542,7 @@ export function YearView() {
                   <td colSpan={12} className="bg-[var(--group-cc-bg)]" />
                 </tr>
                 <BudgetTableSection
-                  budgets={creditCardBudgets}
+                  budgets={displayCCBudgets}
                   metricsMap={ccMetricsMap}
                   startIdx={0}
                 />
@@ -469,7 +550,7 @@ export function YearView() {
             )}
 
             {/* Cash group */}
-            {cashBudgets.length > 0 && (
+            {displayCashBudgets.length > 0 && (
               <>
                 <tr className="bg-[var(--group-cash-bg)] border-t border-[var(--group-cash-border)]">
                   <td className="sticky left-0 z-10 bg-[var(--group-cash-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide">
@@ -478,7 +559,7 @@ export function YearView() {
                   <td colSpan={12} className="bg-[var(--group-cash-bg)]" />
                 </tr>
                 <BudgetTableSection
-                  budgets={cashBudgets}
+                  budgets={displayCashBudgets}
                   metricsMap={cashMetricsMap}
                   startIdx={creditCardBudgets.length}
                 />

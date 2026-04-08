@@ -8,17 +8,23 @@
  * Diseño de tarjetas, no tabular. Optimizado para móvil y escritorio.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   ChevronLeft, ChevronRight, CreditCard, Banknote,
   TrendingUp, AlertTriangle, Wallet,
-  CheckCircle2, Circle, ChevronUp,
+  CheckCircle2, Circle, ChevronUp, SlidersHorizontal, Search, X,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type SortKey = 'pending-desc' | 'value-desc' | 'value-asc' | 'name' | 'category';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -52,6 +58,71 @@ function nextMonth(m: string): string {
   return `${y}-${String(mo + 1).padStart(2, '0')}`;
 }
 
+/** Returns a copy of budgets filtered by name query and sorted by sortKey. */
+function sortAndFilterBudgets(
+  budgets: BudgetRow[],
+  sortKey: SortKey,
+  filterText: string,
+  bmMap: Map<string, BudgetMonthRow>,
+  month: string,
+): BudgetRow[] {
+  const q = filterText.toLowerCase().trim();
+  const filtered = q ? budgets.filter(b => b.name.toLowerCase().includes(q)) : budgets;
+
+  return [...filtered].sort((a, b) => {
+    switch (sortKey) {
+      case 'pending-desc': {
+        const bmA = bmMap.get(`${a.id}|${month}`);
+        const bmB = bmMap.get(`${b.id}|${month}`);
+        const execA = bmA?.is_executed === 1 ? 1 : 0;
+        const execB = bmB?.is_executed === 1 ? 1 : 0;
+        if (execA !== execB) return execA - execB; // pending (0) before executed (1)
+        if (execA === 0) {
+          // Both pending: value desc, then name asc
+          const amtA = bmA?.amount ?? a.default_amount;
+          const amtB = bmB?.amount ?? b.default_amount;
+          if (amtB !== amtA) return amtB - amtA;
+        }
+        return a.name.localeCompare(b.name);
+      }
+      case 'value-desc': {
+        const amtA = bmMap.get(`${a.id}|${month}`)?.amount ?? a.default_amount;
+        const amtB = bmMap.get(`${b.id}|${month}`)?.amount ?? b.default_amount;
+        return amtB - amtA;
+      }
+      case 'value-asc': {
+        const amtA = bmMap.get(`${a.id}|${month}`)?.amount ?? a.default_amount;
+        const amtB = bmMap.get(`${b.id}|${month}`)?.amount ?? b.default_amount;
+        return amtA - amtB;
+      }
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'category': {
+        const catCmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
+        return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
+      }
+      default:
+        return 0;
+    }
+  });
+}
+
+/** Renders budget name with highlighted match. */
+function HighlightedName({ name, query }: { name: string; query: string }) {
+  if (!query) return <>{name}</>;
+  const idx = name.toLowerCase().indexOf(query.toLowerCase());
+  if (idx < 0) return <>{name}</>;
+  return (
+    <>
+      {name.slice(0, idx)}
+      <mark className="bg-amber-200 dark:bg-amber-800/40 text-inherit rounded-sm px-0">
+        {name.slice(idx, idx + query.length)}
+      </mark>
+      {name.slice(idx + query.length)}
+    </>
+  );
+}
+
 // Types are imported from the application layer (BudgetRow, BudgetMonthRow)
 
 // ---------------------------------------------------------------------------
@@ -70,6 +141,132 @@ function MiniProgressBar({ pct, over }: { pct: number; over: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
+// FilterSortBar — collapsible sort & filter strip
+// ---------------------------------------------------------------------------
+
+interface FilterSortBarProps {
+  sortKey: SortKey;
+  filterText: string;
+  onSortChange: (key: SortKey) => void;
+  onFilterChange: (text: string) => void;
+  matchCount: number;
+}
+
+const SORT_OPTIONS: { key: SortKey; labelKey: 'sortPendingDesc' | 'sortValueAsc' | 'sortName' | 'sortCategory' }[] = [
+  { key: 'pending-desc', labelKey: 'sortPendingDesc' },
+  { key: 'value-asc',    labelKey: 'sortValueAsc' },
+  { key: 'name',         labelKey: 'sortName' },
+  { key: 'category',     labelKey: 'sortCategory' },
+];
+
+function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChange, matchCount }: FilterSortBarProps) {
+  const { t } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const hasFilter = filterText.trim().length > 0;
+
+  function toggleExpanded() {
+    setExpanded(v => {
+      if (!v) setTimeout(() => inputRef.current?.focus(), 50);
+      return !v;
+    });
+  }
+
+  function clearFilter() {
+    onFilterChange('');
+    inputRef.current?.focus();
+  }
+
+  const activeLabel = t.monthView[SORT_OPTIONS.find(o => o.key === sortKey)!.labelKey];
+
+  return (
+    <div className="mx-4 mb-2">
+      {/* Toggle row */}
+      <button
+        onClick={toggleExpanded}
+        className={cn(
+          'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors',
+          'bg-[var(--bg-surface)] border border-[var(--border-medium)]',
+          expanded ? 'rounded-t-xl border-b-transparent' : 'rounded-xl',
+          'hover:bg-[var(--bg-hover)]',
+        )}
+        aria-expanded={expanded}
+      >
+        <span className="flex items-center justify-center w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 shrink-0">
+          <SlidersHorizontal size={12} />
+        </span>
+        <span className="flex-1 text-xs font-semibold text-[var(--text-secondary)]">
+          {t.monthView.sortAndFilter}
+        </span>
+
+        {/* Show match count when filtering, otherwise show active sort */}
+        {hasFilter ? (
+          <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full shrink-0">
+            {t.monthView.matchCount(matchCount)}
+          </span>
+        ) : (
+          <span className="text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 px-2 py-0.5 rounded-full shrink-0">
+            {activeLabel}
+          </span>
+        )}
+
+        <ChevronUp
+          size={13}
+          className={cn(
+            'shrink-0 text-[var(--text-muted)] transition-transform duration-200',
+            !expanded && 'rotate-180',
+          )}
+        />
+      </button>
+
+      {/* Expanded panel */}
+      {expanded && (
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-medium)] border-t-0 rounded-b-xl px-3 pb-3 pt-2 space-y-2.5">
+          {/* Search field */}
+          <div className={cn(
+            'flex items-center gap-2 bg-[var(--bg-app)] border rounded-lg px-3 py-0',
+            hasFilter ? 'border-violet-400 dark:border-violet-600' : 'border-[var(--border-medium)]',
+          )}>
+            <Search size={13} className="text-[var(--text-muted)] shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={filterText}
+              onChange={e => onFilterChange(e.target.value)}
+              placeholder={t.monthView.searchPlaceholder}
+              className="flex-1 bg-transparent py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+            />
+            {hasFilter && (
+              <button onClick={clearFilter} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-0.5">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Sort chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {SORT_OPTIONS.map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => onSortChange(opt.key)}
+                className={cn(
+                  'px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors',
+                  sortKey === opt.key
+                    ? 'bg-violet-600 dark:bg-violet-500 text-white border-violet-600 dark:border-violet-500'
+                    : 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40',
+                )}
+              >
+                {t.monthView[opt.labelKey]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // BudgetCard — one budget item per card
 // ---------------------------------------------------------------------------
 
@@ -80,9 +277,10 @@ interface BudgetCardProps {
   month: string;
   householdId: string;
   userId: string;
+  highlightText?: string;
 }
 
-function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: BudgetCardProps) {
+function BudgetCard({ budget, bm, spentAmount, month, householdId, userId, highlightText = '' }: BudgetCardProps) {
   const { t } = useI18n();
   const [expenseOpen, setExpenseOpen] = useState(false);
   const expenseOpenKeyRef = useRef(0);
@@ -120,7 +318,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
-              {budget.name}
+              <HighlightedName name={budget.name} query={highlightText} />
             </p>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
               {getCategoryName(budget.category_id)}
@@ -210,6 +408,77 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId }: Bud
 }
 
 // ---------------------------------------------------------------------------
+// BudgetCardList — renders cards with optional pending/executed sub-dividers
+// ---------------------------------------------------------------------------
+
+interface BudgetCardListProps {
+  budgets: BudgetRow[];
+  bmMap: Map<string, BudgetMonthRow>;
+  expenseMap: Map<string, number>;
+  month: string;
+  householdId: string;
+  userId: string;
+  sortKey: SortKey;
+  filterText: string;
+  pendingLabel: string;
+  executedLabel: string;
+}
+
+function BudgetCardList({
+  budgets, bmMap, expenseMap, month, householdId, userId,
+  sortKey, filterText, pendingLabel, executedLabel,
+}: BudgetCardListProps) {
+  const showDividers = sortKey === 'pending-desc';
+
+  const pendingBudgets = showDividers
+    ? budgets.filter(b => (bmMap.get(`${b.id}|${month}`)?.is_executed ?? 0) !== 1)
+    : budgets;
+  const executedBudgets = showDividers
+    ? budgets.filter(b => bmMap.get(`${b.id}|${month}`)?.is_executed === 1)
+    : [];
+
+  function renderCard(b: BudgetRow) {
+    const bm = bmMap.get(`${b.id}|${month}`) ?? null;
+    const spent = bm ? (expenseMap.get(bm.id) ?? 0) : 0;
+    return (
+      <BudgetCard
+        key={b.id}
+        budget={b}
+        bm={bm}
+        spentAmount={spent}
+        month={month}
+        householdId={householdId}
+        userId={userId}
+        highlightText={filterText}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {showDividers && pendingBudgets.length > 0 && (
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+            {pendingLabel}
+          </span>
+          <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+        </div>
+      )}
+      {pendingBudgets.map(renderCard)}
+      {showDividers && executedBudgets.length > 0 && (
+        <div className="flex items-center gap-2 px-1 pt-1">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+            {executedLabel}
+          </span>
+          <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+        </div>
+      )}
+      {showDividers && executedBudgets.map(renderCard)}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // GroupSection — collapsible group (Tarjeta / Efectivo)
 // ---------------------------------------------------------------------------
 
@@ -225,13 +494,17 @@ interface GroupSectionProps {
   userId: string;
   totalBudgeted: number;
   totalSpent: number;
+  sortKey: SortKey;
+  filterText: string;
 }
 
 function GroupSection({
   label, icon, accent, budgets, bmMap, expenseMap,
   month, householdId, userId, totalBudgeted, totalSpent,
+  sortKey, filterText,
 }: GroupSectionProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { t } = useI18n();
 
   if (budgets.length === 0) return null;
 
@@ -300,25 +573,20 @@ function GroupSection({
         </div>
       )}
 
-      {/* Budget cards */}
+      {/* Budget cards — with optional pending/executed sub-dividers */}
       {!collapsed && (
-        <div className="space-y-2">
-          {budgets.map(b => {
-            const bm = bmMap.get(`${b.id}|${month}`) ?? null;
-            const spent = bm ? (expenseMap.get(bm.id) ?? 0) : 0;
-            return (
-              <BudgetCard
-                key={b.id}
-                budget={b}
-                bm={bm}
-                spentAmount={spent}
-                month={month}
-                householdId={householdId}
-                userId={userId}
-              />
-            );
-          })}
-        </div>
+        <BudgetCardList
+          budgets={budgets}
+          bmMap={bmMap}
+          expenseMap={expenseMap}
+          month={month}
+          householdId={householdId}
+          userId={userId}
+          sortKey={sortKey}
+          filterText={filterText}
+          pendingLabel={t.monthView.pending}
+          executedLabel={t.monthView.executed}
+        />
       )}
     </section>
   );
@@ -510,6 +778,8 @@ export function MonthViewPage() {
   const { session } = useAuth();
   const { t } = useI18n();
   const [month, setMonth] = useState(getCurrentMonth());
+  const [sortKey, setSortKey] = useState<SortKey>('pending-desc');
+  const [filterText, setFilterText] = useState('');
 
   const householdId = session?.householdId ?? '';
   const userId = session?.userId ?? '';
@@ -534,6 +804,18 @@ export function MonthViewPage() {
     ccTotals,
     cashTotals,
   } = useMonthViewData(month);
+
+  // Sort + filter budgets for display
+  const sortedCCBudgets = useMemo(
+    () => sortAndFilterBudgets(creditCardBudgets, sortKey, filterText, bmMap, month),
+    [creditCardBudgets, sortKey, filterText, bmMap, month],
+  );
+  const sortedCashBudgets = useMemo(
+    () => sortAndFilterBudgets(cashBudgets, sortKey, filterText, bmMap, month),
+    [cashBudgets, sortKey, filterText, bmMap, month],
+  );
+
+  const totalMatchCount = sortedCCBudgets.length + sortedCashBudgets.length;
 
   // Balance real uses cash-only figures: CC budgets are not real cash outflows.
   const totalBudgeted = cashTotals.budgeted;
@@ -586,6 +868,17 @@ export function MonthViewPage() {
             formatMonthLabel={formatMonthLabel}
           />
 
+          {/* Sort & filter bar */}
+          {(creditCardBudgets.length > 0 || cashBudgets.length > 0) && (
+            <FilterSortBar
+              sortKey={sortKey}
+              filterText={filterText}
+              onSortChange={setSortKey}
+              onFilterChange={setFilterText}
+              matchCount={totalMatchCount}
+            />
+          )}
+
           {/* Empty state */}
           {creditCardBudgets.length === 0 && cashBudgets.length === 0 && (
             <div className="text-center py-16 text-[var(--text-muted)]">
@@ -602,7 +895,7 @@ export function MonthViewPage() {
               label={t.monthView.creditCard}
               icon={<CreditCard size={15} />}
               accent="violet"
-              budgets={creditCardBudgets}
+              budgets={sortedCCBudgets}
               bmMap={bmMap}
               expenseMap={expenseMap}
               month={month}
@@ -610,6 +903,8 @@ export function MonthViewPage() {
               userId={userId}
               totalBudgeted={ccTotals.budgeted}
               totalSpent={ccTotals.spent}
+              sortKey={sortKey}
+              filterText={filterText}
             />
 
             {/* Cash group */}
@@ -617,7 +912,7 @@ export function MonthViewPage() {
               label={t.monthView.cashLabel}
               icon={<Banknote size={15} />}
               accent="green"
-              budgets={cashBudgets}
+              budgets={sortedCashBudgets}
               bmMap={bmMap}
               expenseMap={expenseMap}
               month={month}
@@ -625,6 +920,8 @@ export function MonthViewPage() {
               userId={userId}
               totalBudgeted={cashTotals.budgeted}
               totalSpent={cashTotals.spent}
+              sortKey={sortKey}
+              filterText={filterText}
             />
           </div>
 

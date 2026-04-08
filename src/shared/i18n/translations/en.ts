@@ -211,6 +211,15 @@ export const en: Translations = {
     usdExcludedNoTrm: 'USD income excluded — enter TRM in the Income section',
     prevMonth: 'Previous month',
     nextMonth: 'Next month',
+    sortAndFilter: 'Sort & filter',
+    searchPlaceholder: 'Search budget…',
+    pending: 'Pending',
+    executed: 'Executed',
+    sortPendingDesc: '↓ Highest first',
+    sortValueAsc: '↑ Lowest first',
+    sortName: 'A→Z Name',
+    sortCategory: 'Category',
+    matchCount: (n: number) => `${n} result${n !== 1 ? 's' : ''}`,
   },
 
   // ---------------------------------------------------------------------------
@@ -233,6 +242,11 @@ export const en: Translations = {
     executedHint: 'Executed ✓ — right-click to unmark',
     editHint: 'Click to edit · right-click to mark executed',
     viewExpenses: 'View / record expenses',
+    searchPlaceholder: 'Search budget…',
+    sortName: 'A→Z',
+    sortValueDesc: '↓ Value',
+    sortCategory: 'Category',
+    matchCount: (n: number) => `${n} budget${n !== 1 ? 's' : ''}`,
   },
 
   // ---------------------------------------------------------------------------

@@ -210,6 +210,15 @@ export const es = {
     usdExcludedNoTrm: 'Ingresos USD excluidos — ingresa la TRM en la sección Ingresos',
     prevMonth: 'Mes anterior',
     nextMonth: 'Mes siguiente',
+    sortAndFilter: 'Ordenar y filtrar',
+    searchPlaceholder: 'Buscar rubro…',
+    pending: 'Pendientes',
+    executed: 'Ejecutados',
+    sortPendingDesc: '↓ Mayor a menor',
+    sortValueAsc: '↑ Menor a mayor',
+    sortName: 'A→Z Nombre',
+    sortCategory: 'Categoría',
+    matchCount: (n: number) => `${n} resultado${n !== 1 ? 's' : ''}`,
   },
 
   // ---------------------------------------------------------------------------
@@ -232,6 +241,11 @@ export const es = {
     executedHint: 'Ejecutado ✓ — clic derecho para desmarcar',
     editHint: 'Clic para editar · clic derecho para marcar ejecutado',
     viewExpenses: 'Ver / registrar gastos',
+    searchPlaceholder: 'Buscar rubro…',
+    sortName: 'A→Z',
+    sortValueDesc: '↓ Valor',
+    sortCategory: 'Categoría',
+    matchCount: (n: number) => `${n} rubro${n !== 1 ? 's' : ''}`,
   },
 
   // ---------------------------------------------------------------------------
