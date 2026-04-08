@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortAndFilterBudgets, type SortKey } from './MonthViewPage';
+import { sortAndFilterBudgets } from './MonthViewPage';
 import type { BudgetRow, BudgetMonthRow } from '@/application/useMonthViewData';
 
 // ---------------------------------------------------------------------------

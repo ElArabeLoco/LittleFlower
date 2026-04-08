@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortYearBudgets, type YearSortKey } from './YearView';
+import { sortYearBudgets } from './YearView';
 import type { BudgetRow } from '@/application/useYearViewData';
 
 // ---------------------------------------------------------------------------
