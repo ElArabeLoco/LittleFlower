@@ -11,6 +11,20 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.2.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.1.0...littleflower-v0.2.0) (2026-04-08)
+
+
+### Features
+
+* add SemVer versioning, release-please CI, and CHANGELOG ([#30](https://github.com/ElArabeLoco/LittleFlower/issues/30)) ([6420a38](https://github.com/ElArabeLoco/LittleFlower/commit/6420a385b90ff1f78569ca5497de9ebc38099f72))
+* add sort & filter to month and year views ([5876051](https://github.com/ElArabeLoco/LittleFlower/commit/5876051eed83579499df46f5e2f4caf8a07bee4a))
+
+
+### Bug Fixes
+
+* remove unused SortKey and YearSortKey type imports in test files ([c03d549](https://github.com/ElArabeLoco/LittleFlower/commit/c03d549ae129805ede4be390a733d3eb40b9c956))
+* remove unused TS type imports in test files (TS6133) ([e94276a](https://github.com/ElArabeLoco/LittleFlower/commit/e94276a84071c2e09a01b12283fb34f4deae1d07))
+
 ## [Unreleased]
 
 ## [0.1.0] — 2026-03-23
