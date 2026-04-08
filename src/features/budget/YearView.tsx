@@ -23,7 +23,7 @@ import { upsertBudgetMonth, updateBudgetMonthExecution } from '@/infrastructure/
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 
-type YearSortKey = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc' | 'value-asc' | 'value-desc';
+export type YearSortKey = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc' | 'value-asc' | 'value-desc';
 
 const YEAR_DEFAULT_SORT: YearSortKey = 'name-asc';
 
@@ -38,7 +38,7 @@ const YEAR_SORT_CHIPS: {
   { dimension: 'category', ascKey: 'category-asc', descKey: 'category-desc', defaultDir: 'asc'  },
 ];
 
-function sortYearBudgets(budgets: BudgetRow[], sortKey: YearSortKey): BudgetRow[] {
+export function sortYearBudgets(budgets: BudgetRow[], sortKey: YearSortKey): BudgetRow[] {
   return [...budgets].sort((a, b) => {
     switch (sortKey) {
       case 'name-asc': return a.name.localeCompare(b.name);
@@ -502,27 +502,27 @@ export function YearView() {
             const isActive = yearSortKey === chip.ascKey || yearSortKey === chip.descKey;
             const isAsc = yearSortKey === chip.ascKey;
 
-            function handleChipClick() {
-              if (yearSortKey === chip.ascKey)  setYearSortKey(chip.descKey);
-              else if (yearSortKey === chip.descKey) setYearSortKey(chip.ascKey);
-              else setYearSortKey(chip.defaultDir === 'desc' ? chip.descKey : chip.ascKey);
-            }
-
-            function label() {
+            const chipLabel = (() => {
               if (!isActive) {
-                if (chip.dimension === 'name')     return t.yearView.sortName;
-                if (chip.dimension === 'value')    return t.yearView.sortValue;
+                if (chip.dimension === 'name')  return t.yearView.sortName;
+                if (chip.dimension === 'value') return t.yearView.sortValue;
                 return t.yearView.sortCategory;
               }
-              if (chip.dimension === 'value')    return isAsc ? `↑ ${t.yearView.sortValue}` : `↓ ${t.yearView.sortValue}`;
-              if (chip.dimension === 'name')     return isAsc ? `A→Z ${t.yearView.sortName}` : `Z→A ${t.yearView.sortName}`;
+              if (chip.dimension === 'value') return isAsc ? `↑ ${t.yearView.sortValue}` : `↓ ${t.yearView.sortValue}`;
+              if (chip.dimension === 'name')  return isAsc ? `A→Z ${t.yearView.sortName}` : `Z→A ${t.yearView.sortName}`;
               return isAsc ? `${t.yearView.sortCategory} A→Z` : `${t.yearView.sortCategory} Z→A`;
-            }
+            })();
+
+            const handleClick = () => {
+              if (yearSortKey === chip.ascKey)       setYearSortKey(chip.descKey);
+              else if (yearSortKey === chip.descKey) setYearSortKey(chip.ascKey);
+              else setYearSortKey(chip.defaultDir === 'desc' ? chip.descKey : chip.ascKey);
+            };
 
             return (
               <button
                 key={chip.dimension}
-                onClick={handleChipClick}
+                onClick={handleClick}
                 className={cn(
                   'px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all duration-150 whitespace-nowrap shrink-0',
                   isActive
@@ -531,7 +531,7 @@ export function YearView() {
                 )}
                 title={isActive ? 'Toca para invertir el orden' : undefined}
               >
-                {label()}
+                {chipLabel}
               </button>
             );
           })}

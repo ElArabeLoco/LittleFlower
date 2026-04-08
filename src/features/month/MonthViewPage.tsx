@@ -19,25 +19,6 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type SortKey = 'pending-desc' | 'value-desc' | 'value-asc' | 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc';
-
-type SortDimension = 'value' | 'name' | 'category';
-
-const SORT_CHIPS: {
-  dimension: SortDimension;
-  ascKey: SortKey;
-  descKey: SortKey;
-  defaultDir: 'asc' | 'desc';
-}[] = [
-  { dimension: 'value',    ascKey: 'value-asc',    descKey: 'value-desc',    defaultDir: 'desc' },
-  { dimension: 'name',     ascKey: 'name-asc',     descKey: 'name-desc',     defaultDir: 'asc'  },
-  { dimension: 'category', ascKey: 'category-asc', descKey: 'category-desc', defaultDir: 'asc'  },
-];
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -50,6 +31,27 @@ import {
   type IncomeRow,
   type IncomeMonthRow,
 } from '@/application/useMonthViewData';
+
+// ---------------------------------------------------------------------------
+// Types & constants
+// ---------------------------------------------------------------------------
+
+export type SortKey =
+  | 'pending-desc'
+  | 'value-desc' | 'value-asc'
+  | 'name-asc'   | 'name-desc'
+  | 'category-asc' | 'category-desc';
+
+const SORT_CHIPS: {
+  dimension: 'value' | 'name' | 'category';
+  ascKey: SortKey;
+  descKey: SortKey;
+  defaultDir: 'asc' | 'desc';
+}[] = [
+  { dimension: 'value',    ascKey: 'value-asc',    descKey: 'value-desc',    defaultDir: 'desc' },
+  { dimension: 'name',     ascKey: 'name-asc',     descKey: 'name-desc',     defaultDir: 'asc'  },
+  { dimension: 'category', ascKey: 'category-asc', descKey: 'category-desc', defaultDir: 'asc'  },
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -72,7 +74,7 @@ function nextMonth(m: string): string {
 }
 
 /** Returns a copy of budgets filtered by name query and sorted by sortKey. */
-function sortAndFilterBudgets(
+export function sortAndFilterBudgets(
   budgets: BudgetRow[],
   sortKey: SortKey,
   filterText: string,
