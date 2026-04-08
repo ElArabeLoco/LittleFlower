@@ -15,16 +15,12 @@ import { useExchangeRatesForMonths } from '@/infrastructure/powersync/queries/us
 // Helpers (private)
 // ---------------------------------------------------------------------------
 
-function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-function prevNMonths(n: number): string[] {
+function prevNMonthsFrom(n: number, fromMonth: string): string[] {
+  const [y, m] = fromMonth.split('-').map(Number);
   const months: string[] = [];
-  const d = new Date();
   for (let i = n - 1; i >= 0; i--) {
-    const t = new Date(d.getFullYear(), d.getMonth() - i, 1);
-    months.push(t.toISOString().slice(0, 7));
+    const t = new Date(y, m - 1 - i, 1);
+    months.push(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`);
   }
   return months;
 }
@@ -66,12 +62,11 @@ export interface DashboardData {
 // ---------------------------------------------------------------------------
 
 /**
- * Reactive dashboard data: last 6 months of budget/income/expense aggregates.
+ * Reactive dashboard data: 6 months ending at selectedMonth of budget/income/expense aggregates.
  * Returns both pre-computed MonthlyDataPoint[] and raw lookup maps for charts.
  */
-export function useDashboardData(): DashboardData {
-  const currentMonth = useMemo(getCurrentMonth, []);
-  const last6 = useMemo(() => prevNMonths(6), []);
+export function useDashboardData(selectedMonth: string): DashboardData {
+  const last6 = useMemo(() => prevNMonthsFrom(6, selectedMonth), [selectedMonth]);
 
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: budgetMonths = [] } = useBudgetMonthsForMonths(last6);
@@ -149,5 +144,5 @@ export function useDashboardData(): DashboardData {
     });
   }, [last6, budgets, incomes, budgetAmountMap, bmIdMap, expenseByBmId, imMap, trmMap]);
 
-  return { monthlyData, currentMonth, last6, budgets, bmIdMap, expenseByBmId, budgetAmountMap };
+  return { monthlyData, currentMonth: selectedMonth, last6, budgets, bmIdMap, expenseByBmId, budgetAmountMap };
 }

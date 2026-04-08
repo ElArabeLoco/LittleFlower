@@ -5,10 +5,10 @@ import { ChartCard } from './shared';
 import { fmtDate } from './helpers';
 import { useRecentExpenses } from '@/infrastructure/powersync/queries/useExpenseQueries';
 
-export function RecentExpensesFeed() {
+export function RecentExpensesFeed({ month }: { month: string }) {
   const { t } = useI18n();
 
-  const { data: recentExpenses = [] } = useRecentExpenses();
+  const { data: recentExpenses = [] } = useRecentExpenses(month);
 
   if (recentExpenses.length === 0) return null;
 

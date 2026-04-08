@@ -22,8 +22,14 @@ export interface DashboardContextValue extends DashboardData, DashboardDebtSumma
 
 const DashboardContext = createContext<DashboardContextValue | null>(null);
 
-export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
-  const data = useDashboardData();
+export function DashboardDataProvider({
+  children,
+  selectedMonth,
+}: {
+  children: React.ReactNode;
+  selectedMonth: string;
+}) {
+  const data = useDashboardData(selectedMonth);
   const debtData = useDashboardDebtSummary();
 
   return (

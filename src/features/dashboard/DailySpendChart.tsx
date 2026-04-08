@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { ChartCard } from './shared';
-import { formatK, buildDailyChartData, getCurrentMonth } from './helpers';
+import { formatK, buildDailyChartData } from './helpers';
 import { useDailyExpensesByCategory } from '@/infrastructure/powersync/queries/useExpenseQueries';
 
 interface DailySpendChartProps {
+  month: string;
   categoryId: string;
   title: string;
   subtitle: string;
@@ -13,15 +14,14 @@ interface DailySpendChartProps {
   textColor: string;
 }
 
-export function DailySpendChart({ categoryId, title, subtitle, barColor, textColor }: DailySpendChartProps) {
+export function DailySpendChart({ month, categoryId, title, subtitle, barColor, textColor }: DailySpendChartProps) {
   const { t } = useI18n();
-  const currentMonth = getCurrentMonth();
 
-  const { data: dailyRaw = [] } = useDailyExpensesByCategory(currentMonth, categoryId);
+  const { data: dailyRaw = [] } = useDailyExpensesByCategory(month, categoryId);
 
   const dailyData = useMemo(
-    () => buildDailyChartData(dailyRaw, currentMonth),
-    [dailyRaw, currentMonth],
+    () => buildDailyChartData(dailyRaw, month),
+    [dailyRaw, month],
   );
 
   if (dailyRaw.length === 0) return null;

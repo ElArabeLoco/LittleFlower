@@ -12,31 +12,32 @@ import {
 } from 'recharts';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { ChartCard } from './shared';
-import { formatK, getCurrentMonth, getPreviousMonth, buildBurnUpData } from './helpers';
+import { formatK, getPreviousMonth, buildBurnUpData } from './helpers';
 import { useDailyExpensesByCreditCard } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useCreditCardBudgetTarget } from '@/infrastructure/powersync/queries/useBudgetQueries';
 
 interface CreditCardBurnUpChartProps {
+  month: string;
+  isCurrentMonth: boolean;
   householdId: string;
 }
 
 const COLOR = '#a78bfa';
 const GRADIENT_ID = 'burnUp-creditcard';
 
-export function CreditCardBurnUpChart({ householdId }: CreditCardBurnUpChartProps) {
+export function CreditCardBurnUpChart({ month, isCurrentMonth, householdId }: CreditCardBurnUpChartProps) {
   const { t } = useI18n();
-  const currentMonth = getCurrentMonth();
-  const prevMonth = getPreviousMonth(currentMonth);
+  const prevMonth = getPreviousMonth(month);
 
-  const { data: targetRows = [] } = useCreditCardBudgetTarget(currentMonth, householdId);
-  const { data: curRaw = [] } = useDailyExpensesByCreditCard(currentMonth, householdId);
+  const { data: targetRows = [] } = useCreditCardBudgetTarget(month, householdId);
+  const { data: curRaw = [] } = useDailyExpensesByCreditCard(month, householdId);
   const { data: prevRaw = [] } = useDailyExpensesByCreditCard(prevMonth, householdId);
 
   const target = targetRows[0]?.total ?? 0;
 
   const chartData = useMemo(
-    () => buildBurnUpData(curRaw, prevRaw, currentMonth, target),
-    [curRaw, prevRaw, currentMonth, target],
+    () => buildBurnUpData(curRaw, prevRaw, month, target),
+    [curRaw, prevRaw, month, target],
   );
 
   const today = new Date().getDate();
@@ -120,14 +121,16 @@ export function CreditCardBurnUpChart({ householdId }: CreditCardBurnUpChartProp
             connectNulls={false}
           />
 
-          {/* Today marker */}
-          <ReferenceLine
-            x={String(today)}
-            stroke={COLOR}
-            strokeWidth={1}
-            strokeDasharray="3 3"
-            label={{ value: t.dashboard.burnUpToday, position: 'insideTopRight', fontSize: 9, fill: COLOR }}
-          />
+          {/* Today marker — only shown when viewing the current month */}
+          {isCurrentMonth && (
+            <ReferenceLine
+              x={String(today)}
+              stroke={COLOR}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              label={{ value: t.dashboard.burnUpToday, position: 'insideTopRight', fontSize: 9, fill: COLOR }}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </ChartCard>

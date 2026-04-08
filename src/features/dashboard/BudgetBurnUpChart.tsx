@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { ChartCard } from './shared';
-import { formatK, getCurrentMonth, getPreviousMonth, buildBurnUpData } from './helpers';
+import { formatK, getPreviousMonth, buildBurnUpData } from './helpers';
 import {
   useDailyExpensesByBudgetName,
 } from '@/infrastructure/powersync/queries/useExpenseQueries';
@@ -21,6 +21,8 @@ import {
 } from '@/infrastructure/powersync/queries/useBudgetQueries';
 
 interface BudgetBurnUpChartProps {
+  month: string;
+  isCurrentMonth: boolean;
   budgetName: string;
   title: string;
   subtitle: string;
@@ -28,21 +30,20 @@ interface BudgetBurnUpChartProps {
   householdId: string;
 }
 
-export function BudgetBurnUpChart({ budgetName, title, subtitle, color, householdId }: BudgetBurnUpChartProps) {
+export function BudgetBurnUpChart({ month, isCurrentMonth, budgetName, title, subtitle, color, householdId }: BudgetBurnUpChartProps) {
   const { t } = useI18n();
-  const currentMonth = getCurrentMonth();
-  const prevMonth = getPreviousMonth(currentMonth);
+  const prevMonth = getPreviousMonth(month);
   const gradientId = `burnUp-${budgetName.replace(/\s/g, '_')}`;
 
-  const { data: targetRows = [] } = useBudgetTargetByName(currentMonth, budgetName, householdId);
-  const { data: curRaw = [] } = useDailyExpensesByBudgetName(currentMonth, budgetName, householdId);
+  const { data: targetRows = [] } = useBudgetTargetByName(month, budgetName, householdId);
+  const { data: curRaw = [] } = useDailyExpensesByBudgetName(month, budgetName, householdId);
   const { data: prevRaw = [] } = useDailyExpensesByBudgetName(prevMonth, budgetName, householdId);
 
   const target = targetRows[0]?.amount ?? 0;
 
   const chartData = useMemo(
-    () => buildBurnUpData(curRaw, prevRaw, currentMonth, target),
-    [curRaw, prevRaw, currentMonth, target],
+    () => buildBurnUpData(curRaw, prevRaw, month, target),
+    [curRaw, prevRaw, month, target],
   );
 
   const today = new Date().getDate();
@@ -126,14 +127,16 @@ export function BudgetBurnUpChart({ budgetName, title, subtitle, color, househol
             connectNulls={false}
           />
 
-          {/* Today marker */}
-          <ReferenceLine
-            x={String(today)}
-            stroke={color}
-            strokeWidth={1}
-            strokeDasharray="3 3"
-            label={{ value: t.dashboard.burnUpToday, position: 'insideTopRight', fontSize: 9, fill: color }}
-          />
+          {/* Today marker — only shown when viewing the current month */}
+          {isCurrentMonth && (
+            <ReferenceLine
+              x={String(today)}
+              stroke={color}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              label={{ value: t.dashboard.burnUpToday, position: 'insideTopRight', fontSize: 9, fill: color }}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </ChartCard>

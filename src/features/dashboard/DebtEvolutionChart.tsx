@@ -3,14 +3,13 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { ChartTooltip } from './shared';
 import { ChartCard } from './shared';
-import { formatK, prevNMonths, makeShortMonth } from './helpers';
+import { formatK, makeShortMonth } from './helpers';
 import { useDebtData } from './useDebtData';
 
 export function DebtEvolutionChart() {
   const { t } = useI18n();
   const shortMonth = makeShortMonth(t);
-  const { dashDebts, dashDebtTxs, debtInitialCOP } = useDebtData();
-  const last6 = useMemo(() => prevNMonths(6), []);
+  const { dashDebts, dashDebtTxs, debtInitialCOP, last6 } = useDebtData();
 
   const debtEvolutionData = useMemo(() => {
     return last6.map(month => {
