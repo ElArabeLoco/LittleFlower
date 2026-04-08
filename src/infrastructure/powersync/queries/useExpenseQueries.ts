@@ -81,16 +81,17 @@ export interface RecentExpenseRow {
   category_id: string;
 }
 
-/** Latest N positive expenses across all budgets (for the dashboard feed). */
-export function useRecentExpenses(limit = 10) {
+/** Latest N positive expenses for the given month (for the dashboard feed). */
+export function useRecentExpenses(month: string, limit = 10) {
   return useQuery<RecentExpenseRow>(
     `SELECT e.id, e.amount, e.note, e.timestamp, b.name as budget_name, b.category_id
      FROM expenses e
      JOIN budgets b ON b.id = e.budget_id
-     WHERE e.deleted_at IS NULL AND e.amount > 0
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     WHERE e.deleted_at IS NULL AND e.amount > 0 AND bm.month = ?
      ORDER BY e.timestamp DESC, e.created_at DESC
      LIMIT ?`,
-    [limit],
+    [month, limit],
   );
 }
 
