@@ -651,3 +651,123 @@ export async function insertDebtTransaction(
 export async function softDeleteDebtTransaction(id: string): Promise<void> {
   await db.execute(`UPDATE debt_transactions SET deleted_at = ? WHERE id = ?`, [now(), id]);
 }
+
+// ---------------------------------------------------------------------------
+// BudgetMonth — apply forward helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates an array of 'YYYY-MM' strings from fromMonth to toMonth (inclusive).
+ * Pure function — exported for unit testing.
+ *
+ * @example buildMonthRange('2025-03', '2025-06') → ['2025-03','2025-04','2025-05','2025-06']
+ */
+export function buildMonthRange(fromMonth: string, toMonth: string): string[] {
+  const [fy, fm] = fromMonth.split('-').map(Number);
+  const [ty, tm] = toMonth.split('-').map(Number);
+  if (fy > ty || (fy === ty && fm > tm)) return [];
+  const months: string[] = [];
+  let y = fy, m = fm;
+  while (y < ty || (y === ty && m <= tm)) {
+    months.push(`${y}-${String(m).padStart(2, '0')}`);
+    if (++m > 12) { m = 1; y++; }
+  }
+  return months;
+}
+
+export interface RegisterFullPaymentPayload {
+  budgetId: string;
+  /** Existing budget_month id. If null, a new row is created before recording the expense. */
+  budgetMonthId: string | null;
+  householdId: string;
+  month: string;           // 'YYYY-MM'
+  amount: number;          // full budgeted amount for the month
+  spentAmount: number;     // already recorded (SUM of expenses — may be 0)
+  debtId: string | null;
+  userId: string;
+}
+
+/**
+ * Registers an expense for the remaining unspent balance and marks the budget
+ * month as executed. Creates the budget_month row if it doesn't exist yet.
+ * If spentAmount >= amount there is no remaining balance — only marks executed.
+ */
+export async function registerFullPaymentAndExecute(
+  payload: RegisterFullPaymentPayload,
+): Promise<void> {
+  assertAuth(payload.householdId, payload.userId);
+
+  let bmId = payload.budgetMonthId;
+  if (!bmId) {
+    bmId = await upsertBudgetMonth(
+      {
+        household_id: payload.householdId,
+        budget_id: payload.budgetId,
+        month: payload.month,
+        amount: payload.amount,
+        is_executed: false,
+      },
+      payload.userId,
+    );
+  }
+
+  const remaining = Math.max(0, payload.amount - payload.spentAmount);
+  if (remaining > 0) {
+    await recordExpense({
+      household_id: payload.householdId,
+      budget_id: payload.budgetId,
+      budget_month_id: bmId,
+      amount: remaining,
+      note: 'Pago total registrado automáticamente',
+      recorded_by: payload.userId,
+      timestamp: new Date().toISOString(),
+      ...(payload.debtId ? { debt_id: payload.debtId } : {}),
+    });
+  }
+
+  await updateBudgetMonthExecution(bmId, true, payload.userId);
+}
+
+export interface ApplyForwardPayload {
+  budgetId: string;
+  householdId: string;
+  fromMonth: string;  // inclusive, 'YYYY-MM'
+  toMonth: string;    // inclusive, 'YYYY-MM'
+  amount: number;
+  /**
+   * All existing BudgetMonth rows for this budget within the affected range.
+   * Used to skip executed months and reuse existing row ids on upsert.
+   */
+  existingMonths: ReadonlyArray<{ id: string; month: string; is_executed: number }>;
+  userId: string;
+}
+
+/**
+ * Applies a new monthly amount to all non-executed budget months in [fromMonth, toMonth].
+ * Creates new budget_month rows where they don't exist yet.
+ * Silently skips months where is_executed = 1.
+ */
+export async function applyBudgetMonthAmountForward(
+  payload: ApplyForwardPayload,
+): Promise<void> {
+  assertAuth(payload.householdId, payload.userId);
+
+  const months = buildMonthRange(payload.fromMonth, payload.toMonth);
+  const existing = new Map(payload.existingMonths.map(m => [m.month, m]));
+
+  for (const month of months) {
+    const row = existing.get(month);
+    if (row?.is_executed) continue;
+    await upsertBudgetMonth(
+      {
+        id: row?.id,
+        household_id: payload.householdId,
+        budget_id: payload.budgetId,
+        month,
+        amount: payload.amount,
+        is_executed: false,
+      },
+      payload.userId,
+    );
+  }
+}

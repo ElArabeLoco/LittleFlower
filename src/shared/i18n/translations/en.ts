@@ -240,8 +240,8 @@ export const en: Translations = {
     realBalanceRow: 'Real balance',
     noItems: 'No budget items.',
     addFromSettings: 'Add budgets from Settings.',
-    executedHint: 'Executed ✓ — right-click to unmark',
-    editHint: 'Click to edit · right-click to mark executed',
+    executedHint: 'Executed ✓ — right-click for options',
+    editHint: 'Double-click to edit · right-click for more options',
     viewExpenses: 'View / record expenses',
     searchPlaceholder: 'Search budget…',
     sortValue: 'Value',
@@ -249,6 +249,25 @@ export const en: Translations = {
     sortCategory: 'Category',
     sortReset: 'Default',
     matchCount: (n: number) => `${n} budget${n !== 1 ? 's' : ''}`,
+    // Context menu
+    ctxMarkExecuted: 'Mark as paid',
+    ctxMarkUnexecuted: 'Unmark as paid',
+    ctxRegisterFullPayment: 'Register full payment',
+    ctxRegisterFullPaymentDesc: 'Record remaining balance as expense and mark as paid',
+    ctxForwardAmount: 'From here on…',
+    ctxForwardAmountDesc: (month: string) => `Apply this value from ${month} onwards`,
+    ctxForwardPastNotAvailable: 'Not available for past months',
+    ctxViewExpenses: 'View transactions',
+    // Edit toolbar
+    editOnlyThisMonth: 'This month only',
+    editForwardMonths: (range: string, count: number) => `${range} (${count} ${count === 1 ? 'month' : 'months'})`,
+    // Apply-forward confirm dialog
+    forwardDialogTitle: 'Apply from here on',
+    forwardDialogMsg: (amount: string, range: string, count: number) =>
+      `Apply ${amount} to months ${range} (${count} ${count === 1 ? 'month' : 'months'})?`,
+    forwardDialogNote: 'Already executed months will not be modified.',
+    forwardApply: 'Apply',
+    forwardCancel: 'Cancel',
   },
 
   // ---------------------------------------------------------------------------

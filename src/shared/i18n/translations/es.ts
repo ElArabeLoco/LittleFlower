@@ -239,8 +239,8 @@ export const es = {
     realBalanceRow: 'Balance real',
     noItems: 'No hay ítems de presupuesto.',
     addFromSettings: 'Agrega presupuestos desde Configuración.',
-    executedHint: 'Ejecutado ✓ — clic derecho para desmarcar',
-    editHint: 'Clic para editar · clic derecho para marcar ejecutado',
+    executedHint: 'Ejecutado ✓ — clic derecho para ver opciones',
+    editHint: 'Doble clic para editar · clic derecho para más opciones',
     viewExpenses: 'Ver / registrar gastos',
     searchPlaceholder: 'Buscar rubro…',
     sortValue: 'Valor',
@@ -248,6 +248,25 @@ export const es = {
     sortCategory: 'Categoría',
     sortReset: 'Predeterminado',
     matchCount: (n: number) => `${n} rubro${n !== 1 ? 's' : ''}`,
+    // Context menu
+    ctxMarkExecuted: 'Marcar como pagado',
+    ctxMarkUnexecuted: 'Desmarcar como pagado',
+    ctxRegisterFullPayment: 'Registrar pago total',
+    ctxRegisterFullPaymentDesc: 'Crea gasto por el saldo restante y marca como pagado',
+    ctxForwardAmount: 'De aquí en adelante…',
+    ctxForwardAmountDesc: (month: string) => `Aplicar este valor desde ${month} en adelante`,
+    ctxForwardPastNotAvailable: 'No disponible en meses pasados',
+    ctxViewExpenses: 'Ver transacciones',
+    // Edit toolbar
+    editOnlyThisMonth: 'Solo este mes',
+    editForwardMonths: (range: string, count: number) => `${range} (${count} ${count === 1 ? 'mes' : 'meses'})`,
+    // Apply-forward confirm dialog
+    forwardDialogTitle: 'Aplicar de aquí en adelante',
+    forwardDialogMsg: (amount: string, range: string, count: number) =>
+      `¿Aplicar ${amount} a los meses ${range} (${count} ${count === 1 ? 'mes' : 'meses'})?`,
+    forwardDialogNote: 'Los meses ya ejecutados no se modificarán.',
+    forwardApply: 'Aplicar',
+    forwardCancel: 'Cancelar',
   },
 
   // ---------------------------------------------------------------------------
