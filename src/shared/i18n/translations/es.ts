@@ -503,6 +503,21 @@ export const es = {
     // Session
     sessionTitle: 'Sesión',
     signOut: 'Cerrar sesión',
+    // Data export/import
+    dataTitle: 'Datos',
+    dataDescription: 'Exporta tus datos en varios formatos o importa un respaldo anterior.',
+    exportLF: 'Exportar respaldo (.lf)',
+    exportExcel: 'Exportar para Excel (.xlsx)',
+    exportNumbers: 'Exportar para Numbers (.xlsx)',
+    importLF: 'Importar respaldo (.lf)',
+    exporting: 'Exportando...',
+    importing: 'Importando...',
+    exportSuccess: 'Archivo descargado',
+    importSuccess: (imported: number, skipped: number) =>
+      `${imported} registros importados. ${skipped} ya existían.`,
+    importDifferentHousehold: 'Atención: el respaldo es de otro hogar. Los datos se han importado con tu hogar actual.',
+    importErrorInvalidFormat: 'Formato de archivo inválido. Asegúrate de importar un archivo .lf de Florecita.',
+    importErrorGeneric: 'Error al importar. Revisa el archivo e intenta de nuevo.',
   },
 
   // ---------------------------------------------------------------------------

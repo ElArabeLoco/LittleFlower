@@ -504,6 +504,21 @@ export const en: Translations = {
     // Session
     sessionTitle: 'Session',
     signOut: 'Sign out',
+    // Data export/import
+    dataTitle: 'Data',
+    dataDescription: 'Export your data in multiple formats or import a previous backup.',
+    exportLF: 'Export backup (.lf)',
+    exportExcel: 'Export for Excel (.xlsx)',
+    exportNumbers: 'Export for Numbers (.xlsx)',
+    importLF: 'Import backup (.lf)',
+    exporting: 'Exporting...',
+    importing: 'Importing...',
+    exportSuccess: 'File downloaded',
+    importSuccess: (imported: number, skipped: number) =>
+      `${imported} records imported. ${skipped} already existed.`,
+    importDifferentHousehold: 'Warning: this backup is from a different household. Data has been imported under your current household.',
+    importErrorInvalidFormat: 'Invalid file format. Make sure you are importing a Florecita .lf file.',
+    importErrorGeneric: 'Import failed. Check the file and try again.',
   },
 
   // ---------------------------------------------------------------------------

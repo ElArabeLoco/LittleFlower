@@ -18,6 +18,7 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
 import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages, Tag } from 'lucide-react';
+import { ExportImportSection } from './export/ExportImportSection';
 import { cn } from '@/shared/ui/cn';
 import { useHouseholdQuery, useUserQuery } from '@/infrastructure/powersync/queries/useHouseholdQueries';
 import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
@@ -390,6 +391,18 @@ export function SettingsPage() {
                   <p className="text-xs text-[var(--text-muted)]">{t.settings.numberFormatDescription}</p>
                 </div>
                 <NumberFormatSelector />
+              </SettingsCard>
+            </section>
+
+            {/* Datos */}
+            <section>
+              <SectionTitle>{t.settings.dataTitle}</SectionTitle>
+              <SettingsCard>
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.dataTitle}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t.settings.dataDescription}</p>
+                </div>
+                <ExportImportSection householdId={householdId} />
               </SettingsCard>
             </section>
 
