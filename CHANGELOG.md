@@ -11,6 +11,14 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.3.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.2.0...littleflower-v0.3.0) (2026-04-10)
+
+
+### Features
+
+* make dashboard month-navigable with prev/next navigation ([#34](https://github.com/ElArabeLoco/LittleFlower/issues/34)) ([4998ad6](https://github.com/ElArabeLoco/LittleFlower/commit/4998ad6a6ee75352ea5146864780700ed5489395))
+* rich cell interactions on YearView spreadsheet ([#36](https://github.com/ElArabeLoco/LittleFlower/issues/36)) ([dd48a06](https://github.com/ElArabeLoco/LittleFlower/commit/dd48a06cf5793d1ba443994da1c5ea3ad0788654))
+
 ## [0.2.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.1.0...littleflower-v0.2.0) (2026-04-08)
 
 
