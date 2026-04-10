@@ -16,6 +16,7 @@ import { ExceededBudgetsChart } from './ExceededBudgetsChart';
 import { RecentExpensesFeed } from './RecentExpensesFeed';
 import { DebtProgressChart } from './DebtProgressChart';
 import { DebtEvolutionChart } from './DebtEvolutionChart';
+import { IncomeHistoryChart } from './IncomeHistoryChart';
 import { DailySpendChart } from './DailySpendChart';
 import { BudgetBurnUpChart } from './BudgetBurnUpChart';
 import { CreditCardBurnUpChart } from './CreditCardBurnUpChart';
@@ -158,6 +159,8 @@ export function DashboardPage() {
           <DebtProgressChart />
           <DebtEvolutionChart />
         </div>
+
+        <IncomeHistoryChart />
 
         <EmptyState />
       </main>
