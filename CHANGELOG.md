@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.4.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.3.0...littleflower-v0.4.0) (2026-04-10)
+
+
+### Features
+
+* add interactive income history chart to dashboard ([#37](https://github.com/ElArabeLoco/LittleFlower/issues/37)) ([550c8d7](https://github.com/ElArabeLoco/LittleFlower/commit/550c8d7687bc8db844cc6df068fef7430d6f7db9))
+
 ## [0.3.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.2.0...littleflower-v0.3.0) (2026-04-10)
 
 
