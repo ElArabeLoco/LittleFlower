@@ -50,14 +50,15 @@ export function BudgetHubPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="📊" title={t.budgetHub.title} subtitle={t.budgetHub.subtitle} />
+      <AppHeader emoji="📊" title={t.budgetHub.title} subtitle={t.budgetHub.subtitle} maxWidth="max-w-2xl" />
 
-      <main className="flex-1 max-w-lg w-full mx-auto px-4 py-8 space-y-4">
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
 
-        <p className="text-xs text-[var(--text-muted)] px-1 mb-2">
+        <p className="text-xs text-[var(--text-muted)] px-1 mb-4">
           {t.budgetHub.description}
         </p>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CARDS.map(card => (
           <button
             key={card.to}
@@ -92,6 +93,7 @@ export function BudgetHubPage() {
             </div>
           </button>
         ))}
+        </div>
       </main>
 
       <AppNav />

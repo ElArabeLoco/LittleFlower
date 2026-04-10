@@ -50,12 +50,12 @@ export function DashboardPage() {
       <AppHeader
         emoji="✨"
         title="Dashboard"
-        maxWidth="max-w-4xl"
+        maxWidth="max-w-7xl"
       />
 
       {/* Month navigation bar */}
       <div className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] sticky top-14 z-10">
-        <div className="max-w-4xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
+        <div className="max-w-7xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
           <button
             onClick={goToPrevMonth}
             className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
@@ -84,7 +84,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-5 space-y-5">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
         <KpiStrip />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

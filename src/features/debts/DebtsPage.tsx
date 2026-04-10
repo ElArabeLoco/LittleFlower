@@ -30,6 +30,7 @@ export function DebtsPage() {
         emoji="💳"
         title={t.debts.title}
         subtitle={t.debts.subtitle}
+        maxWidth="max-w-5xl"
         actions={
           <DebtFormDialog
             mode="create"
@@ -45,7 +46,7 @@ export function DebtsPage() {
         }
       />
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-5xl mx-auto px-4 py-6 space-y-4">
         {debts.length > 0 && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] p-4">

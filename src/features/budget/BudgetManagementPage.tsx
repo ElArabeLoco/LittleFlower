@@ -33,7 +33,7 @@ export function BudgetManagementPage() {
         emoji="📋"
         title={t.budgets.title}
         subtitle={t.budgets.subtitle}
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-5xl"
         actions={
           <BudgetFormDialog
             mode="create"
@@ -50,7 +50,7 @@ export function BudgetManagementPage() {
         }
       />
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-4 py-6">
         {budgets.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">📋</p>

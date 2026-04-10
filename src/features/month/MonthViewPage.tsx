@@ -895,11 +895,11 @@ export function MonthViewPage() {
         emoji="🗓️"
         title={t.monthView.title}
         subtitle={formatMonthLabel(month)}
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-5xl"
       />
 
       {/* Month navigator */}
-      <div className="max-w-3xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
+      <div className="max-w-5xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
         <button
           onClick={() => setMonth(m => prevMonth(m))}
           className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
@@ -921,7 +921,7 @@ export function MonthViewPage() {
 
       {/* Scrollable content */}
       <main className="flex-1 overflow-auto">
-        <div className="max-w-3xl mx-auto px-4 pb-6 space-y-4">
+        <div className="max-w-5xl mx-auto px-4 pb-6 space-y-4">
 
           {/* Hero balance card — full width */}
           <BalanceCard

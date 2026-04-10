@@ -328,95 +328,104 @@ export function SettingsPage() {
         emoji="🌸"
         title={t.settings.profileTitle}
         subtitle={session?.email ?? ''}
+        maxWidth="max-w-4xl"
       />
 
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-6 space-y-6">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-        {/* ── Perfil ── */}
-        <section>
-          <SectionTitle>{t.settings.profileTitle}</SectionTitle>
-          <SettingsCard>
-            <ProfileCard email={session?.email ?? ''} userName={userName} />
-          </SettingsCard>
-        </section>
+          {/* ── Left column: identity ── */}
+          <div className="space-y-6">
+            {/* Perfil */}
+            <section>
+              <SectionTitle>{t.settings.profileTitle}</SectionTitle>
+              <SettingsCard>
+                <ProfileCard email={session?.email ?? ''} userName={userName} />
+              </SettingsCard>
+            </section>
 
-        {/* ── Hogar ── */}
-        {householdId && (
-          <section>
-            <SectionTitle>{t.settings.householdTitle}</SectionTitle>
-            <SettingsCard>
-              <HouseholdCard householdName={householdName} joinCode={joinCode} />
-            </SettingsCard>
-          </section>
-        )}
+            {/* Hogar */}
+            {householdId && (
+              <section>
+                <SectionTitle>{t.settings.householdTitle}</SectionTitle>
+                <SettingsCard>
+                  <HouseholdCard householdName={householdName} joinCode={joinCode} />
+                </SettingsCard>
+              </section>
+            )}
+          </div>
 
-        {/* ── Apariencia ── */}
-        <section>
-          <SectionTitle>{t.settings.appearanceTitle}</SectionTitle>
-          <SettingsCard>
-            <div className="px-4 pt-3 pb-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.themeLabel}</p>
-              <p className="text-xs text-[var(--text-muted)]">{t.settings.themeDescription}</p>
-            </div>
-            <ThemeSelector />
-          </SettingsCard>
-        </section>
+          {/* ── Right column: preferences ── */}
+          <div className="space-y-6">
+            {/* Apariencia */}
+            <section>
+              <SectionTitle>{t.settings.appearanceTitle}</SectionTitle>
+              <SettingsCard>
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.themeLabel}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t.settings.themeDescription}</p>
+                </div>
+                <ThemeSelector />
+              </SettingsCard>
+            </section>
 
-        {/* ── Idioma ── */}
-        <section>
-          <SectionTitle>{t.settings.languageTitle}</SectionTitle>
-          <SettingsCard>
-            <div className="px-4 pt-3 pb-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.languageLabel}</p>
-              <p className="text-xs text-[var(--text-muted)]">{t.settings.languageDescription}</p>
-            </div>
-            <LanguageSelector />
-          </SettingsCard>
-        </section>
+            {/* Idioma */}
+            <section>
+              <SectionTitle>{t.settings.languageTitle}</SectionTitle>
+              <SettingsCard>
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.languageLabel}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t.settings.languageDescription}</p>
+                </div>
+                <LanguageSelector />
+              </SettingsCard>
+            </section>
 
-        {/* ── Números ── */}
-        <section>
-          <SectionTitle>{t.settings.numbersTitle}</SectionTitle>
-          <SettingsCard>
-            <div className="px-4 pt-3 pb-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.numberFormatLabel}</p>
-              <p className="text-xs text-[var(--text-muted)]">{t.settings.numberFormatDescription}</p>
-            </div>
-            <NumberFormatSelector />
-          </SettingsCard>
-        </section>
+            {/* Números */}
+            <section>
+              <SectionTitle>{t.settings.numbersTitle}</SectionTitle>
+              <SettingsCard>
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.numberFormatLabel}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t.settings.numberFormatDescription}</p>
+                </div>
+                <NumberFormatSelector />
+              </SettingsCard>
+            </section>
 
-        {/* ── Versión ── */}
-        <section>
-          <SectionTitle>{t.settings.versionTitle}</SectionTitle>
-          <SettingsCard>
-            <div className="flex items-center gap-3 px-5 py-4">
-              <Tag size={16} className="shrink-0 text-[var(--text-muted)]" />
-              <div className="flex-1">
-                <p className="text-sm text-[var(--text-primary)]">Florecita</p>
-                <p className="text-xs text-[var(--text-muted)]">v{__APP_VERSION__}</p>
-              </div>
-            </div>
-          </SettingsCard>
-        </section>
+            {/* Versión */}
+            <section>
+              <SectionTitle>{t.settings.versionTitle}</SectionTitle>
+              <SettingsCard>
+                <div className="flex items-center gap-3 px-5 py-4">
+                  <Tag size={16} className="shrink-0 text-[var(--text-muted)]" />
+                  <div className="flex-1">
+                    <p className="text-sm text-[var(--text-primary)]">Florecita</p>
+                    <p className="text-xs text-[var(--text-muted)]">v{__APP_VERSION__}</p>
+                  </div>
+                </div>
+              </SettingsCard>
+            </section>
 
-        {/* ── Sesión ── */}
-        <section>
-          <SectionTitle>{t.settings.sessionTitle}</SectionTitle>
-          <SettingsCard>
-            <div className="px-1 py-1">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-12 rounded-xl"
-                onClick={handleLogout}
-              >
-                <LogOut size={16} />
-                {t.settings.signOut}
-              </Button>
-            </div>
-          </SettingsCard>
-        </section>
+            {/* Sesión */}
+            <section>
+              <SectionTitle>{t.settings.sessionTitle}</SectionTitle>
+              <SettingsCard>
+                <div className="px-1 py-1">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-12 rounded-xl"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={16} />
+                    {t.settings.signOut}
+                  </Button>
+                </div>
+              </SettingsCard>
+            </section>
+          </div>
 
+        </div>
       </main>
 
       <AppNav />
