@@ -11,6 +11,14 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.5.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.4.0...littleflower-v0.5.0) (2026-04-10)
+
+
+### Features
+
+* add data export/import to Settings ([76599b4](https://github.com/ElArabeLoco/LittleFlower/commit/76599b4a81e1ebb1eb6f8cbce3643178bc2e02e6))
+* improve horizontal space utilization on wide screens ([#39](https://github.com/ElArabeLoco/LittleFlower/issues/39)) ([6393235](https://github.com/ElArabeLoco/LittleFlower/commit/63932352ad514cfebe58641893eaec7144a62f6a))
+
 ## [0.4.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.3.0...littleflower-v0.4.0) (2026-04-10)
 
 
