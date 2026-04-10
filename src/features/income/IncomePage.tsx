@@ -43,6 +43,7 @@ export function IncomePage() {
         emoji="💰"
         title={t.income.title}
         subtitle={fmtMonth(month)}
+        maxWidth="max-w-3xl"
         actions={
           <IncomeFormDialog
             mode="create"
@@ -58,7 +59,7 @@ export function IncomePage() {
         }
       />
 
-      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
         <Button variant="outline" size="icon" onClick={() => setMonth(prevMonth(month))}>
           <ChevronLeft size={16} />
         </Button>
@@ -68,7 +69,7 @@ export function IncomePage() {
         </Button>
       </div>
 
-      <main className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+      <main className="max-w-3xl mx-auto px-4 py-5 space-y-4">
         {hasUSDIncome && (
           <TrmSection
             month={month}

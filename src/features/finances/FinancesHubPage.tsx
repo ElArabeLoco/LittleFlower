@@ -9,7 +9,7 @@
 
 import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { TrendingUp, LayoutList, CreditCard, ChevronRight } from 'lucide-react';
+import { TrendingUp, LayoutList, CreditCard } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
@@ -62,14 +62,15 @@ export function FinancesHubPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="💳" title={t.finances.title} subtitle={t.finances.subtitle} />
+      <AppHeader emoji="💳" title={t.finances.title} subtitle={t.finances.subtitle} maxWidth="max-w-3xl" />
 
-      <main className="flex-1 max-w-lg w-full mx-auto px-4 py-8 space-y-4">
+      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8">
 
-        <p className="text-xs text-[var(--text-muted)] px-1 mb-2">
+        <p className="text-xs text-[var(--text-muted)] px-1 mb-4">
           {t.finances.description}
         </p>
 
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map(card => (
           <button
             key={card.to}
@@ -79,7 +80,7 @@ export function FinancesHubPage() {
               card.border,
             )}
           >
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col gap-3">
               {/* Icon */}
               <div className={cn(
                 'w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white shadow-sm shrink-0',
@@ -89,13 +90,10 @@ export function FinancesHubPage() {
               </div>
 
               {/* Copy */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-[var(--text-primary)]">
-                    {card.emoji} {card.title}
-                  </h2>
-                  <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
-                </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-[var(--text-primary)] mb-1">
+                  {card.title}
+                </h2>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                   {card.desc}
                 </p>
@@ -103,6 +101,7 @@ export function FinancesHubPage() {
             </div>
           </button>
         ))}
+        </div>
       </main>
 
       <AppNav />
