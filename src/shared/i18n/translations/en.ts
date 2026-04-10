@@ -180,6 +180,10 @@ export const en: Translations = {
     burnUpCreditCardDesc: 'Total credit card budget spend vs ideal pace',
     noDataYet: 'No data yet',
     addBudgetsAndIncome: 'Add budgets and income to see your stats',
+    incomeHistory: 'Income history',
+    incomeHistoryDesc: 'Available income in COP per month',
+    incomeHistoryLabel: 'Available income',
+    incomeRanges: { '3': '3M', '6': '6M', '12': '12M', '24': '2Y', '60': '5Y' },
   },
 
   // ---------------------------------------------------------------------------

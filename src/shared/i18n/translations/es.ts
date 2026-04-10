@@ -179,6 +179,10 @@ export const es = {
     burnUpCreditCardDesc: 'Total gastos en presupuestos de tarjeta vs ritmo ideal',
     noDataYet: 'Aún no hay datos',
     addBudgetsAndIncome: 'Agrega presupuestos e ingresos para ver tus estadísticas',
+    incomeHistory: 'Histórico de ingresos',
+    incomeHistoryDesc: 'Ingreso disponible en COP por mes',
+    incomeHistoryLabel: 'Ingreso disponible',
+    incomeRanges: { '3': '3M', '6': '6M', '12': '12M', '24': '2A', '60': '5A' },
   },
 
   // ---------------------------------------------------------------------------
