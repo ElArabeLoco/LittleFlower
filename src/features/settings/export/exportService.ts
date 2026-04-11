@@ -140,7 +140,6 @@ function buildGastosSheet(data: FlorecitaExport): Row[] {
   }
 
   const header: Row = ['Presupuesto', 'Tipo', ...allMonths.map(fmtMonth), 'TOTAL'];
-  const rows: Row[] = [];
 
   function buildSection(title: string, getValue: (budgetId: string, month: string) => number): Row[] {
     const section: Row[] = [
@@ -179,7 +178,7 @@ function buildGastosSheet(data: FlorecitaExport): Row[] {
     return Math.max(0, spentMap.get(bm.id) ?? 0);
   });
 
-  return [...presupSection, [], ...ejecutadoSection, rows].filter(r => r !== rows);
+  return [...presupSection, [], ...ejecutadoSection];
 }
 
 /** Sheet 2 — Ingresos: income sources × months grid */
