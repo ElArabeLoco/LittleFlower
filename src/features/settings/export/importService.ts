@@ -97,7 +97,7 @@ async function importTable(
       `SELECT id FROM ${tableName} WHERE id IN (${placeholders})`,
       chunk,
     );
-    found.forEach(r => existingIds.add(r.id as string));
+    found.forEach(r => existingIds.add((r as Record<string, unknown>).id as string));
   }
 
   let imported = 0;
