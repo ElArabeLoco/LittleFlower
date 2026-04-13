@@ -29,7 +29,20 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85dvh] translate-x-[-50%] translate-y-[-50%] gap-4 bg-[var(--bg-surface)] p-6 shadow-xl rounded-2xl border border-[var(--border-subtle)] text-[var(--text-primary)] duration-200 overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+        // Shared base
+        'fixed z-50 grid w-full bg-[var(--bg-surface)] shadow-xl border border-[var(--border-subtle)] text-[var(--text-primary)] duration-200 overflow-y-auto gap-4 p-6',
+        // Shared animations (fade)
+        'data-[state=open]:animate-in data-[state=closed]:animate-out',
+        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        // Mobile default: bottom sheet — anchored to bottom, full width, rounded top corners
+        // The sheet fills from its top down to the physical bottom of the screen,
+        // covering the area behind the keyboard so no transparent overlay shows through.
+        'bottom-0 left-0 right-0 max-h-[90dvh] rounded-t-2xl border-b-0',
+        // Desktop (sm+): centered modal
+        'sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:right-auto',
+        'sm:translate-x-[-50%] sm:translate-y-[-50%]',
+        'sm:max-h-[85dvh] sm:rounded-2xl sm:border',
+        'sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:zoom-out-95',
         className,
       )}
       {...props}

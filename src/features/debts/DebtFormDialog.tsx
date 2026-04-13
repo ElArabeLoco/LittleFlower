@@ -90,7 +90,7 @@ export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onD
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? t.debts.newDebt : t.debts.editDebt}</DialogTitle>
         </DialogHeader>
