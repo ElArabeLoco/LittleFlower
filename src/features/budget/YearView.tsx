@@ -436,9 +436,10 @@ interface MonthMetrics {
   pending: number;
 }
 
-function TotalsRow({ months, metricsMap }: {
+function TotalsRow({ months, metricsMap, nameColCollapsed }: {
   months: string[];
   metricsMap: Map<string, MonthMetrics>;
+  nameColCollapsed: boolean;
 }) {
   const { t } = useI18n();
   const metrics = [
@@ -450,8 +451,11 @@ function TotalsRow({ months, metricsMap }: {
     <>
       {metrics.map(m => (
         <tr key={m.key} className="bg-[var(--group-totals-bg)] border-t border-[var(--border-subtle)]">
-          <td className="sticky left-0 z-10 bg-[var(--group-totals-sticky)] px-3 py-1 text-xs text-[var(--text-secondary)] font-medium whitespace-nowrap border-r border-[var(--border-subtle)]">
-            {m.label}
+          <td className={cn(
+            'sticky left-0 z-10 bg-[var(--group-totals-sticky)] py-1 text-xs text-[var(--text-secondary)] font-medium whitespace-nowrap border-r border-[var(--border-subtle)] transition-all duration-200',
+            nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+          )}>
+            {nameColCollapsed ? '' : m.label}
           </td>
           {months.map(month => {
             const v = metricsMap.get(month)?.[m.key] ?? 0;
@@ -481,6 +485,7 @@ interface BudgetTableSectionProps {
   expenseMap: Map<string, number>;
   householdId: string;
   userId: string;
+  nameColCollapsed: boolean;
   getCellRef: (globalBudgetIdx: number, monthIdx: number) => React.RefObject<BudgetCellHandle | null>;
   onCellTabNext: (globalBudgetIdx: number, monthIdx: number) => void;
   onCellTabPrev: (globalBudgetIdx: number, monthIdx: number) => void;
@@ -495,7 +500,7 @@ interface BudgetTableSectionProps {
 
 function BudgetTableSection({
   budgets, metricsMap, startIdx, months, currentMonth,
-  bmMap, expenseMap, householdId, userId, getCellRef,
+  bmMap, expenseMap, householdId, userId, nameColCollapsed, getCellRef,
   onCellTabNext, onCellTabPrev, onCellEnterDown,
   onCellContextMenu, onCellForwardRequest, onOpenExpenses,
 }: BudgetTableSectionProps) {
@@ -506,10 +511,16 @@ function BudgetTableSection({
         return (
           <tr key={budget.id} className="border-b border-[var(--border-subtle)] hover:bg-[var(--bg-hover)] transition-colors group">
             <td
-              className="sticky left-0 z-10 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-hover-solid)] px-3 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-[var(--border-subtle)] max-w-[160px] truncate"
+              className={cn(
+                'sticky left-0 z-10 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-hover-solid)] py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-[var(--border-subtle)] transition-all duration-200',
+                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3 max-w-[160px] truncate',
+              )}
               title={budget.name}
             >
-              <span className="mr-1.5">{getCategoryEmoji(budget.category_id)}</span>{budget.name}
+              {nameColCollapsed
+                ? <span>{getCategoryEmoji(budget.category_id)}</span>
+                : <><span className="mr-1.5">{getCategoryEmoji(budget.category_id)}</span>{budget.name}</>
+              }
             </td>
             {months.map((month, mIdx) => {
               const bm         = bmMap.get(`${budget.id}|${month}`);
@@ -553,7 +564,7 @@ function BudgetTableSection({
           </tr>
         );
       })}
-      <TotalsRow months={months} metricsMap={metricsMap} />
+      <TotalsRow months={months} metricsMap={metricsMap} nameColCollapsed={nameColCollapsed} />
     </>
   );
 }
@@ -593,6 +604,11 @@ export function YearView() {
   const [yearFilter, setYearFilter]   = useState('');
   const [yearSortKey, setYearSortKey] = useState<YearSortKey>(YEAR_DEFAULT_SORT);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  // Left-column collapse: auto-collapse on narrow screens (mobile)
+  const [nameColCollapsed, setNameColCollapsed] = useState(false);
+  useEffect(() => {
+    if (window.innerWidth < 640) setNameColCollapsed(true);
+  }, []);
 
   const months       = useMemo(() => yearMonths(year), [year]);
   const currentMonth = useMemo(getCurrentMonth, []);
@@ -849,7 +865,7 @@ export function YearView() {
 
       {/* Sort & filter bar */}
       {budgets.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
           <div className={cn(
             'flex items-center gap-2 flex-1 bg-[var(--bg-app)] border rounded-lg px-3',
             yearFilter ? 'border-violet-400 dark:border-violet-600' : 'border-[var(--border-medium)]',
@@ -924,8 +940,18 @@ export function YearView() {
         <table className="border-separate border-spacing-0 text-sm bg-[var(--bg-surface)] min-w-max w-full">
           <thead className="bg-[var(--bg-surface)] shadow-sm">
             <tr className="border-b-2 border-[var(--border-medium)]">
-              <th className="sticky top-0 left-0 z-30 bg-[var(--bg-surface)] px-3 py-2 text-left text-xs font-semibold text-[var(--text-secondary)] w-40 border-r border-[var(--border-subtle)]">
-                {t.yearView.itemHeader}
+              <th className={cn(
+                'sticky top-0 left-0 z-30 bg-[var(--bg-surface)] px-2 py-2 border-r border-[var(--border-subtle)] transition-all duration-200',
+                nameColCollapsed ? 'w-9' : 'w-40',
+              )}>
+                <button
+                  onClick={() => setNameColCollapsed(v => !v)}
+                  className="flex items-center gap-1 w-full text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  title={nameColCollapsed ? 'Expandir nombres' : 'Colapsar nombres'}
+                >
+                  {!nameColCollapsed && <span className="flex-1 text-left">{t.yearView.itemHeader}</span>}
+                  <ChevronRight size={12} className={cn('shrink-0 transition-transform duration-200', !nameColCollapsed && 'rotate-180')} />
+                </button>
               </th>
               {months.map((month, i) => (
                 <th
@@ -950,8 +976,11 @@ export function YearView() {
             {displayCCBudgets.length > 0 && (
               <>
                 <tr className="bg-[var(--group-cc-bg)] border-t border-[var(--group-cc-border)]">
-                  <td className="sticky left-0 z-10 bg-[var(--group-cc-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide">
-                    💳 {t.yearView.creditCardGroup}
+                  <td className={cn(
+                    'sticky left-0 z-10 bg-[var(--group-cc-bg)] py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide transition-all duration-200',
+                    nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+                  )}>
+                    {nameColCollapsed ? '💳' : `💳 ${t.yearView.creditCardGroup}`}
                   </td>
                   <td colSpan={months.length} className="bg-[var(--group-cc-bg)]" />
                 </tr>
@@ -965,6 +994,7 @@ export function YearView() {
                   expenseMap={expenseMap}
                   householdId={householdId}
                   userId={userId}
+                  nameColCollapsed={nameColCollapsed}
                   getCellRef={getCellRef}
                   onCellTabNext={onCellTabNext}
                   onCellTabPrev={onCellTabPrev}
@@ -982,8 +1012,11 @@ export function YearView() {
             {displayCashBudgets.length > 0 && (
               <>
                 <tr className="bg-[var(--group-cash-bg)] border-t border-[var(--group-cash-border)]">
-                  <td className="sticky left-0 z-10 bg-[var(--group-cash-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide">
-                    💵 {t.yearView.cashGroup}
+                  <td className={cn(
+                    'sticky left-0 z-10 bg-[var(--group-cash-bg)] py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide transition-all duration-200',
+                    nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+                  )}>
+                    {nameColCollapsed ? '💵' : `💵 ${t.yearView.cashGroup}`}
                   </td>
                   <td colSpan={months.length} className="bg-[var(--group-cash-bg)]" />
                 </tr>
@@ -997,6 +1030,7 @@ export function YearView() {
                   expenseMap={expenseMap}
                   householdId={householdId}
                   userId={userId}
+                  nameColCollapsed={nameColCollapsed}
                   getCellRef={getCellRef}
                   onCellTabNext={onCellTabNext}
                   onCellTabPrev={onCellTabPrev}
@@ -1013,8 +1047,11 @@ export function YearView() {
 
             {/* Available income row */}
             <tr className="bg-[var(--group-available-bg)] border-t-2 border-[var(--border-medium)]">
-              <td className="sticky left-0 z-10 bg-[var(--group-available-sticky)] px-3 py-1.5 text-xs font-bold text-[var(--group-available-text)] whitespace-nowrap border-r border-[var(--border-medium)]">
-                💰 {t.yearView.availableRow}
+              <td className={cn(
+                'sticky left-0 z-10 bg-[var(--group-available-sticky)] py-1.5 text-xs font-bold text-[var(--group-available-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
+                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+              )}>
+                {nameColCollapsed ? '💰' : `💰 ${t.yearView.availableRow}`}
               </td>
               {months.map(month => (
                 <td key={month} className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-right text-xs tabular-nums font-bold text-[var(--group-available-text)]">
@@ -1025,8 +1062,11 @@ export function YearView() {
 
             {/* Total presupuestado efectivo */}
             <tr className="bg-[var(--group-total-bg)] border-b border-[var(--border-subtle)]">
-              <td className="sticky left-0 z-10 bg-[var(--group-total-sticky)] px-3 py-1.5 text-xs font-bold text-[var(--group-total-text)] whitespace-nowrap border-r border-[var(--border-medium)]">
-                📋 {t.yearView.totalBudgetedRow}
+              <td className={cn(
+                'sticky left-0 z-10 bg-[var(--group-total-sticky)] py-1.5 text-xs font-bold text-[var(--group-total-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
+                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+              )}>
+                {nameColCollapsed ? '📋' : `📋 ${t.yearView.totalBudgetedRow}`}
               </td>
               {months.map(month => (
                 <td key={month} className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-right text-xs tabular-nums font-semibold text-[var(--group-total-text)]">
@@ -1037,8 +1077,11 @@ export function YearView() {
 
             {/* Balance real */}
             <tr className="bg-[var(--group-balance-bg)] border-b-2 border-[var(--border-subtle)]">
-              <td className="sticky left-0 z-10 bg-[var(--group-balance-bg)] px-3 py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)]">
-                ⚖️ {t.yearView.realBalanceRow}
+              <td className={cn(
+                'sticky left-0 z-10 bg-[var(--group-balance-bg)] py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
+                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+              )}>
+                {nameColCollapsed ? '⚖️' : `⚖️ ${t.yearView.realBalanceRow}`}
               </td>
               {months.map(month => {
                 const available   = availableMap.get(month) ?? 0;

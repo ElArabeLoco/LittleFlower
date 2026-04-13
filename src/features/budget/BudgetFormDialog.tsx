@@ -96,7 +96,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? t.budgets.newBudget : t.budgets.editBudget}</DialogTitle>
         </DialogHeader>

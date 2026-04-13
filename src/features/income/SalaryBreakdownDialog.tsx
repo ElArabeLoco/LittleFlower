@@ -94,7 +94,7 @@ export function SalaryBreakdownDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{t.income.salaryBreakdown(income.name)}</DialogTitle>
           <p className="text-xs text-gray-400 mt-0.5">{fmtMonth(month)}</p>

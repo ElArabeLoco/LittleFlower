@@ -95,7 +95,7 @@ export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId,
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? t.income.newIncome : t.income.editIncome}</DialogTitle>
         </DialogHeader>
