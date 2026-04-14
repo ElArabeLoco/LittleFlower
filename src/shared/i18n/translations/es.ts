@@ -188,6 +188,7 @@ export const es = {
     totalPending: 'Total pendiente',
     allPaidThisMonth: 'Todo al día este mes',
     noPendingItems: 'Sin rubros pendientes de pago',
+    pendingRestoreAll: 'Restaurar todos',
   },
 
   // ---------------------------------------------------------------------------

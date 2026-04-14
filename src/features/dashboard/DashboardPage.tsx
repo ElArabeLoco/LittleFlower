@@ -88,8 +88,6 @@ export function DashboardPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
         <KpiStrip />
 
-        <PendingPaymentsChart />
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <TrendChart />
           <BalanceChart />
@@ -151,6 +149,7 @@ export function DashboardPage() {
               />
             </div>
             <CreditCardBurnUpChart month={selectedMonth} isCurrentMonth={isAtCurrentMonth} householdId={session.householdId} />
+            <PendingPaymentsChart />
           </>
         )}
 

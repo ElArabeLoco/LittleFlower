@@ -189,6 +189,7 @@ export const en: Translations = {
     totalPending: 'Total pending',
     allPaidThisMonth: 'All paid this month',
     noPendingItems: 'No pending budget items',
+    pendingRestoreAll: 'Restore all',
   },
 
   // ---------------------------------------------------------------------------
