@@ -11,6 +11,19 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.6.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.5.0...littleflower-v0.6.0) (2026-04-14)
+
+
+### Features
+
+* **dashboard:** add 'Por pagar este mes' pending payments chart ([#44](https://github.com/ElArabeLoco/LittleFlower/issues/44)) ([a997b99](https://github.com/ElArabeLoco/LittleFlower/commit/a997b993f005d783df1a8e2a78eb86e82a686fef))
+
+
+### Bug Fixes
+
+* **mobile:** collapsible year-view column + dialog bottom sheet ([#43](https://github.com/ElArabeLoco/LittleFlower/issues/43)) ([103d0a0](https://github.com/ElArabeLoco/LittleFlower/commit/103d0a0dcf24450150ecfd639ff082f9be3228c7))
+* resolve TS errors in export/import service ([#41](https://github.com/ElArabeLoco/LittleFlower/issues/41)) ([58c05a7](https://github.com/ElArabeLoco/LittleFlower/commit/58c05a7e9232fbf3b6d313c1c17e6b76773e41fb))
+
 ## [0.5.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.4.0...littleflower-v0.5.0) (2026-04-10)
 
 
