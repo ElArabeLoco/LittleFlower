@@ -183,6 +183,12 @@ export const es = {
     incomeHistoryDesc: 'Ingreso disponible en COP por mes',
     incomeHistoryLabel: 'Ingreso disponible',
     incomeRanges: { '3': '3M', '6': '6M', '12': '12M', '24': '2A', '60': '5A' },
+    pendingPayments: 'Por pagar este mes',
+    pendingItemsCount: (n: number) => `${n} rubro${n !== 1 ? 's' : ''} pendiente${n !== 1 ? 's' : ''}`,
+    totalPending: 'Total pendiente',
+    allPaidThisMonth: 'Todo al día este mes',
+    noPendingItems: 'Sin rubros pendientes de pago',
+    pendingRestoreAll: 'Restaurar todos',
   },
 
   // ---------------------------------------------------------------------------

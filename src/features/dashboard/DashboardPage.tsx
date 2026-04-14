@@ -20,6 +20,7 @@ import { IncomeHistoryChart } from './IncomeHistoryChart';
 import { DailySpendChart } from './DailySpendChart';
 import { BudgetBurnUpChart } from './BudgetBurnUpChart';
 import { CreditCardBurnUpChart } from './CreditCardBurnUpChart';
+import { PendingPaymentsChart } from './PendingPaymentsChart';
 import { EmptyState } from './EmptyState';
 import { DashboardDataProvider } from './DashboardContext';
 
@@ -148,6 +149,7 @@ export function DashboardPage() {
               />
             </div>
             <CreditCardBurnUpChart month={selectedMonth} isCurrentMonth={isAtCurrentMonth} householdId={session.householdId} />
+            <PendingPaymentsChart />
           </>
         )}
 

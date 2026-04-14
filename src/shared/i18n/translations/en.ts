@@ -184,6 +184,12 @@ export const en: Translations = {
     incomeHistoryDesc: 'Available income in COP per month',
     incomeHistoryLabel: 'Available income',
     incomeRanges: { '3': '3M', '6': '6M', '12': '12M', '24': '2Y', '60': '5Y' },
+    pendingPayments: 'To pay this month',
+    pendingItemsCount: (n: number) => `${n} pending item${n !== 1 ? 's' : ''}`,
+    totalPending: 'Total pending',
+    allPaidThisMonth: 'All paid this month',
+    noPendingItems: 'No pending budget items',
+    pendingRestoreAll: 'Restore all',
   },
 
   // ---------------------------------------------------------------------------
