@@ -3,6 +3,7 @@ import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import { BudgetFormDialog } from './BudgetFormDialog';
 import type { BudgetRow, DebtOption } from './types';
 
@@ -53,7 +54,7 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
                 start_month: b.start_month,
                 end_month: b.end_month ?? '',
                 default_amount: String(b.default_amount),
-                paid_with_credit_card: b.paid_with_credit_card === 1,
+                payment_mode: (b.payment_mode as PaymentMode) ?? 'credit_card',
                 debt_id: b.debt_id ?? '',
               }}
               onDone={() => {}}

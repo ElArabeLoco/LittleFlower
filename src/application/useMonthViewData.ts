@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useBudgetsQuery, useBudgetMonthsForMonth } from '@/infrastructure/powersync/queries/useBudgetQueries';
-import { useExpenseSumsForMonth } from '@/infrastructure/powersync/queries/useExpenseQueries';
+import { useExpenseSumsByModeForMonth } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useIncomesForMonth, useIncomeMonthsForMonth } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRateForMonth } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
 import type { BudgetRow, BudgetMonthRow, IncomeRow, IncomeMonthRow } from '@/infrastructure/powersync/queries/types';
@@ -13,15 +13,19 @@ export interface GroupTotals {
 }
 
 export interface MonthViewData {
-  /** All active budgets (credit card + cash). */
+  /** All active budgets (credit card + cash + dual). */
   budgets: BudgetRow[];
-  /** Budgets active in this month, split by payment type. */
+  /** Budgets active in this month, split by payment type (dual appears in both). */
   creditCardBudgets: BudgetRow[];
   cashBudgets: BudgetRow[];
   /** Lookup: `${budget_id}|${month}` → BudgetMonthRow. */
   bmMap: Map<string, BudgetMonthRow>;
-  /** Lookup: budget_month_id → total expenses. */
+  /** Lookup: budget_month_id → total expenses (all modes combined). */
   expenseMap: Map<string, number>;
+  /** Lookup: budget_month_id → CC expenses only. */
+  ccExpenseMap: Map<string, number>;
+  /** Lookup: budget_month_id → cash expenses only. */
+  cashExpenseMap: Map<string, number>;
   /** Income sources active this month. */
   activeIncomes: IncomeRow[];
   /** Lookup: income_id → IncomeMonthRow override. */
@@ -41,11 +45,15 @@ export interface MonthViewData {
 /**
  * All data required to render MonthViewPage for a given month.
  * SQL lives in infrastructure queries; calculations live here.
+ *
+ * Dual-mode budgets (payment_mode='both') appear in BOTH creditCardBudgets and
+ * cashBudgets. Their planned amount only counts toward CC totals; the Cash group
+ * shows their cash-only executed amount with budgeted=0.
  */
 export function useMonthViewData(month: string): MonthViewData {
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: budgetMonths = [] } = useBudgetMonthsForMonth(month);
-  const { data: expenseSums = [] } = useExpenseSumsForMonth(month);
+  const { data: expenseSumsByMode = [] } = useExpenseSumsByModeForMonth(month);
   const { data: incomes = [] } = useIncomesForMonth(month);
   const { data: incomeMonths = [] } = useIncomeMonthsForMonth(month);
   const { data: rateRows = [] } = useExchangeRateForMonth(month);
@@ -59,11 +67,17 @@ export function useMonthViewData(month: string): MonthViewData {
     return m;
   }, [budgetMonths]);
 
-  const expenseMap = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const es of expenseSums) m.set(es.budget_month_id, es.total);
-    return m;
-  }, [expenseSums]);
+  const { ccExpenseMap, cashExpenseMap, expenseMap } = useMemo(() => {
+    const cc = new Map<string, number>();
+    const cash = new Map<string, number>();
+    const combined = new Map<string, number>();
+    for (const es of expenseSumsByMode) {
+      const target = es.paid_with_credit_card === 1 ? cc : cash;
+      target.set(es.budget_month_id, (target.get(es.budget_month_id) ?? 0) + es.total);
+      combined.set(es.budget_month_id, (combined.get(es.budget_month_id) ?? 0) + es.total);
+    }
+    return { ccExpenseMap: cc, cashExpenseMap: cash, expenseMap: combined };
+  }, [expenseSumsByMode]);
 
   const imMap = useMemo(() => {
     const m = new Map<string, IncomeMonthRow>();
@@ -77,20 +91,20 @@ export function useMonthViewData(month: string): MonthViewData {
     [budgets, month],
   );
 
+  // Dual-mode budgets appear in BOTH groups
   const creditCardBudgets = useMemo(
-    () => activeForMonth.filter(b => b.paid_with_credit_card === 1),
+    () => activeForMonth.filter(b => b.payment_mode === 'credit_card' || b.payment_mode === 'both'),
     [activeForMonth],
   );
 
   const cashBudgets = useMemo(
-    () => activeForMonth.filter(b => b.paid_with_credit_card === 0),
+    () => activeForMonth.filter(b => b.payment_mode === 'cash' || b.payment_mode === 'both'),
     [activeForMonth],
   );
 
-  // incomes is already filtered by month in SQL (useIncomesForMonth), so no JS filter needed
+  // incomes is already filtered by month in SQL (useIncomesForMonth)
   const activeIncomes = incomes;
 
-  // Total available income in COP
   const { totalAvailable, hasMissingTrm } = useMemo(() => {
     let total = 0;
     let missing = false;
@@ -109,22 +123,25 @@ export function useMonthViewData(month: string): MonthViewData {
     return { totalAvailable: total, hasMissingTrm: missing };
   }, [activeIncomes, imMap, trm]);
 
-  // Group totals
+  // Group totals — dual budgets: planned amount only in CC, cash section gets 0 budgeted
   const calcGroupTotals = useCallback(
-    (group: BudgetRow[]): GroupTotals => {
+    (group: BudgetRow[], isCC: boolean): GroupTotals => {
       let budgeted = 0, spent = 0;
+      const modeMap = isCC ? ccExpenseMap : cashExpenseMap;
       for (const b of group) {
         const bm = bmMap.get(`${b.id}|${month}`);
-        budgeted += bm?.amount ?? b.default_amount;
-        spent += bm ? (expenseMap.get(bm.id) ?? 0) : 0;
+        if (isCC || b.payment_mode !== 'both') {
+          budgeted += bm?.amount ?? b.default_amount;
+        }
+        spent += bm ? (modeMap.get(bm.id) ?? 0) : 0;
       }
       return { budgeted, spent };
     },
-    [bmMap, expenseMap, month],
+    [bmMap, ccExpenseMap, cashExpenseMap, month],
   );
 
-  const ccTotals = useMemo(() => calcGroupTotals(creditCardBudgets), [creditCardBudgets, calcGroupTotals]);
-  const cashTotals = useMemo(() => calcGroupTotals(cashBudgets), [cashBudgets, calcGroupTotals]);
+  const ccTotals = useMemo(() => calcGroupTotals(creditCardBudgets, true), [creditCardBudgets, calcGroupTotals]);
+  const cashTotals = useMemo(() => calcGroupTotals(cashBudgets, false), [cashBudgets, calcGroupTotals]);
 
   return {
     budgets,
@@ -132,6 +149,8 @@ export function useMonthViewData(month: string): MonthViewData {
     cashBudgets,
     bmMap,
     expenseMap,
+    ccExpenseMap,
+    cashExpenseMap,
     activeIncomes,
     imMap,
     trm,

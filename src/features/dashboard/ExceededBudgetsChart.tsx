@@ -32,7 +32,7 @@ export function ExceededBudgetsChart() {
           name: b.name,
           emoji: cat?.emoji ?? '•',
           color: cat?.color ?? '#cbd5e1',
-          isCreditCard: b.paid_with_credit_card === 1,
+          isCreditCard: b.payment_mode !== 'cash',
           month,
           label: shortMonth(month),
           budgeted,

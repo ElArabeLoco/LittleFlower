@@ -4,9 +4,10 @@ import type { BudgetRow, BudgetMonthRow } from './types';
 /** All active budgets ordered by payment type then name. */
 export function useBudgetsQuery() {
   return useQuery<BudgetRow>(
-    `SELECT id, name, description, category_id, paid_with_credit_card,
+    `SELECT id, name, description, category_id, payment_mode,
             default_amount, household_id, start_month, end_month, debt_id
-     FROM budgets WHERE deleted_at IS NULL ORDER BY paid_with_credit_card DESC, name ASC`,
+     FROM budgets WHERE deleted_at IS NULL
+     ORDER BY CASE payment_mode WHEN 'credit_card' THEN 0 WHEN 'both' THEN 1 ELSE 2 END, name ASC`,
   );
 }
 
@@ -43,7 +44,7 @@ export interface BudgetWithExpenseTotalsRow {
   id: string;
   name: string;
   category_id: string;
-  paid_with_credit_card: number;
+  payment_mode: string;
   default_amount: number;
   bm_id: string | null;
   bm_amount: number | null;
@@ -61,7 +62,7 @@ export function useBudgetWithExpenseTotals(month: string) {
        b.id,
        b.name,
        b.category_id,
-       b.paid_with_credit_card,
+       b.payment_mode,
        b.default_amount,
        bm.id          AS bm_id,
        bm.amount      AS bm_amount,
@@ -73,7 +74,7 @@ export function useBudgetWithExpenseTotals(month: string) {
      FROM budgets b
      LEFT JOIN budget_months bm ON bm.budget_id = b.id AND bm.month = ?
      WHERE b.deleted_at IS NULL
-     ORDER BY b.paid_with_credit_card DESC, b.name ASC`,
+     ORDER BY CASE b.payment_mode WHEN 'credit_card' THEN 0 WHEN 'both' THEN 1 ELSE 2 END, b.name ASC`,
     [month],
   );
 }
@@ -97,13 +98,13 @@ export function useBudgetTargetByName(month: string, budgetName: string, househo
   );
 }
 
-/** Total effective target for all credit-card budgets in a given month. */
+/** Total effective target for all credit-card and dual budgets in a given month. */
 export function useCreditCardBudgetTarget(month: string, householdId: string) {
   return useQuery<{ total: number }>(
     `SELECT SUM(COALESCE(bm.amount, b.default_amount)) as total
      FROM budgets b
      LEFT JOIN budget_months bm ON bm.budget_id = b.id AND bm.month = ?
-     WHERE b.paid_with_credit_card = 1 AND b.household_id = ?`,
+     WHERE b.payment_mode IN ('credit_card', 'both') AND b.household_id = ?`,
     [month, householdId],
   );
 }

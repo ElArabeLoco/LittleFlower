@@ -23,7 +23,7 @@ function makeBudgetRow(overrides: Partial<BudgetWithExpenseTotalsRow> = {}): Bud
     id: 'bm-1',
     name: 'Arriendo',
     category_id: 'housing',
-    paid_with_credit_card: 0,
+    payment_mode: 'cash',
     default_amount: 1_500_000,
     bm_id: 'bm-1',
     bm_amount: 1_500_000,
@@ -44,30 +44,34 @@ describe('useAppShellData', () => {
     (useIncomeMonthAmountsForMonth as Mock).mockReturnValue({ data: [] });
   });
 
-  it('creditCardRows contains only rows where paid_with_credit_card === 1', () => {
+  it("creditCardRows contains only rows where payment_mode is 'credit_card' or 'both'", () => {
     (useBudgetWithExpenseTotals as Mock).mockReturnValue({
       data: [
-        makeBudgetRow({ id: 'cash-1', paid_with_credit_card: 0 }),
-        makeBudgetRow({ id: 'cc-1', paid_with_credit_card: 1 }),
+        makeBudgetRow({ id: 'cash-1', payment_mode: 'cash' }),
+        makeBudgetRow({ id: 'cc-1', payment_mode: 'credit_card' }),
+        makeBudgetRow({ id: 'dual-1', payment_mode: 'both' }),
       ],
     });
 
     const { result } = renderHook(() => useAppShellData('2025-03'));
-    expect(result.current.creditCardRows).toHaveLength(1);
-    expect(result.current.creditCardRows[0].id).toBe('cc-1');
+    expect(result.current.creditCardRows).toHaveLength(2);
+    expect(result.current.creditCardRows.map(r => r.id)).toContain('cc-1');
+    expect(result.current.creditCardRows.map(r => r.id)).toContain('dual-1');
   });
 
-  it('cashRows contains only rows where paid_with_credit_card === 0', () => {
+  it("cashRows contains only rows where payment_mode is 'cash' or 'both'", () => {
     (useBudgetWithExpenseTotals as Mock).mockReturnValue({
       data: [
-        makeBudgetRow({ id: 'cash-1', paid_with_credit_card: 0 }),
-        makeBudgetRow({ id: 'cc-1', paid_with_credit_card: 1 }),
+        makeBudgetRow({ id: 'cash-1', payment_mode: 'cash' }),
+        makeBudgetRow({ id: 'cc-1', payment_mode: 'credit_card' }),
+        makeBudgetRow({ id: 'dual-1', payment_mode: 'both' }),
       ],
     });
 
     const { result } = renderHook(() => useAppShellData('2025-03'));
-    expect(result.current.cashRows).toHaveLength(1);
-    expect(result.current.cashRows[0].id).toBe('cash-1');
+    expect(result.current.cashRows).toHaveLength(2);
+    expect(result.current.cashRows.map(r => r.id)).toContain('cash-1');
+    expect(result.current.cashRows.map(r => r.id)).toContain('dual-1');
   });
 
   it('totalBudgeted sums bm_amount for all rows (fallback to default_amount when bm_amount is null)', () => {

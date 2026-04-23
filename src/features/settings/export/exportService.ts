@@ -112,9 +112,11 @@ function buildGastosSheet(data: FlorecitaExport): Row[] {
   const activeBudgets = (data.budgets as Record<string, unknown>[])
     .filter(b => !b.deleted_at)
     .sort((a, b) => {
-      // CC first, then alphabetical
-      if (a.paid_with_credit_card !== b.paid_with_credit_card)
-        return (b.paid_with_credit_card as number) - (a.paid_with_credit_card as number);
+      // CC / dual first, then alphabetical
+      const modeOrder = (m: unknown) => m === 'credit_card' ? 0 : m === 'both' ? 1 : 2;
+      const modeA = modeOrder(a.payment_mode);
+      const modeB = modeOrder(b.payment_mode);
+      if (modeA !== modeB) return modeA - modeB;
       return String(a.name).localeCompare(String(b.name));
     });
 
@@ -149,7 +151,7 @@ function buildGastosSheet(data: FlorecitaExport): Row[] {
     const colTotals = Array(allMonths.length).fill(0) as number[];
 
     for (const b of activeBudgets) {
-      const tipo = b.paid_with_credit_card ? 'TC' : 'Efectivo';
+      const tipo = b.payment_mode === 'credit_card' ? 'TC' : b.payment_mode === 'both' ? 'Dual' : 'Efectivo';
       const row: Row = [b.name as string, tipo];
       let rowTotal = 0;
       allMonths.forEach((month, i) => {

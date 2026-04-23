@@ -23,7 +23,7 @@ function makeBudgetRow(overrides: Record<string, unknown> = {}) {
     category_id: 'housing',
     start_month: '2025-01',
     default_amount: 1_500_000,
-    paid_with_credit_card: 0,
+    payment_mode: 'cash',
     credit_card_id: null,
     debt_id: null,
     created_by: 'user-1',
@@ -82,16 +82,22 @@ describe('PowerSyncBudgetRepository', () => {
       expect(budget.defaultAmount).toBe(1_500_000);
     });
 
-    it('maps paid_with_credit_card: 0 → paidWithCreditCard: false', async () => {
-      mockGetAll.mockResolvedValue([makeBudgetRow({ paid_with_credit_card: 0 })]);
+    it("maps payment_mode: 'cash' → paymentMode: 'cash'", async () => {
+      mockGetAll.mockResolvedValue([makeBudgetRow({ payment_mode: 'cash' })]);
       const [budget] = await repo.listActive();
-      expect(budget.paidWithCreditCard).toBe(false);
+      expect(budget.paymentMode).toBe('cash');
     });
 
-    it('maps paid_with_credit_card: 1 → paidWithCreditCard: true', async () => {
-      mockGetAll.mockResolvedValue([makeBudgetRow({ paid_with_credit_card: 1 })]);
+    it("maps payment_mode: 'credit_card' → paymentMode: 'credit_card'", async () => {
+      mockGetAll.mockResolvedValue([makeBudgetRow({ payment_mode: 'credit_card' })]);
       const [budget] = await repo.listActive();
-      expect(budget.paidWithCreditCard).toBe(true);
+      expect(budget.paymentMode).toBe('credit_card');
+    });
+
+    it("maps payment_mode: 'both' → paymentMode: 'both'", async () => {
+      mockGetAll.mockResolvedValue([makeBudgetRow({ payment_mode: 'both' })]);
+      const [budget] = await repo.listActive();
+      expect(budget.paymentMode).toBe('both');
     });
 
     it('returns empty array when db.getAll returns []', async () => {

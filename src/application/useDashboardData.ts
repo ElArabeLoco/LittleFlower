@@ -124,10 +124,10 @@ export function useDashboardData(selectedMonth: string): DashboardData {
         else if (trm) available += Math.round(amount * trm);
       }
 
-      // Cash budgets only (credit card is not a cash outflow)
+      // Cash budgets only (credit card and dual are not direct cash outflows)
       let budgeted = 0, spent = 0;
       for (const b of budgets) {
-        if (b.paid_with_credit_card === 1) continue;
+        if (b.payment_mode !== 'cash') continue;
         if (b.start_month > month) continue;
         if (b.end_month && b.end_month < month) continue;
         const bmKey = `${b.id}|${month}`;

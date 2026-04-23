@@ -19,8 +19,8 @@ export function BudgetManagementPage() {
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: debtOptions = [] } = useDebtOptionsQuery();
 
-  const creditCard = budgets.filter(b => b.paid_with_credit_card === 1);
-  const cash = budgets.filter(b => b.paid_with_credit_card === 0);
+  const creditCard = budgets.filter(b => b.payment_mode === 'credit_card' || b.payment_mode === 'both');
+  const cash = budgets.filter(b => b.payment_mode === 'cash' || b.payment_mode === 'both');
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(t.budgets.confirmDelete(name))) return;

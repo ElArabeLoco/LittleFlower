@@ -54,7 +54,7 @@ export function PendingPaymentsChart() {
           name: b.name,
           pending,
           isExecuted,
-          isCC: b.paid_with_credit_card === 1,
+          isCC: b.payment_mode !== 'cash',
           emoji: cat?.emoji ?? '•',
         };
       })

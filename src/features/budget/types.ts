@@ -1,3 +1,5 @@
+import type { PaymentMode } from '@/domain/budget/Budget';
+
 export interface BudgetRow {
   id: string;
   name: string;
@@ -6,7 +8,7 @@ export interface BudgetRow {
   start_month: string;
   end_month: string | null;
   default_amount: number;
-  paid_with_credit_card: number;
+  payment_mode: string;
   household_id: string;
   debt_id: string | null;
 }
@@ -23,6 +25,6 @@ export interface BudgetFormState {
   start_month: string;
   end_month: string;
   default_amount: string;
-  paid_with_credit_card: boolean;
+  payment_mode: PaymentMode;
   debt_id: string;
 }

@@ -19,6 +19,7 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
@@ -382,8 +383,13 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId, highl
             {getCategoryEmoji(budget.category_id)}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
-              <HighlightedName name={budget.name} query={highlightText} />
+            <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight flex items-center gap-1.5">
+              <span className="truncate"><HighlightedName name={budget.name} query={highlightText} /></span>
+              {budget.payment_mode === 'both' && (
+                <span className="shrink-0 text-[9px] font-bold leading-none px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                  dual
+                </span>
+              )}
             </p>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
               {getCategoryName(budget.category_id)}
@@ -463,6 +469,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId, highl
           householdId={householdId}
           userId={userId}
           debtId={budget.debt_id}
+          budgetPaymentMode={budget.payment_mode as PaymentMode}
           trigger={<span />}
           defaultOpen
           onClose={() => setExpenseOpen(false)}

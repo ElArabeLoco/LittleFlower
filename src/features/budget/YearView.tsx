@@ -38,6 +38,7 @@ import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useYearViewData, type BudgetRow } from '@/application/useYearViewData';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import type { BudgetMonthRow } from '@/infrastructure/powersync/queries/types';
 
 // ---------------------------------------------------------------------------
@@ -115,6 +116,7 @@ interface CellContextData {
   /** month < currentMonth */
   isPast: boolean;
   debtId: string | null;
+  paymentMode: string;
 }
 
 interface ContextMenuPos {
@@ -137,6 +139,7 @@ interface BudgetCellProps {
   isFuture: boolean;
   hasStarted: boolean;
   debtId: string | null;
+  paymentMode: string;
   onTabNext: () => void;
   onTabPrev: () => void;
   onEnterDown: () => void;
@@ -152,7 +155,7 @@ interface BudgetCellProps {
 const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
   function BudgetCell({
     budgetId, budgetName, budgetMonthId, month, amount, spentAmount,
-    isExecuted, householdId, userId, isCurrent, isFuture, hasStarted, debtId,
+    isExecuted, householdId, userId, isCurrent, isFuture, hasStarted, debtId, paymentMode,
     onTabNext, onTabPrev, onEnterDown, onOpenExpenses, onContextMenu, onForwardRequest,
   }, ref) {
     const { t } = useI18n();
@@ -181,7 +184,7 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
 
     const ctxData: CellContextData = {
       budgetId, budgetName, budgetMonthId, month, amount, spentAmount,
-      isExecuted, isPast, debtId,
+      isExecuted, isPast, debtId, paymentMode,
     };
 
     // ── Save ────────────────────────────────────────────────────────
@@ -494,7 +497,7 @@ interface BudgetTableSectionProps {
   onCellForwardRequest: (globalBudgetIdx: number, monthIdx: number, amount: number) => void;
   onOpenExpenses: (params: {
     budgetId: string; budgetName: string; budgetMonthId: string | null;
-    budgetMonthAmount: number; month: string; debtId: string | null;
+    budgetMonthAmount: number; month: string; debtId: string | null; paymentMode: string;
   }) => void;
 }
 
@@ -519,7 +522,17 @@ function BudgetTableSection({
             >
               {nameColCollapsed
                 ? <span>{getCategoryEmoji(budget.category_id)}</span>
-                : <><span className="mr-1.5">{getCategoryEmoji(budget.category_id)}</span>{budget.name}</>
+                : (
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="shrink-0">{getCategoryEmoji(budget.category_id)}</span>
+                    <span className="truncate">{budget.name}</span>
+                    {budget.payment_mode === 'both' && (
+                      <span className="shrink-0 text-[9px] font-bold leading-none px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                        dual
+                      </span>
+                    )}
+                  </span>
+                )
               }
             </td>
             {months.map((month, mIdx) => {
@@ -545,6 +558,7 @@ function BudgetTableSection({
                   isFuture={month > currentMonth}
                   hasStarted={hasStarted}
                   debtId={budget.debt_id ?? null}
+                  paymentMode={budget.payment_mode}
                   onTabNext={() => onCellTabNext(globalIdx, mIdx)}
                   onTabPrev={() => onCellTabPrev(globalIdx, mIdx)}
                   onEnterDown={() => onCellEnterDown(globalIdx, mIdx)}
@@ -557,6 +571,7 @@ function BudgetTableSection({
                     budgetMonthAmount: bm?.amount ?? budget.default_amount,
                     month,
                     debtId: budget.debt_id ?? null,
+                    paymentMode: budget.payment_mode,
                   })}
                 />
               );
@@ -580,6 +595,7 @@ interface ExpenseModalState {
   budgetMonthAmount: number;
   month: string;
   debtId: string | null;
+  paymentMode: string;
   openKey: number;
 }
 
@@ -748,7 +764,8 @@ export function YearView() {
     setExpenseModal({
       budgetId: data.budgetId, budgetName: data.budgetName,
       budgetMonthId: data.budgetMonthId, budgetMonthAmount: data.amount,
-      month: data.month, debtId: data.debtId, openKey: expenseModalKeyRef.current,
+      month: data.month, debtId: data.debtId, paymentMode: data.paymentMode,
+      openKey: expenseModalKeyRef.current,
     });
   }
 
@@ -1129,6 +1146,7 @@ export function YearView() {
           householdId={householdId}
           userId={userId}
           debtId={expenseModal.debtId}
+          budgetPaymentMode={expenseModal.paymentMode as PaymentMode}
           trigger={<span />}
           defaultOpen
           onClose={() => setExpenseModal(null)}

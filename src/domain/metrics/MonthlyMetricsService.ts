@@ -15,6 +15,8 @@
  *   balanceReal             → realBalance
  */
 
+import type { PaymentMode } from '@/domain/budget/Budget';
+
 // ---------------------------------------------------------------------------
 // Input types
 // ---------------------------------------------------------------------------
@@ -22,7 +24,7 @@
 /** Immutable budget definition metadata needed for calculations. */
 export interface BudgetRow {
   id: string;
-  paidWithCreditCard: boolean;
+  paymentMode: PaymentMode;
   defaultAmount: number; // integer COP
 }
 
@@ -229,7 +231,7 @@ export function _budgetedBalance(
   for (const bm of budgetMonths) {
     const budget = budgets.get(bm.budgetId);
     if (budget === undefined) continue; // orphaned row — skip silently
-    if (budget.paidWithCreditCard) {
+    if (budget.paymentMode !== 'cash') {
       creditCardTotal += bm.amount;
     }
   }
@@ -248,7 +250,7 @@ export function _executedBudget(
   for (const bm of budgetMonths) {
     const budget = budgets.get(bm.budgetId);
     if (budget === undefined) continue;
-    if (bm.isExecuted && !budget.paidWithCreditCard) {
+    if (bm.isExecuted && budget.paymentMode === 'cash') {
       total += bm.amount;
     }
   }
@@ -275,7 +277,7 @@ export function _pendingBudget(
   for (const bm of budgetMonths) {
     const budget = budgets.get(bm.budgetId);
     if (budget === undefined) continue;
-    if (!bm.isExecuted && !budget.paidWithCreditCard) {
+    if (!bm.isExecuted && budget.paymentMode === 'cash') {
       total += bm.amount;
     }
   }
@@ -308,7 +310,7 @@ export function _realBalance(
   for (const bm of budgetMonths) {
     const budget = budgets.get(bm.budgetId);
     if (budget === undefined) continue;
-    if (bm.isExecuted && budget.paidWithCreditCard) {
+    if (bm.isExecuted && budget.paymentMode !== 'cash') {
       executedCreditCard += bm.amount;
     }
   }
@@ -352,7 +354,7 @@ export function computeMonthlyMetrics(input: MonthlyMetricsInput): MonthlyMetric
   for (const bm of budgetMonths) {
     const budget = budgets.get(bm.budgetId);
     if (budget === undefined) continue;
-    if (budget.paidWithCreditCard) {
+    if (budget.paymentMode !== 'cash') {
       totalCreditCardBudgeted += bm.amount;
       if (bm.isExecuted) {
         totalCreditCardExecuted += bm.amount;

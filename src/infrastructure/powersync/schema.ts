@@ -48,7 +48,7 @@ const budgets = new Table({
   start_month: column.text,     // 'YYYY-MM'
   end_month: column.text,       // 'YYYY-MM' nullable — if null, no end date
   default_amount: column.integer,
-  paid_with_credit_card: column.integer, // 0 | 1
+  payment_mode: column.text,     // 'cash' | 'credit_card' | 'both'
   credit_card_id: column.text,  // nullable, Phase 2
   created_by: column.text,      // userId
   created_at: column.text,
@@ -82,6 +82,7 @@ const expenses = new Table({
   created_at: column.text,      // system timestamp — IMMUTABLE
   linked_expense_id: column.text, // nullable — set when reversing another expense
   deleted_at: column.text,      // nullable — MVP soft delete
+  paid_with_credit_card: column.integer, // 0 | 1 — mode used for this specific transaction
 });
 
 const incomes = new Table({
