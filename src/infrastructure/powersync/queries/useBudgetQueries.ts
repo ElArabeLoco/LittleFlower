@@ -108,3 +108,15 @@ export function useCreditCardBudgetTarget(month: string, householdId: string) {
     [month, householdId],
   );
 }
+
+/** Total effective target for pure cash budgets in a given month.
+ *  Dual-mode budgets are excluded — their planned amount belongs to the CC envelope. */
+export function useCashBudgetTarget(month: string, householdId: string) {
+  return useQuery<{ total: number }>(
+    `SELECT SUM(COALESCE(bm.amount, b.default_amount)) as total
+     FROM budgets b
+     LEFT JOIN budget_months bm ON bm.budget_id = b.id AND bm.month = ?
+     WHERE b.payment_mode = 'cash' AND b.household_id = ?`,
+    [month, householdId],
+  );
+}
