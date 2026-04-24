@@ -31,6 +31,8 @@ export interface YearViewData {
   ccMetricsMap: Map<string, MonthMetrics>;
   /** Lookup: month → MonthMetrics for cash group. */
   cashMetricsMap: Map<string, MonthMetrics>;
+  /** Lookup: month → total expenses (all modes) for that month. */
+  totalExpenseByMonth: Map<string, number>;
 }
 
 /**
@@ -69,6 +71,14 @@ export function useYearViewData(year: number, months: string[]): YearViewData {
       combined.set(es.budget_month_id, (combined.get(es.budget_month_id) ?? 0) + es.total);
     }
     return { ccExpenseMap: cc, cashExpenseMap: cash, expenseMap: combined };
+  }, [expenseSumsByMode]);
+
+  const totalExpenseByMonth = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const es of expenseSumsByMode) {
+      m.set(es.month, (m.get(es.month) ?? 0) + es.total);
+    }
+    return m;
   }, [expenseSumsByMode]);
 
   const rateMap = useMemo(() => {
@@ -154,5 +164,6 @@ export function useYearViewData(year: number, months: string[]): YearViewData {
     availableMap,
     ccMetricsMap,
     cashMetricsMap,
+    totalExpenseByMonth,
   };
 }
