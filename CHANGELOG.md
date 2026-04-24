@@ -11,6 +11,19 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.9.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.8.0...littleflower-v0.9.0) (2026-04-24)
+
+
+### Features
+
+* **budget:** rename Balance Real → Balance Ideal + add true Balance Real ([d1e0087](https://github.com/ElArabeLoco/LittleFlower/commit/d1e0087a4db6dece0433031a16427073b231e4ef))
+* **budget:** rename Balance Real → Balance Ideal; add true Balance Real ([228f772](https://github.com/ElArabeLoco/LittleFlower/commit/228f772f70a835e2654bbb2976ab4d7e9c2e2a7d))
+
+
+### Bug Fixes
+
+* **budget:** Balance real uses cash-only expenses, not all transactions ([387155a](https://github.com/ElArabeLoco/LittleFlower/commit/387155ac902b492eeeee46a0aba19d0b885ee28f))
+
 ## [0.8.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.7.0...littleflower-v0.8.0) (2026-04-24)
 
 
