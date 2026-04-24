@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.10.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.9.0...littleflower-v0.10.0) (2026-04-24)
+
+
+### Features
+
+* **finances:** add Transactions page with CC and cash grids ([#51](https://github.com/ElArabeLoco/LittleFlower/issues/51)) ([acfe599](https://github.com/ElArabeLoco/LittleFlower/commit/acfe599d3613b0c4ed736c6d862dd38fc36583c7))
+
 ## [0.9.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.8.0...littleflower-v0.9.0) (2026-04-24)
 
 
