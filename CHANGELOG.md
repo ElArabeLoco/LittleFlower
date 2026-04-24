@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.8.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.7.0...littleflower-v0.8.0) (2026-04-24)
+
+
+### Features
+
+* **dashboard:** add cash burn-up chart alongside credit card burn-up ([#47](https://github.com/ElArabeLoco/LittleFlower/issues/47)) ([bd0db20](https://github.com/ElArabeLoco/LittleFlower/commit/bd0db204deef8c1731871e1da62ad8e505997ef2))
+
 ## [0.7.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.6.0...littleflower-v0.7.0) (2026-04-24)
 
 
