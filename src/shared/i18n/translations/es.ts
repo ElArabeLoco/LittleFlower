@@ -177,6 +177,8 @@ export const es = {
     burnUpSaludDesc: 'Gasto acumulado vs ritmo ideal',
     burnUpCreditCardTitle: '💳 Tarjeta de Crédito',
     burnUpCreditCardDesc: 'Total gastos en presupuestos de tarjeta vs ritmo ideal',
+    burnUpCashTitle: '💵 Efectivo',
+    burnUpCashDesc: 'Total gastos en efectivo vs ritmo ideal',
     noDataYet: 'Aún no hay datos',
     addBudgetsAndIncome: 'Agrega presupuestos e ingresos para ver tus estadísticas',
     incomeHistory: 'Histórico de ingresos',
