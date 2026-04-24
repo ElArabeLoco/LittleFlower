@@ -476,6 +476,24 @@ export const es = {
     budgetsDesc: 'Define y gestiona las categorías de gasto del hogar. Crea, edita y organiza por tipo de pago.',
     debtsTitle: 'Deudas',
     debtsDesc: 'Registra y haz seguimiento de tus deudas. Vincula presupuestos para abonos automáticos.',
+    transactionsTitle: 'Transacciones',
+    transactionsDesc: 'Historial de gastos del mes organizado por forma de pago.',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Transactions
+  // ---------------------------------------------------------------------------
+  transactions: {
+    title: 'Transacciones',
+    subtitle: 'Gastos del mes',
+    creditCardGroup: 'Tarjeta de Crédito',
+    cashGroup: 'Efectivo',
+    budgetHeader: 'Rubro',
+    noteHeader: 'Descripción',
+    amountHeader: 'Monto',
+    dateHeader: 'Fecha',
+    total: 'Total',
+    noTransactions: 'Sin transacciones este mes',
   },
 
   // ---------------------------------------------------------------------------

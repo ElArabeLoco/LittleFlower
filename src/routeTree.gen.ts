@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MonthRouteImport } from './routes/month'
 import { Route as LoginRouteImport } from './routes/login'
@@ -23,6 +24,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsBudgetsRouteImport } from './routes/settings/budgets'
 
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
+  '/transactions': typeof TransactionsRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
+  '/transactions': typeof TransactionsRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings': typeof SettingsIndexRoute
 }
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
+  '/transactions': typeof TransactionsRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/month'
     | '/onboarding'
+    | '/transactions'
     | '/settings/budgets'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/month'
     | '/onboarding'
+    | '/transactions'
     | '/settings/budgets'
     | '/settings'
   id:
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/month'
     | '/onboarding'
+    | '/transactions'
     | '/settings/budgets'
     | '/settings/'
   fileRoutesById: FileRoutesById
@@ -195,12 +207,20 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MonthRoute: typeof MonthRoute
   OnboardingRoute: typeof OnboardingRoute
+  TransactionsRoute: typeof TransactionsRoute
   SettingsBudgetsRoute: typeof SettingsBudgetsRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -307,6 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MonthRoute: MonthRoute,
   OnboardingRoute: OnboardingRoute,
+  TransactionsRoute: TransactionsRoute,
   SettingsBudgetsRoute: SettingsBudgetsRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }

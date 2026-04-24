@@ -63,7 +63,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Wallet size={20} />,
     to: '/finances',
     // Active on the hub AND on the sub-pages it contains
-    match: ['/finances', '/income', '/settings/budgets', '/debts'],
+    match: ['/finances', '/income', '/settings/budgets', '/debts', '/transactions'],
   },
 ];
 
