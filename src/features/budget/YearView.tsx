@@ -751,6 +751,7 @@ export function YearView() {
         budgetId: data.budgetId, budgetMonthId: data.budgetMonthId,
         householdId, month: data.month, amount: data.amount,
         spentAmount: data.spentAmount, debtId: data.debtId, userId,
+        paidWithCreditCard: data.paymentMode !== 'cash',
       });
     } catch (err) {
       console.error('[YearView] handleRegisterFullPayment failed:', err);

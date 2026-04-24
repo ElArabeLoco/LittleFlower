@@ -689,6 +689,7 @@ export interface RegisterFullPaymentPayload {
   spentAmount: number;     // already recorded (SUM of expenses — may be 0)
   debtId: string | null;
   userId: string;
+  paidWithCreditCard: boolean;
 }
 
 /**
@@ -725,6 +726,7 @@ export async function registerFullPaymentAndExecute(
       note: 'Pago total registrado automáticamente',
       recorded_by: payload.userId,
       timestamp: new Date().toISOString(),
+      paid_with_credit_card: payload.paidWithCreditCard,
       ...(payload.debtId ? { debt_id: payload.debtId } : {}),
     });
   }

@@ -26,6 +26,7 @@ interface ExpenseRow {
   created_at: string;
   linked_expense_id: string | null;
   deleted_at: string | null;
+  paid_with_credit_card: number; // 0 | 1
 }
 
 // ---------------------------------------------------------------------------
@@ -45,6 +46,7 @@ function toExpense(row: ExpenseRow): Expense {
     createdAt: row.created_at,
     linkedExpenseId: row.linked_expense_id,
     deletedAt: row.deleted_at,
+    paidWithCreditCard: row.paid_with_credit_card === 1,
   };
 }
 
