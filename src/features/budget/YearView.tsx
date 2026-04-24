@@ -20,7 +20,7 @@
 import React, {
   useState, useRef, useEffect, useImperativeHandle, useMemo,
 } from 'react';
-import { ChevronLeft, ChevronRight, Search, X, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Search, X, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
@@ -626,6 +626,9 @@ export function YearView() {
     if (window.innerWidth < 640) setNameColCollapsed(true);
   }, []);
 
+  const [ccCollapsed,   setCcCollapsed]   = useState(false);
+  const [cashCollapsed, setCashCollapsed] = useState(false);
+
   const months       = useMemo(() => yearMonths(year), [year]);
   const currentMonth = useMemo(getCurrentMonth, []);
 
@@ -998,32 +1001,50 @@ export function YearView() {
                     'sticky left-0 z-10 bg-[var(--group-cc-bg)] py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide transition-all duration-200',
                     nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
                   )}>
-                    {nameColCollapsed ? '💳' : `💳 ${t.yearView.creditCardGroup}`}
+                    <button
+                      onClick={() => setCcCollapsed(v => !v)}
+                      className="flex items-center gap-1.5 w-full text-left hover:opacity-70 transition-opacity"
+                      title={ccCollapsed ? 'Expandir Tarjeta de Crédito' : 'Colapsar Tarjeta de Crédito'}
+                    >
+                      {nameColCollapsed ? (
+                        <span>💳</span>
+                      ) : (
+                        <>
+                          <span>{`💳 ${t.yearView.creditCardGroup}`}</span>
+                          <ChevronDown
+                            size={12}
+                            className={cn('shrink-0 transition-transform duration-200 ml-auto', ccCollapsed && '-rotate-90')}
+                          />
+                        </>
+                      )}
+                    </button>
                   </td>
                   <td colSpan={months.length} className="bg-[var(--group-cc-bg)]" />
                 </tr>
-                <BudgetTableSection
-                  budgets={displayCCBudgets}
-                  metricsMap={ccMetricsMap}
-                  startIdx={0}
-                  months={months}
-                  currentMonth={currentMonth}
-                  bmMap={bmMap}
-                  expenseMap={expenseMap}
-                  householdId={householdId}
-                  userId={userId}
-                  nameColCollapsed={nameColCollapsed}
-                  getCellRef={getCellRef}
-                  onCellTabNext={onCellTabNext}
-                  onCellTabPrev={onCellTabPrev}
-                  onCellEnterDown={onCellEnterDown}
-                  onCellContextMenu={handleCellContextMenu}
-                  onCellForwardRequest={handleCellForwardRequest}
-                  onOpenExpenses={params => {
-                    expenseModalKeyRef.current += 1;
-                    setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
-                  }}
-                />
+                {!ccCollapsed && (
+                  <BudgetTableSection
+                    budgets={displayCCBudgets}
+                    metricsMap={ccMetricsMap}
+                    startIdx={0}
+                    months={months}
+                    currentMonth={currentMonth}
+                    bmMap={bmMap}
+                    expenseMap={expenseMap}
+                    householdId={householdId}
+                    userId={userId}
+                    nameColCollapsed={nameColCollapsed}
+                    getCellRef={getCellRef}
+                    onCellTabNext={onCellTabNext}
+                    onCellTabPrev={onCellTabPrev}
+                    onCellEnterDown={onCellEnterDown}
+                    onCellContextMenu={handleCellContextMenu}
+                    onCellForwardRequest={handleCellForwardRequest}
+                    onOpenExpenses={params => {
+                      expenseModalKeyRef.current += 1;
+                      setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
+                    }}
+                  />
+                )}
               </>
             )}
 
@@ -1034,32 +1055,50 @@ export function YearView() {
                     'sticky left-0 z-10 bg-[var(--group-cash-bg)] py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide transition-all duration-200',
                     nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
                   )}>
-                    {nameColCollapsed ? '💵' : `💵 ${t.yearView.cashGroup}`}
+                    <button
+                      onClick={() => setCashCollapsed(v => !v)}
+                      className="flex items-center gap-1.5 w-full text-left hover:opacity-70 transition-opacity"
+                      title={cashCollapsed ? 'Expandir Efectivo' : 'Colapsar Efectivo'}
+                    >
+                      {nameColCollapsed ? (
+                        <span>💵</span>
+                      ) : (
+                        <>
+                          <span>{`💵 ${t.yearView.cashGroup}`}</span>
+                          <ChevronDown
+                            size={12}
+                            className={cn('shrink-0 transition-transform duration-200 ml-auto', cashCollapsed && '-rotate-90')}
+                          />
+                        </>
+                      )}
+                    </button>
                   </td>
                   <td colSpan={months.length} className="bg-[var(--group-cash-bg)]" />
                 </tr>
-                <BudgetTableSection
-                  budgets={displayCashBudgets}
-                  metricsMap={cashMetricsMap}
-                  startIdx={displayCCBudgets.length}
-                  months={months}
-                  currentMonth={currentMonth}
-                  bmMap={bmMap}
-                  expenseMap={expenseMap}
-                  householdId={householdId}
-                  userId={userId}
-                  nameColCollapsed={nameColCollapsed}
-                  getCellRef={getCellRef}
-                  onCellTabNext={onCellTabNext}
-                  onCellTabPrev={onCellTabPrev}
-                  onCellEnterDown={onCellEnterDown}
-                  onCellContextMenu={handleCellContextMenu}
-                  onCellForwardRequest={handleCellForwardRequest}
-                  onOpenExpenses={params => {
-                    expenseModalKeyRef.current += 1;
-                    setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
-                  }}
-                />
+                {!cashCollapsed && (
+                  <BudgetTableSection
+                    budgets={displayCashBudgets}
+                    metricsMap={cashMetricsMap}
+                    startIdx={displayCCBudgets.length}
+                    months={months}
+                    currentMonth={currentMonth}
+                    bmMap={bmMap}
+                    expenseMap={expenseMap}
+                    householdId={householdId}
+                    userId={userId}
+                    nameColCollapsed={nameColCollapsed}
+                    getCellRef={getCellRef}
+                    onCellTabNext={onCellTabNext}
+                    onCellTabPrev={onCellTabPrev}
+                    onCellEnterDown={onCellEnterDown}
+                    onCellContextMenu={handleCellContextMenu}
+                    onCellForwardRequest={handleCellForwardRequest}
+                    onOpenExpenses={params => {
+                      expenseModalKeyRef.current += 1;
+                      setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
+                    }}
+                  />
+                )}
               </>
             )}
 
