@@ -477,6 +477,24 @@ export const en: Translations = {
     budgetsDesc: 'Define and manage your household spending categories. Create, edit, and organize by payment type.',
     debtsTitle: 'Debts',
     debtsDesc: 'Track your debts. Link budgets for automatic payments.',
+    transactionsTitle: 'Transactions',
+    transactionsDesc: 'Monthly expense ledger organized by payment method.',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Transactions
+  // ---------------------------------------------------------------------------
+  transactions: {
+    title: 'Transactions',
+    subtitle: 'Monthly expenses',
+    creditCardGroup: 'Credit Card',
+    cashGroup: 'Cash',
+    budgetHeader: 'Budget',
+    noteHeader: 'Description',
+    amountHeader: 'Amount',
+    dateHeader: 'Date',
+    total: 'Total',
+    noTransactions: 'No transactions this month',
   },
 
   // ---------------------------------------------------------------------------

@@ -182,6 +182,31 @@ export function useDailyExpensesByCreditCard(month: string, householdId: string)
   );
 }
 
+/** Full transaction row for the transactions ledger page. */
+export interface TransactionRow {
+  id: string;
+  amount: number;
+  note: string | null;
+  timestamp: string;
+  paid_with_credit_card: number; // 0 | 1
+  budget_name: string;
+  category_id: string;
+}
+
+/** All non-deleted expenses for a month with budget name and category (for TransactionsPage). */
+export function useTransactionsForMonth(month: string) {
+  return useQuery<TransactionRow>(
+    `SELECT e.id, e.amount, e.note, e.timestamp, e.paid_with_credit_card,
+            b.name as budget_name, b.category_id
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     JOIN budgets b ON b.id = e.budget_id
+     WHERE bm.month = ? AND e.deleted_at IS NULL
+     ORDER BY e.timestamp ASC, e.created_at ASC`,
+    [month],
+  );
+}
+
 /** Daily spending for all cash expenses in a month (CashBurnUpChart). */
 export function useDailyExpensesByCash(month: string, householdId: string) {
   return useQuery<DailyExpenseRow>(

@@ -9,7 +9,7 @@
 
 import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { TrendingUp, LayoutList, CreditCard } from 'lucide-react';
+import { TrendingUp, LayoutList, CreditCard, Receipt } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
@@ -58,6 +58,15 @@ export function FinancesHubPage() {
       gradient: 'from-amber-400 to-orange-400',
       border: 'border-amber-100 dark:border-amber-900/30',
     },
+    {
+      emoji: '🧾',
+      title: t.finances.transactionsTitle,
+      desc: t.finances.transactionsDesc,
+      to: '/transactions',
+      icon: <Receipt size={22} />,
+      gradient: 'from-sky-400 to-blue-400',
+      border: 'border-sky-100 dark:border-sky-900/30',
+    },
   ], [t]);
 
   return (
@@ -70,7 +79,7 @@ export function FinancesHubPage() {
           {t.finances.description}
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {cards.map(card => (
           <button
             key={card.to}
