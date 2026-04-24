@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propuesta UI — Sort & Filter · Florecita</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-app: #f5f3ff;
+      --bg-surface: #ffffff;
+      --bg-hover: #f9f7ff;
+      --border-subtle: #e9e5f7;
+      --border-medium: #d6cff0;
+      --text-primary: #1e1b4b;
+      --text-secondary: #4c4980;
+      --text-muted: #8b85b3;
+      --group-cc-bg: #f3f0ff;
+      --group-cc-border: #c4b5fd;
+      --group-cc-text: #6d28d9;
+      --group-cash-bg: #f0fdf4;
+      --group-cash-border: #86efac;
+      --group-cash-text: #15803d;
+      --accent-violet: #7c3aed;
+      --accent-pink: #db2777;
+      --accent-green: #16a34a;
+      --filter-bg: #faf8ff;
+      --filter-border: #ddd6fe;
+      --chip-active-bg: #7c3aed;
+      --chip-active-text: #ffffff;
+      --chip-idle-bg: #ede9fe;
+      --chip-idle-text: #5b21b6;
+      --chip-idle-border: #c4b5fd;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #ede9fe;
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px 16px 80px;
+    }
+
+    .page-frame { max-width: 860px; margin: 0 auto; }
+
+    .demo-label {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      background: var(--accent-violet); color: white;
+      padding: 2px 10px; border-radius: 999px; margin-bottom: 8px;
+    }
+    h1 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+    .view-tabs {
+      display: flex; gap: 0; background: var(--border-subtle);
+      border-radius: 10px; padding: 3px; margin-bottom: 20px; width: fit-content;
+    }
+    .view-tab {
+      padding: 6px 20px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s; color: var(--text-muted);
+      border: none; background: transparent;
+    }
+    .view-tab.active { background: white; color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+    .section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text-muted); margin: 28px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+
+    /* App frame */
+    .app-card {
+      background: var(--bg-app); border-radius: 20px; overflow: hidden;
+      box-shadow: 0 4px 24px rgba(109,40,217,.12), 0 1px 4px rgba(0,0,0,.06);
+    }
+    .app-header {
+      background: linear-gradient(135deg, #ec4899 0%, #7c3aed 100%);
+      color: white; padding: 16px 20px 14px;
+    }
+    .app-header h2 { font-size: 17px; font-weight: 700; }
+    .app-header p  { font-size: 11px; opacity: .7; margin-top: 2px; }
+
+    .month-nav {
+      display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+      background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle);
+    }
+    .month-nav h3 { flex: 1; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .nav-btn {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; border: none; background: transparent;
+      color: var(--text-secondary); cursor: pointer; font-size: 18px;
+    }
+    .nav-btn:hover { background: var(--bg-hover); }
+
+    /* Hero card */
+    .hero-card {
+      margin: 16px; background: linear-gradient(135deg, #ec4899 0%, #7c3aed 100%);
+      border-radius: 16px; padding: 20px; color: white;
+    }
+    .hero-label { font-size: 10px; font-weight: 700; opacity: .65; letter-spacing: .1em; text-transform: uppercase; }
+    .hero-amount { font-size: 32px; font-weight: 800; margin: 4px 0 2px; letter-spacing: -.02em; }
+    .hero-sub { font-size: 10px; opacity: .55; }
+    .hero-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.2);
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat + .hero-stat { border-left: 1px solid rgba(255,255,255,.2); }
+    .hero-stat-label { font-size: 8px; opacity: .55; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
+    .hero-stat-val { font-size: 12px; font-weight: 700; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar-wrapper { margin: 0 16px 10px; }
+
+    .filter-toggle-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; background: var(--filter-bg);
+      border: 1.5px solid var(--filter-border); border-radius: 10px;
+      cursor: pointer; transition: all .15s; user-select: none;
+    }
+    .filter-toggle-row:hover { background: #f3efff; border-color: #a78bfa; }
+    .filter-toggle-row.open { border-radius: 10px 10px 0 0; border-bottom-color: transparent; }
+
+    .filter-icon-wrap {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: var(--chip-idle-bg); border-radius: 7px; color: var(--accent-violet); flex-shrink: 0;
+    }
+    .filter-toggle-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); flex: 1; }
+
+    .active-badge {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--chip-active-bg); color: white;
+      font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0;
+    }
+    .match-badge {
+      background: #fef3c7; color: #92400e;
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; flex-shrink: 0;
+    }
+    .chevron { color: var(--text-muted); font-size: 11px; transition: transform .2s; flex-shrink: 0; }
+    .chevron.open { transform: rotate(180deg); }
+
+    /* Expanded panel */
+    .filter-panel {
+      background: var(--filter-bg); border: 1.5px solid var(--filter-border); border-top: none;
+      border-radius: 0 0 12px 12px; padding: 10px 10px 12px; display: none;
+    }
+    .filter-panel.open { display: block; }
+
+    .search-row {
+      display: flex; align-items: center; gap: 8px;
+      background: white; border: 1.5px solid var(--border-medium);
+      border-radius: 8px; padding: 0 10px; margin-bottom: 10px;
+    }
+    .search-row.focused { border-color: #a78bfa; box-shadow: 0 0 0 3px #ede9fe; }
+    .search-input {
+      flex: 1; border: none; outline: none; background: transparent;
+      padding: 8px 0; font-size: 13px; color: var(--text-primary);
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-clear { color: var(--text-muted); cursor: pointer; font-size: 15px; padding: 2px; border-radius: 4px; }
+    .search-clear:hover { color: var(--text-primary); }
+
+    .sort-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .sort-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; flex-shrink: 0; margin-right: 2px; }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      cursor: pointer; border: 1.5px solid transparent; transition: all .15s; user-select: none; white-space: nowrap;
+    }
+    .chip.idle { background: var(--chip-idle-bg); color: var(--chip-idle-text); border-color: var(--chip-idle-border); }
+    .chip.idle:hover { background: #ddd6fe; border-color: #a78bfa; }
+    .chip.active { background: var(--chip-active-bg); color: var(--chip-active-text); }
+
+    /* Groups */
+    .groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 16px; }
+    @media (max-width: 560px) { .groups-grid { grid-template-columns: 1fr; } }
+
+    .group-section { display: flex; flex-direction: column; gap: 6px; }
+
+    .group-header {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-radius: 10px; border: 1px solid; font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .group-header.cc  { background: var(--group-cc-bg);   border-color: var(--group-cc-border);   color: var(--group-cc-text); }
+    .group-header.cash{ background: var(--group-cash-bg); border-color: var(--group-cash-border); color: var(--group-cash-text); }
+    .group-pct { margin-left: auto; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .group-count { font-size: 10px; font-weight: 500; opacity: .7; margin-left: auto; }
+
+    .sub-divider {
+      display: flex; align-items: center; gap: 6px; padding: 0 2px;
+      font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+    }
+    .sub-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+
+    .budget-card {
+      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+      transition: border-color .15s;
+    }
+    .budget-card.executed { background: #f0fdf4; border-color: #bbf7d0; }
+
+    .card-top { display: flex; align-items: center; gap: 8px; }
+    .card-emoji { font-size: 18px; flex-shrink: 0; line-height: 1; }
+    .card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-cat  { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+    .card-toggle {
+      margin-left: auto; flex-shrink: 0; width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; border: none; background: transparent; cursor: pointer;
+    }
+
+    .card-amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .amount-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+    .amount-val { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+    .amount-val.violet { color: #7c3aed; }
+    .amount-val.green  { color: #16a34a; }
+    .amount-val.muted  { color: var(--text-muted); }
+
+    .prog { height: 3px; border-radius: 99px; background: var(--border-subtle); overflow: hidden; margin-top: 2px; }
+    .prog-fill { height: 100%; border-radius: 99px; background: #7c3aed; }
+    .prog-fill.over { background: #ef4444; }
+
+    .highlight { background: #fde68a; border-radius: 2px; padding: 0 1px; }
+
+    /* ── Year view ── */
+    .year-filter-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; background: var(--filter-bg);
+      border: 1.5px solid var(--filter-border); border-radius: 10px;
+      margin: 12px 16px 10px;
+    }
+    .year-search {
+      display: flex; align-items: center; gap: 6px; flex: 1;
+      background: white; border: 1.5px solid var(--border-medium);
+      border-radius: 7px; padding: 0 8px;
+    }
+    .year-search input {
+      border: none; outline: none; background: transparent;
+      padding: 6px 0; font-size: 12px; color: var(--text-primary); width: 100%;
+    }
+    .year-search input::placeholder { color: var(--text-muted); }
+    .year-sort-group { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+
+    .year-table-wrap { overflow-x: auto; padding: 0 16px 16px; }
+    .year-table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 11px; }
+    .year-table th, .year-table td { border: 1px solid var(--border-subtle); padding: 6px 8px; text-align: right; white-space: nowrap; }
+    .year-table th { background: #f9f7ff; color: var(--text-secondary); font-weight: 600; font-size: 10px; }
+    .year-table td.row-label { text-align: left; font-weight: 600; color: var(--text-primary); min-width: 140px; max-width: 140px; position: sticky; left: 0; background: var(--bg-surface); z-index: 2; }
+    .year-table tr.group-row td { background: var(--group-cc-bg); color: var(--group-cc-text); font-weight: 700; font-size: 10px; text-align: left; }
+    .year-table tr.group-row.cash td { background: var(--group-cash-bg); color: var(--group-cash-text); }
+    .year-table td.current { background: #faf5ff; }
+    .year-table td.done { background: #f0fdf4; }
+    .cell-b { color: var(--text-secondary); font-weight: 500; }
+    .cell-s { color: #7c3aed; font-weight: 700; font-size: 10px; margin-top: 1px; }
+    .cell-check { color: #15803d; font-weight: 600; }
+
+    /* Notes */
+    .notes-panel {
+      background: white; border: 1px solid var(--border-subtle);
+      border-radius: 14px; padding: 16px 18px; margin-top: 12px;
+    }
+    .notes-panel h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
+    .note { display: flex; gap: 10px; margin-bottom: 8px; }
+    .note:last-child { margin-bottom: 0; }
+    .note-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .note p { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+    .note p strong { color: var(--text-primary); }
+
+    svg { display: inline; vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div class="page-frame">
+
+  <div class="demo-label">Propuesta Visual · Florecita</div>
+  <h1>Sort & Filter — Vista Mensual y Anual</h1>
+  <p class="subtitle">Haz clic en las pestañas o en los controles para ver los estados interactivos</p>
+
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="showView('monthly')">📅 Vista Mensual</button>
+    <button class="view-tab" onclick="showView('yearly')">📊 Vista Anual</button>
+  </div>
+
+  <!-- ══════════ MONTHLY ══════════ -->
+  <div id="view-monthly">
+
+    <div class="section-title">Estado colapsado (default) — toca el strip para expandir</div>
+
+    <div class="app-card">
+      <div class="app-header"><h2>🗓️ Vista Mensual</h2><p>Abril 2026</p></div>
+      <div class="month-nav">
+        <button class="nav-btn">‹</button>
+        <h3>Abril 2026</h3>
+        <button class="nav-btn">›</button>
+      </div>
+
+      <div class="hero-card">
+        <p class="hero-label">Balance real</p>
+        <p class="hero-amount">+$2.4M</p>
+        <p class="hero-sub">disponible − presupuestado (efectivo)</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><p class="hero-stat-label">Disponible</p><p class="hero-stat-val">$8.2M</p></div>
+          <div class="hero-stat"><p class="hero-stat-label">Presupuestado</p><p class="hero-stat-val">$5.8M</p></div>
+          <div class="hero-stat"><p class="hero-stat-label">Ejecutado</p><p class="hero-stat-val">$3.1M</p></div>
+          <div class="hero-stat"><p class="hero-stat-label">Por ejecutar</p><p class="hero-stat-val">$2.7M</p></div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar-wrapper">
+        <div class="filter-toggle-row" id="toggle-main" onclick="togglePanel('panel-main','toggle-main','chev-main')">
+          <div class="filter-icon-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="12" x2="7" y2="12"/><line x1="13" y1="18" x2="11" y2="18"/>
+            </svg>
+          </div>
+          <span class="filter-toggle-label">Ordenar y filtrar</span>
+          <span class="active-badge" id="active-badge-main">
+            ↓ Mayor a menor · Pendientes primero
+          </span>
+          <span id="match-badge-main" class="match-badge" style="display:none">0 resultados</span>
+          <span class="chevron" id="chev-main">▾</span>
+        </div>
+        <div class="filter-panel" id="panel-main">
+          <div class="search-row" id="search-row-main">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" type="text" placeholder="Buscar rubro…"
+              id="search-main"
+              oninput="liveFilter(this.value)"
+              onfocus="document.getElementById('search-row-main').classList.add('focused')"
+              onblur="document.getElementById('search-row-main').classList.remove('focused')" />
+            <span class="search-clear" onclick="clearSearch()">✕</span>
+          </div>
+          <div class="sort-row" id="sort-main">
+            <span class="sort-label">Ordenar por</span>
+            <span class="chip active" onclick="selectChip(this,'sort-main')">↓ Mayor a menor</span>
+            <span class="chip idle" onclick="selectChip(this,'sort-main')">↑ Menor a mayor</span>
+            <span class="chip idle" onclick="selectChip(this,'sort-main')">A→Z Nombre</span>
+            <span class="chip idle" onclick="selectChip(this,'sort-main')">Categoría</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUPS -->
+      <div class="groups-grid">
+
+        <!-- CC -->
+        <div class="group-section">
+          <div class="group-header cc">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Tarjeta
+            <span class="group-pct" id="cc-pct">62%</span>
+          </div>
+
+          <div class="sub-divider" id="cc-pending-div">Pendientes</div>
+          <div class="budget-card" data-name="arriendo" data-group="cc">
+            <div class="card-top">
+              <span class="card-emoji">🏠</span>
+              <div><div class="card-name" data-raw="Arriendo">Arriendo</div><div class="card-cat">Hogar</div></div>
+              <button class="card-toggle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></button>
+            </div>
+            <div class="card-amounts">
+              <div><div class="amount-label">Presup.</div><div class="amount-val">$1.8M</div></div>
+              <div><div class="amount-label">Gastado</div><div class="amount-val violet">$1.1M</div></div>
+              <div><div class="amount-label">Restante</div><div class="amount-val green">+$700K</div></div>
+            </div>
+            <div class="prog"><div class="prog-fill" style="width:62%"></div></div>
+          </div>
+
+          <div class="budget-card" data-name="netflix" data-group="cc">
+            <div class="card-top">
+              <span class="card-emoji">🎬</span>
+              <div><div class="card-name" data-raw="Netflix">Netflix</div><div class="card-cat">Entretenimiento</div></div>
+              <button class="card-toggle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></button>
+            </div>
+            <div class="card-amounts">
+              <div><div class="amount-label">Presup.</div><div class="amount-val">$52K</div></div>
+              <div><div class="amount-label">Gastado</div><div class="amount-val muted">—</div></div>
+              <div><div class="amount-label">Restante</div><div class="amount-val muted">—</div></div>
+            </div>
+          </div>
+
+          <div class="sub-divider" id="cc-exec-div">Ejecutados</div>
+          <div class="budget-card executed" data-name="gimnasio" data-group="cc">
+            <div class="card-top">
+              <span class="card-emoji">🏋️</span>
+              <div><div class="card-name" data-raw="Gimnasio">Gimnasio</div><div class="card-cat">Salud</div></div>
+              <button class="card-toggle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg></button>
+            </div>
+            <div class="card-amounts">
+              <div><div class="amount-label">Presup.</div><div class="amount-val">$120K</div></div>
+              <div><div class="amount-label">Gastado</div><div class="amount-val violet">$120K</div></div>
+              <div><div class="amount-label">Restante</div><div class="amount-val green">+$0</div></div>
+            </div>
+            <div class="prog"><div class="prog-fill" style="width:100%"></div></div>
+          </div>
+        </div>
+
+        <!-- CASH -->
+        <div class="group-section">
+          <div class="group-header cash">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="6" width="22" height="13" rx="1"/><path d="M1 10h22"/></svg>
+            Efectivo
+            <span class="group-pct" id="cash-pct">53%</span>
+          </div>
+
+          <div class="sub-divider" id="cash-pending-div">Pendientes</div>
+          <div class="budget-card" data-name="mercado" data-group="cash">
+            <div class="card-top">
+              <span class="card-emoji">🛒</span>
+              <div><div class="card-name" data-raw="Mercado">Mercado</div><div class="card-cat">Alimentación</div></div>
+              <button class="card-toggle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></button>
+            </div>
+            <div class="card-amounts">
+              <div><div class="amount-label">Presup.</div><div class="amount-val">$450K</div></div>
+              <div><div class="amount-label">Gastado</div><div class="amount-val violet">$238K</div></div>
+              <div><div class="amount-label">Restante</div><div class="amount-val green">+$212K</div></div>
+            </div>
+            <div class="prog"><div class="prog-fill" style="width:53%"></div></div>
+          </div>
+
+          <div class="budget-card" data-name="gasolina" data-group="cash">
+            <div class="card-top">
+              <span class="card-emoji">⛽</span>
+              <div><div class="card-name" data-raw="Gasolina">Gasolina</div><div class="card-cat">Transporte</div></div>
+              <button class="card-toggle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></button>
+            </div>
+            <div class="card-amounts">
+              <div><div class="amount-label">Presup.</div><div class="amount-val">$200K</div></div>
+              <div><div class="amount-label">Gastado</div><div class="amount-val muted">—</div></div>
+              <div><div class="amount-label">Restante</div><div class="amount-val muted">—</div></div>
+            </div>
+          </div>
+
+          <div class="sub-divider" id="cash-exec-div">Ejecutados</div>
+          <div class="budget-card executed" data-name="servicios" data-group="cash">
+            <div class="card-top">
+              <span class="card-emoji">💡</span>
+              <div><div class="card-name" data-raw="Servicios públicos">Servicios públicos</div><div class="card-cat">Hogar</div></div>
+              <button class="card-toggle"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg></button>
+            </div>
+            <div class="card-amounts">
+              <div><div class="amount-label">Presup.</div><div class="amount-val">$180K</div></div>
+              <div><div class="amount-label">Gastado</div><div class="amount-val violet">$175K</div></div>
+              <div><div class="amount-label">Restante</div><div class="amount-val green">+$5K</div></div>
+            </div>
+            <div class="prog"><div class="prog-fill" style="width:97%"></div></div>
+          </div>
+        </div>
+
+      </div><!-- /groups-grid -->
+    </div><!-- /app-card -->
+
+    <div class="notes-panel">
+      <h3>Notas de diseño — Vista Mensual</h3>
+      <div class="note"><div class="note-dot" style="background:#7c3aed"></div><p><strong>Barra colapsable</strong> entre el hero card y las dos columnas. Muestra el sort activo como badge incluso colapsada — el usuario ve de un vistazo que hay un ordenamiento aplicado.</p></div>
+      <div class="note"><div class="note-dot" style="background:#16a34a"></div><p><strong>Sub-separadores "Pendientes / Ejecutados"</strong> dentro de cada columna. Orden por defecto: pendientes de mayor a menor valor, luego ejecutados. Segundo criterio: A→Z por nombre.</p></div>
+      <div class="note"><div class="note-dot" style="background:#db2777"></div><p><strong>Búsqueda en tiempo real</strong> con resaltado amarillo del texto coincidente y contador "X de Y" en cada header de grupo. Filtra ambas columnas simultáneamente.</p></div>
+      <div class="note"><div class="note-dot" style="background:#f59e0b"></div><p><strong>Chips de sort</strong>: Mayor a menor (default) · Menor a mayor · Nombre A→Z · Categoría. Solo uno activo a la vez, fondo violeta cuando está seleccionado.</p></div>
+    </div>
+
+  </div><!-- /view-monthly -->
+
+  <!-- ══════════ YEARLY ══════════ -->
+  <div id="view-yearly" style="display:none">
+
+    <div class="section-title">Vista Anual — barra siempre visible (no colapsable)</div>
+
+    <div class="app-card">
+      <div class="app-header"><h2>📊 Vista Anual</h2><p>2026</p></div>
+      <div class="month-nav">
+        <button class="nav-btn">‹</button>
+        <h3>2026</h3>
+        <button class="nav-btn">›</button>
+      </div>
+
+      <!-- YEAR FILTER BAR — always visible, compact -->
+      <div class="year-filter-bar">
+        <div class="year-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Buscar rubro…" oninput="filterYearRows(this.value)" id="year-search-input"/>
+        </div>
+        <div class="year-sort-group">
+          <span class="chip active" style="font-size:10px;padding:3px 9px;" onclick="selectChip(this,'year-sort')">A→Z</span>
+          <span class="chip idle"   style="font-size:10px;padding:3px 9px;" onclick="selectChip(this,'year-sort')">↓ Valor</span>
+          <span class="chip idle"   style="font-size:10px;padding:3px 9px;" onclick="selectChip(this,'year-sort')">Categoría</span>
+        </div>
+        <span id="year-match" style="font-size:10px;color:var(--text-muted);flex-shrink:0;display:none;"></span>
+      </div>
+
+      <!-- Table -->
+      <div class="year-table-wrap">
+        <table class="year-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;position:sticky;left:0;background:#f9f7ff;z-index:3;">Rubro</th>
+              <th>Ene</th><th>Feb</th><th>Mar</th>
+              <th style="background:#f3f0ff;color:#6d28d9;font-weight:700;">Abr ★</th>
+              <th style="color:#c4b5fd;">May</th><th style="color:#c4b5fd;">Jun</th><th style="color:#c4b5fd;">Jul</th>
+              <th style="color:#c4b5fd;">Ago</th><th style="color:#c4b5fd;">Sep</th><th style="color:#c4b5fd;">Oct</th>
+              <th style="color:#c4b5fd;">Nov</th><th style="color:#c4b5fd;">Dic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="group-row" data-group-label="cc">
+              <td colspan="13" style="padding:5px 10px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:4px;"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                TARJETA DE CRÉDITO
+              </td>
+            </tr>
+            <tr data-year-name="arriendo">
+              <td class="row-label">🏠 Arriendo</td>
+              <td><div class="cell-b">1.8M</div></td><td><div class="cell-b">1.8M</div></td>
+              <td class="done"><div class="cell-check cell-b">✓ 1.8M</div><div class="cell-s">1.8M</div></td>
+              <td class="current"><div class="cell-b">1.8M</div><div class="cell-s">1.1M</div></td>
+              <td><div class="cell-b" style="opacity:.4">1.8M</div></td><td><div class="cell-b" style="opacity:.4">1.8M</div></td>
+              <td><div class="cell-b" style="opacity:.4">1.8M</div></td><td><div class="cell-b" style="opacity:.4">1.8M</div></td>
+              <td><div class="cell-b" style="opacity:.4">1.8M</div></td><td><div class="cell-b" style="opacity:.4">1.8M</div></td>
+              <td><div class="cell-b" style="opacity:.4">1.8M</div></td><td><div class="cell-b" style="opacity:.4">1.8M</div></td>
+            </tr>
+            <tr data-year-name="gimnasio">
+              <td class="row-label">🏋️ Gimnasio</td>
+              <td><div class="cell-b">120K</div></td><td><div class="cell-b">120K</div></td>
+              <td class="done"><div class="cell-check cell-b">✓ 120K</div><div class="cell-s">120K</div></td>
+              <td class="current done"><div class="cell-check cell-b">✓ 120K</div><div class="cell-s">120K</div></td>
+              <td><div class="cell-b" style="opacity:.4">120K</div></td><td><div class="cell-b" style="opacity:.4">120K</div></td>
+              <td><div class="cell-b" style="opacity:.4">120K</div></td><td><div class="cell-b" style="opacity:.4">120K</div></td>
+              <td><div class="cell-b" style="opacity:.4">120K</div></td><td><div class="cell-b" style="opacity:.4">120K</div></td>
+              <td><div class="cell-b" style="opacity:.4">120K</div></td><td><div class="cell-b" style="opacity:.4">120K</div></td>
+            </tr>
+            <tr data-year-name="netflix">
+              <td class="row-label">🎬 Netflix</td>
+              <td><div class="cell-b">52K</div></td><td><div class="cell-b">52K</div></td>
+              <td class="done"><div class="cell-check cell-b">✓ 52K</div><div class="cell-s">52K</div></td>
+              <td class="current"><div class="cell-b">52K</div></td>
+              <td><div class="cell-b" style="opacity:.4">52K</div></td><td><div class="cell-b" style="opacity:.4">52K</div></td>
+              <td><div class="cell-b" style="opacity:.4">52K</div></td><td><div class="cell-b" style="opacity:.4">52K</div></td>
+              <td><div class="cell-b" style="opacity:.4">52K</div></td><td><div class="cell-b" style="opacity:.4">52K</div></td>
+              <td><div class="cell-b" style="opacity:.4">52K</div></td><td><div class="cell-b" style="opacity:.4">52K</div></td>
+            </tr>
+            <tr class="group-row cash" data-group-label="cash">
+              <td colspan="13" style="padding:5px 10px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:4px;"><rect x="1" y="6" width="22" height="13" rx="1"/><path d="M1 10h22"/></svg>
+                EFECTIVO
+              </td>
+            </tr>
+            <tr data-year-name="mercado">
+              <td class="row-label">🛒 Mercado</td>
+              <td><div class="cell-b">450K</div></td><td><div class="cell-b">450K</div></td>
+              <td class="done"><div class="cell-check cell-b">✓ 450K</div><div class="cell-s">448K</div></td>
+              <td class="current"><div class="cell-b">450K</div><div class="cell-s">238K</div></td>
+              <td><div class="cell-b" style="opacity:.4">450K</div></td><td><div class="cell-b" style="opacity:.4">450K</div></td>
+              <td><div class="cell-b" style="opacity:.4">450K</div></td><td><div class="cell-b" style="opacity:.4">450K</div></td>
+              <td><div class="cell-b" style="opacity:.4">450K</div></td><td><div class="cell-b" style="opacity:.4">450K</div></td>
+              <td><div class="cell-b" style="opacity:.4">450K</div></td><td><div class="cell-b" style="opacity:.4">450K</div></td>
+            </tr>
+            <tr data-year-name="gasolina">
+              <td class="row-label">⛽ Gasolina</td>
+              <td><div class="cell-b">200K</div></td><td><div class="cell-b">200K</div></td>
+              <td class="done"><div class="cell-check cell-b">✓ 200K</div><div class="cell-s">195K</div></td>
+              <td class="current"><div class="cell-b">200K</div></td>
+              <td><div class="cell-b" style="opacity:.4">200K</div></td><td><div class="cell-b" style="opacity:.4">200K</div></td>
+              <td><div class="cell-b" style="opacity:.4">200K</div></td><td><div class="cell-b" style="opacity:.4">200K</div></td>
+              <td><div class="cell-b" style="opacity:.4">200K</div></td><td><div class="cell-b" style="opacity:.4">200K</div></td>
+              <td><div class="cell-b" style="opacity:.4">200K</div></td><td><div class="cell-b" style="opacity:.4">200K</div></td>
+            </tr>
+            <tr data-year-name="servicios">
+              <td class="row-label">💡 Servicios</td>
+              <td><div class="cell-b">180K</div></td><td><div class="cell-b">180K</div></td>
+              <td class="done"><div class="cell-check cell-b">✓ 180K</div><div class="cell-s">180K</div></td>
+              <td class="current done"><div class="cell-check cell-b">✓ 180K</div><div class="cell-s">175K</div></td>
+              <td><div class="cell-b" style="opacity:.4">180K</div></td><td><div class="cell-b" style="opacity:.4">180K</div></td>
+              <td><div class="cell-b" style="opacity:.4">180K</div></td><td><div class="cell-b" style="opacity:.4">180K</div></td>
+              <td><div class="cell-b" style="opacity:.4">180K</div></td><td><div class="cell-b" style="opacity:.4">180K</div></td>
+              <td><div class="cell-b" style="opacity:.4">180K</div></td><td><div class="cell-b" style="opacity:.4">180K</div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="notes-panel">
+      <h3>Notas de diseño — Vista Anual</h3>
+      <div class="note"><div class="note-dot" style="background:#7c3aed"></div><p><strong>Barra siempre visible</strong> (no necesita colapsar): en la vista de hoja de cálculo el usuario ya está en modo análisis y espera controles a la mano. Es compacta: 40px de altura total.</p></div>
+      <div class="note"><div class="note-dot" style="background:#16a34a"></div><p><strong>Búsqueda</strong> oculta filas que no coinciden (dentro de cada grupo), pero mantiene los encabezados CC / Efectivo visibles para no perder contexto.</p></div>
+      <div class="note"><div class="note-dot" style="background:#db2777"></div><p><strong>Sort A→Z</strong> como default en la vista anual (más útil para la hoja de cálculo). En la vista mensual el default es "Mayor a menor · Pendientes primero".</p></div>
+    </div>
+
+  </div><!-- /view-yearly -->
+
+</div>
+
+<script>
+  function showView(v) {
+    document.getElementById('view-monthly').style.display = v==='monthly' ? 'block' : 'none';
+    document.getElementById('view-yearly').style.display  = v==='yearly'  ? 'block' : 'none';
+    document.querySelectorAll('.view-tab').forEach((t,i) => {
+      t.classList.toggle('active', (i===0&&v==='monthly')||(i===1&&v==='yearly'));
+    });
+  }
+
+  function togglePanel(panelId, toggleId, chevId) {
+    const panel  = document.getElementById(panelId);
+    const toggle = document.getElementById(toggleId);
+    const chev   = document.getElementById(chevId);
+    const open   = panel.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+    chev.classList.toggle('open', open);
+  }
+
+  function selectChip(el, groupId) {
+    el.closest('[id='+groupId+'], .sort-row, .year-sort-group').querySelectorAll('.chip').forEach(c => {
+      c.classList.remove('active'); c.classList.add('idle');
+    });
+    el.classList.remove('idle'); el.classList.add('active');
+    // update badge
+    const badge = document.getElementById('active-badge-main');
+    if (badge) badge.textContent = el.textContent.trim();
+  }
+
+  function liveFilter(q) {
+    const lower = q.toLowerCase().trim();
+    let total = 0;
+    document.querySelectorAll('.budget-card[data-name]').forEach(card => {
+      const name = card.dataset.name;
+      const match = !lower || name.includes(lower);
+      card.style.display = match ? '' : 'none';
+      if (match) total++;
+      // highlight
+      const nameEl = card.querySelector('.card-name');
+      const raw = nameEl.dataset.raw;
+      if (lower && match) {
+        const idx = raw.toLowerCase().indexOf(lower);
+        if (idx >= 0) {
+          nameEl.innerHTML = raw.slice(0,idx) + '<span class="highlight">' + raw.slice(idx,idx+lower.length) + '</span>' + raw.slice(idx+lower.length);
+        }
+      } else {
+        nameEl.textContent = nameEl.dataset.raw;
+      }
+    });
+    const badge = document.getElementById('active-badge-main');
+    const matchBadge = document.getElementById('match-badge-main');
+    if (lower) {
+      badge.style.display = 'none';
+      matchBadge.style.display = 'flex';
+      matchBadge.textContent = total + ' resultado' + (total!==1?'s':'');
+    } else {
+      badge.style.display = 'flex';
+      matchBadge.style.display = 'none';
+    }
+    // hide/show sub-dividers
+    ['cc','cash'].forEach(g => {
+      const vis = [...document.querySelectorAll('.budget-card[data-group='+g+']')].some(c => c.style.display !== 'none');
+      const pdiv = document.getElementById(g+'-pending-div');
+      const ediv = document.getElementById(g+'-exec-div');
+      if (pdiv) pdiv.style.display = vis ? '' : 'none';
+      if (ediv) ediv.style.display = vis ? '' : 'none';
+    });
+  }
+
+  function clearSearch() {
+    const inp = document.getElementById('search-main');
+    inp.value = '';
+    liveFilter('');
+  }
+
+  function filterYearRows(q) {
+    const lower = q.toLowerCase().trim();
+    let vis = 0;
+    document.querySelectorAll('tr[data-year-name]').forEach(row => {
+      const show = !lower || row.dataset.yearName.includes(lower);
+      row.style.display = show ? '' : 'none';
+      if (show) vis++;
+    });
+    const badge = document.getElementById('year-match');
+    if (lower) { badge.style.display='inline'; badge.textContent=vis+' rubros'; }
+    else        { badge.style.display='none'; }
+  }
+</script>
+</body>
+</html>
