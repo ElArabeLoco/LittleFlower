@@ -11,6 +11,25 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.8.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.7.0...littleflower-v0.8.0) (2026-04-24)
+
+
+### Features
+
+* **dashboard:** add cash burn-up chart alongside credit card burn-up ([#47](https://github.com/ElArabeLoco/LittleFlower/issues/47)) ([bd0db20](https://github.com/ElArabeLoco/LittleFlower/commit/bd0db204deef8c1731871e1da62ad8e505997ef2))
+
+## [0.7.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.6.0...littleflower-v0.7.0) (2026-04-24)
+
+
+### Features
+
+* add dual payment mode for budgets ([#45](https://github.com/ElArabeLoco/LittleFlower/issues/45)) ([d581fbf](https://github.com/ElArabeLoco/LittleFlower/commit/d581fbf3f331b84076f8f92c8f56e1ebd9f6d5b3))
+
+
+### Bug Fixes
+
+* add paid_with_credit_card to RegisterFullPaymentPayload and ExpenseRepository mapper ([1cd503f](https://github.com/ElArabeLoco/LittleFlower/commit/1cd503f8bce123b31536cd8a9d65c7715777f292))
+
 ## [0.6.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.5.0...littleflower-v0.6.0) (2026-04-14)
 
 

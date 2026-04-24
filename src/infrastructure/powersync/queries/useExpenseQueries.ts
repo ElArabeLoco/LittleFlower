@@ -181,3 +181,18 @@ export function useDailyExpensesByCreditCard(month: string, householdId: string)
     [month, householdId],
   );
 }
+
+/** Daily spending for all cash expenses in a month (CashBurnUpChart). */
+export function useDailyExpensesByCash(month: string, householdId: string) {
+  return useQuery<DailyExpenseRow>(
+    `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     JOIN budgets b ON b.id = bm.budget_id
+     WHERE bm.month = ? AND e.paid_with_credit_card = 0 AND b.household_id = ?
+       AND e.deleted_at IS NULL AND e.amount > 0
+     GROUP BY substr(e.timestamp, 1, 10)
+     ORDER BY day ASC`,
+    [month, householdId],
+  );
+}
