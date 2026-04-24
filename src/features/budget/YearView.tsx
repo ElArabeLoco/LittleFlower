@@ -636,7 +636,7 @@ export function YearView() {
 
   const {
     budgets, creditCardBudgets, cashBudgets, bmMap, expenseMap,
-    availableMap, ccMetricsMap, cashMetricsMap, totalExpenseByMonth,
+    availableMap, ccMetricsMap, cashMetricsMap, cashExpenseByMonth,
   } = useYearViewData(year, months);
 
   // Sort + filter
@@ -1131,8 +1131,8 @@ export function YearView() {
               </td>
               {months.map(month => {
                 const available     = availableMap.get(month) ?? 0;
-                const totalExpenses = totalExpenseByMonth.get(month) ?? 0;
-                const realBalance   = available - totalExpenses;
+                const cashSpent     = cashExpenseByMonth.get(month) ?? 0;
+                const realBalance   = available - cashSpent;
                 return (
                   <td
                     key={month}

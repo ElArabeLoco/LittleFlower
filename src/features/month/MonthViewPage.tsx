@@ -879,6 +879,7 @@ export function MonthViewPage() {
     cashBudgets,
     bmMap,
     expenseMap,
+    cashExpenseMap,
     activeIncomes,
     imMap,
     trm,
@@ -903,10 +904,10 @@ export function MonthViewPage() {
   // Balance ideal uses cash-only figures: CC budgets are not real cash outflows.
   const totalBudgeted = cashTotals.budgeted;
   const totalSpent = cashTotals.spent;
-  // Balance real = sum of all expense transactions (regardless of budget/mode).
+  // Balance real = cash-only expenses (excludes CC transactions).
   const totalRealSpent = useMemo(
-    () => Array.from(expenseMap.values()).reduce((s, v) => s + v, 0),
-    [expenseMap],
+    () => Array.from(cashExpenseMap.values()).reduce((s, v) => s + v, 0),
+    [cashExpenseMap],
   );
 
   // ── Render ────────────────────────────────────────────────────────────────

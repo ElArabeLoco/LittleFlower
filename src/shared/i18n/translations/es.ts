@@ -213,7 +213,7 @@ export const es = {
     edited: 'editado',
     balanceReal: 'Balance ideal',
     trueBalanceReal: 'Balance real',
-    availableMinusSpent: 'Disponible − Gasto real',
+    availableMinusSpent: 'Disponible − Gasto efectivo real',
     availableLabel: 'Disponible',
     budgetedLabel: 'Presupuest.',
     executedLabel: 'Ejecutado',

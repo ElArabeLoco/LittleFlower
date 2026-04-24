@@ -214,7 +214,7 @@ export const en: Translations = {
     edited: 'edited',
     balanceReal: 'Ideal balance',
     trueBalanceReal: 'Real balance',
-    availableMinusSpent: 'Available − Actual spending',
+    availableMinusSpent: 'Available − Actual cash spending',
     availableLabel: 'Available',
     budgetedLabel: 'Budgeted',
     executedLabel: 'Spent',
