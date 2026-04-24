@@ -23,6 +23,7 @@
  */
 
 import { db } from './client';
+import type { PaymentMode } from '@/domain/budget/Budget';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -65,7 +66,7 @@ export interface InsertBudgetPayload {
   start_month: string;       // 'YYYY-MM'
   end_month?: string | null; // 'YYYY-MM' | null | undefined — null/undefined = no end date
   default_amount: number;    // integer COP
-  paid_with_credit_card: boolean;
+  payment_mode: PaymentMode;
   credit_card_id?: string;
   /** FK to debts.id — when set, expenses auto-create a debit transaction on this debt */
   debt_id?: string | null;
@@ -79,7 +80,7 @@ export async function insertBudget(payload: InsertBudgetPayload, userId: string)
   await db.execute(
     `INSERT INTO budgets
        (id, household_id, name, description, category_id, start_month, end_month,
-        default_amount, paid_with_credit_card, credit_card_id, debt_id,
+        default_amount, payment_mode, credit_card_id, debt_id,
         created_by, created_at, last_edited_by, last_edited_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -91,7 +92,7 @@ export async function insertBudget(payload: InsertBudgetPayload, userId: string)
       payload.start_month,
       payload.end_month ?? null,
       payload.default_amount,
-      payload.paid_with_credit_card ? 1 : 0,
+      payload.payment_mode,
       payload.credit_card_id ?? null,
       payload.debt_id ?? null,
       payload.created_by,
@@ -105,7 +106,7 @@ export async function insertBudget(payload: InsertBudgetPayload, userId: string)
 
 export async function updateBudget(
   id: string,
-  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'end_month' | 'debt_id'>>,
+  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'end_month' | 'debt_id' | 'payment_mode'>>,
   userId: string,
 ): Promise<void> {
   const stamp = authorshipStamp(userId);
@@ -116,6 +117,7 @@ export async function updateBudget(
   if (patch.description !== undefined) { fields.push('description = ?'); values.push(patch.description); }
   if (patch.default_amount !== undefined) { fields.push('default_amount = ?'); values.push(patch.default_amount); }
   if (patch.category_id !== undefined) { fields.push('category_id = ?'); values.push(patch.category_id); }
+  if (patch.payment_mode !== undefined) { fields.push('payment_mode = ?'); values.push(patch.payment_mode); }
   // end_month can be set to null (clear) or a YYYY-MM string
   if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
   // debt_id can be set to null (unlink) or a debt UUID
@@ -230,6 +232,7 @@ export interface RecordExpensePayload {
   note?: string;
   recorded_by: string;        // userId
   timestamp: string;          // ISO8601 — user-visible date of the expense
+  paid_with_credit_card: boolean; // mode used for this specific transaction
   linked_expense_id?: string; // set when reversing another expense
   /** If the budget is linked to a debt, pass the debt_id here to auto-create a debit transaction */
   debt_id?: string;
@@ -248,8 +251,8 @@ export async function recordExpense(payload: RecordExpensePayload): Promise<stri
   await db.execute(
     `INSERT INTO expenses
        (id, household_id, budget_id, budget_month_id, amount, note,
-        recorded_by, timestamp, created_at, linked_expense_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        recorded_by, timestamp, created_at, linked_expense_id, paid_with_credit_card)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
@@ -261,6 +264,7 @@ export async function recordExpense(payload: RecordExpensePayload): Promise<stri
       payload.timestamp,
       now(),
       payload.linked_expense_id ?? null,
+      payload.paid_with_credit_card ? 1 : 0,
     ],
   );
 

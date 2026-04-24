@@ -6,15 +6,18 @@
  *   2. Formulario para registrar un nuevo gasto
  *
  * Se abre desde cualquier BudgetCell, usando el mes de esa celda.
+ * Para budgets con payment_mode='both', el usuario elige el modo por transacción
+ * mediante un segmented control.
  */
 
 import { useState, useRef } from 'react';
-import { Receipt, Plus, Trash2, X, Zap } from 'lucide-react';
+import { Receipt, Plus, Trash2, X, Zap, Banknote, CreditCard } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 import { cn } from '@/shared/ui/cn';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import {
   upsertBudgetMonth,
   recordExpense,
@@ -37,6 +40,7 @@ export interface ExpenseFormDialogProps {
   month: string; // 'YYYY-MM'
   householdId: string;
   userId: string;
+  budgetPaymentMode?: PaymentMode; // defaults to 'credit_card' for backwards compat
   /** If set, expenses on this budget auto-create a debit transaction on this debt */
   debtId?: string | null;
   trigger: React.ReactNode;
@@ -64,6 +68,7 @@ export function ExpenseFormDialog({
   month,
   householdId,
   userId,
+  budgetPaymentMode = 'credit_card',
   debtId,
   trigger,
   defaultOpen = false,
@@ -79,6 +84,10 @@ export function ExpenseFormDialog({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // For dual-mode budgets: which payment mode is selected for this transaction
+  const isDual = budgetPaymentMode === 'both';
+  const [paidWithCC, setPaidWithCC] = useState<boolean>(budgetPaymentMode !== 'cash');
 
   // Set to true when the user submits with Ctrl+Enter — keeps modal open after save
   const keepOpenRef = useRef(false);
@@ -112,6 +121,8 @@ export function ExpenseFormDialog({
     setDate(todayISO());
     setNote('');
     setError(null);
+    // Reset mode to default for the budget
+    setPaidWithCC(budgetPaymentMode !== 'cash');
   }
 
   function handleOpenChange(v: boolean) {
@@ -125,8 +136,8 @@ export function ExpenseFormDialog({
   }
 
   // Core save logic — shared by form submit and quick-pay button
-  // Returns the resolved budgetMonthId (created on-demand if needed)
-  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string): Promise<string> {
+  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string, overrideCC?: boolean): Promise<string> {
+    const modeCC = overrideCC ?? paidWithCC;
     let bmId = resolvedBmId;
     if (!bmId) {
       bmId = await upsertBudgetMonth(
@@ -143,6 +154,7 @@ export function ExpenseFormDialog({
       note: expenseNote || undefined,
       recorded_by: userId,
       timestamp: new Date(expenseDate + 'T12:00:00').toISOString(),
+      paid_with_credit_card: modeCC,
       debt_id: debtId ?? undefined,
     });
     return bmId;
@@ -165,7 +177,6 @@ export function ExpenseFormDialog({
       if (!shouldKeepOpen) {
         handleOpenChange(false);
       } else {
-        // Re-focus amount field for the next entry
         setTimeout(() => amountInputRef.current?.focus(), 0);
       }
     } catch (err) {
@@ -178,11 +189,11 @@ export function ExpenseFormDialog({
   const [quickPaying, setQuickPaying] = useState(false);
   const pendingAmount = budgetMonthAmount - totalSpent;
 
-  async function handleQuickPay() {
+  async function handleQuickPay(overrideCC?: boolean) {
     if (pendingAmount <= 0) return;
     setQuickPaying(true);
     try {
-      const bmId = await saveExpense(pendingAmount, todayISO(), '');
+      const bmId = await saveExpense(pendingAmount, todayISO(), '', overrideCC);
       await updateBudgetMonthExecution(bmId, true, userId);
       handleOpenChange(false);
     } catch (err) {
@@ -196,6 +207,10 @@ export function ExpenseFormDialog({
     await softDeleteExpense(expenseId);
   }
 
+  const quickPayLabel = isDual
+    ? `${t.expenses.quickPayFull} (${paidWithCC ? 'TC' : t.expenses.cash})`
+    : t.expenses.quickPayFull;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -208,6 +223,11 @@ export function ExpenseFormDialog({
             <Receipt size={16} className="text-[var(--text-brand)] shrink-0" />
             <span className="truncate">{budgetName}</span>
             <span className="text-xs font-normal text-[var(--text-muted)] shrink-0">· {fmtMonth(month)}</span>
+            {budgetPaymentMode === 'both' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 font-medium shrink-0">
+                dual
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -267,7 +287,19 @@ export function ExpenseFormDialog({
                       <span className="font-semibold text-sm text-[var(--text-primary)] tabular-nums shrink-0">
                         {formatCOP(exp.amount)}
                       </span>
-                      <span className="text-xs text-[var(--text-muted)] flex-1 truncate">
+                      {/* Payment mode chip — always show so history is clear */}
+                      <span
+                        className={cn(
+                          'shrink-0 text-[10px] px-1.5 py-0.5 rounded font-medium',
+                          exp.paid_with_credit_card
+                            ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                            : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                        )}
+                        title={exp.paid_with_credit_card ? 'Tarjeta' : 'Efectivo'}
+                      >
+                        {exp.paid_with_credit_card ? <CreditCard size={10} /> : <Banknote size={10} />}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)] flex-1 truncate min-w-0">
                         {exp.note ?? ''}
                       </span>
                       <button
@@ -302,7 +334,7 @@ export function ExpenseFormDialog({
               {pendingAmount > 0 && (
                 <button
                   type="button"
-                  onClick={handleQuickPay}
+                  onClick={() => handleQuickPay()}
                   disabled={quickPaying}
                   className={cn(
                     'w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl border-2 transition-all text-left cursor-pointer',
@@ -313,7 +345,7 @@ export function ExpenseFormDialog({
                 >
                   <div>
                     <p className="text-sm font-semibold text-violet-800 dark:text-violet-300 leading-tight">
-                      {quickPaying ? t.common.registering : t.expenses.quickPayFull}
+                      {quickPaying ? t.common.registering : quickPayLabel}
                     </p>
                     <p className="text-xs text-violet-500 dark:text-violet-400 mt-0.5">
                       {formatCOP(pendingAmount)} · {t.expenses.today}
@@ -324,6 +356,41 @@ export function ExpenseFormDialog({
               )}
 
               <div className="h-px bg-[var(--border-subtle)]" />
+
+              {/* Dual-mode segmented control */}
+              {isDual && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{t.expenses.paymentModeLabel}</Label>
+                  <div className="flex rounded-lg border border-[var(--border-medium)] overflow-hidden bg-[var(--bg-surface-2)] p-0.5 gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaidWithCC(false)}
+                      className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-all',
+                        !paidWithCC
+                          ? 'bg-green-500 text-white shadow-sm'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]',
+                      )}
+                    >
+                      <Banknote size={13} />
+                      {t.expenses.cash}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaidWithCC(true)}
+                      className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-all',
+                        paidWithCC
+                          ? 'bg-violet-500 text-white shadow-sm'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]',
+                      )}
+                    >
+                      <CreditCard size={13} />
+                      TC
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Amount + date */}
               <div className="space-y-1.5">

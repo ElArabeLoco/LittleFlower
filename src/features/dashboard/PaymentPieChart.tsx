@@ -17,7 +17,7 @@ export function PaymentPieChart() {
       if (b.end_month && b.end_month < currentMonth) continue;
       const bmRow = bmIdMap.get(`${b.id}|${currentMonth}`);
       const spent = bmRow ? (expenseByBmId.get(bmRow.id) ?? 0) : 0;
-      if (b.paid_with_credit_card === 1) cc += spent;
+      if (b.payment_mode !== 'cash') cc += spent;
       else cash += spent;
     }
     const data = [];

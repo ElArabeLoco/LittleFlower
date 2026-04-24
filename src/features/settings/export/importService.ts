@@ -23,7 +23,7 @@ import type { FlorecitaExport, ImportResult } from './types';
 const TABLE_COLUMNS: Record<string, string[]> = {
   budgets: [
     'id', 'household_id', 'name', 'description', 'category_id',
-    'start_month', 'end_month', 'default_amount', 'paid_with_credit_card',
+    'start_month', 'end_month', 'default_amount', 'payment_mode',
     'credit_card_id', 'created_by', 'created_at', 'deleted_at',
     'last_edited_by', 'last_edited_at', 'debt_id',
   ],

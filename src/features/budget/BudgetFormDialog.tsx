@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Banknote } from 'lucide-react';
+import { CreditCard, Banknote, ArrowLeftRight } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { cn } from '@/shared/ui/cn';
 import { CATEGORIES } from '@/domain/budget/categories';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import { insertBudget, updateBudget } from '@/infrastructure/powersync/mutationWrappers';
 import type { BudgetFormState, DebtOption } from './types';
 
@@ -18,7 +19,7 @@ const defaultForm = (): BudgetFormState => ({
   start_month: new Date().toISOString().slice(0, 7),
   end_month: '',
   default_amount: '0',
-  paid_with_credit_card: false,
+  payment_mode: 'credit_card',
   debt_id: '',
 });
 
@@ -32,6 +33,27 @@ interface BudgetFormDialogProps {
   onDone: () => void;
   trigger: React.ReactNode;
 }
+
+const PAYMENT_MODES: { value: PaymentMode; icon: React.ElementType; labelKey: 'cashMethod' | 'cardMethod' | 'bothMethod' }[] = [
+  { value: 'cash', icon: Banknote, labelKey: 'cashMethod' },
+  { value: 'both', icon: ArrowLeftRight, labelKey: 'bothMethod' },
+  { value: 'credit_card', icon: CreditCard, labelKey: 'cardMethod' },
+];
+
+const MODE_STYLES: Record<PaymentMode, { active: string; inactive: string }> = {
+  cash: {
+    active: 'border-green-400 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 dark:border-green-600',
+    inactive: 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400',
+  },
+  both: {
+    active: 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-600',
+    inactive: 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400',
+  },
+  credit_card: {
+    active: 'border-violet-400 bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-600',
+    inactive: 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400',
+  },
+};
 
 export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, onDone, trigger }: BudgetFormDialogProps) {
   const { t } = useI18n();
@@ -70,7 +92,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           start_month: form.start_month,
           end_month: form.end_month || undefined,
           default_amount: amount,
-          paid_with_credit_card: form.paid_with_credit_card,
+          payment_mode: form.payment_mode,
           debt_id: form.debt_id || null,
           created_by: userId,
         }, userId);
@@ -82,6 +104,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           default_amount: amount,
           end_month: form.end_month || null,
           debt_id: form.debt_id || null,
+          payment_mode: form.payment_mode,
         }, userId);
       }
       setOpen(false);
@@ -158,27 +181,28 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
             </div>
           </div>
 
-          {mode === 'create' && (
-            <div className="space-y-1.5">
-              <Label>{t.budgets.paymentMethod}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => set('paid_with_credit_card', false)}
-                  className={cn('flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-sm font-medium transition-colors',
-                    !form.paid_with_credit_card
-                      ? 'border-green-400 bg-green-50 text-green-700'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
-                  <Banknote size={16} /> {t.budgets.cashMethod}
+          {/* Payment mode — tri-state, visible in both create and edit */}
+          <div className="space-y-1.5">
+            <Label>{t.budgets.paymentMethod}</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {PAYMENT_MODES.map(({ value, icon: Icon, labelKey }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => set('payment_mode', value)}
+                  className={cn(
+                    'flex flex-col items-center gap-1 rounded-lg border-2 px-2 py-2.5 text-xs font-medium transition-colors',
+                    form.payment_mode === value
+                      ? MODE_STYLES[value].active
+                      : MODE_STYLES[value].inactive,
+                  )}
+                >
+                  <Icon size={15} />
+                  {t.budgets[labelKey]}
                 </button>
-                <button type="button" onClick={() => set('paid_with_credit_card', true)}
-                  className={cn('flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-sm font-medium transition-colors',
-                    form.paid_with_credit_card
-                      ? 'border-violet-400 bg-violet-50 text-violet-700'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
-                  <CreditCard size={16} /> {t.budgets.cardMethod}
-                </button>
-              </div>
+              ))}
             </div>
-          )}
+          </div>
 
           {(form.category_id === 'debt' || form.debt_id) && debts.length > 0 && (
             <div className="space-y-1.5">

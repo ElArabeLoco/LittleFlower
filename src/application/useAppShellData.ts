@@ -39,12 +39,12 @@ export function useAppShellData(month: string): AppShellMetrics {
   }, [incomeRows, trm]);
 
   const creditCardRows = useMemo(
-    () => budgetRows.filter(r => r.paid_with_credit_card === 1),
+    () => budgetRows.filter(r => r.payment_mode === 'credit_card' || r.payment_mode === 'both'),
     [budgetRows],
   );
 
   const cashRows = useMemo(
-    () => budgetRows.filter(r => r.paid_with_credit_card === 0),
+    () => budgetRows.filter(r => r.payment_mode === 'cash' || r.payment_mode === 'both'),
     [budgetRows],
   );
 

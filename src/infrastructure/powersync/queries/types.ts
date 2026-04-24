@@ -9,7 +9,7 @@ export interface BudgetRow {
   name: string;
   description: string | null;
   category_id: string;
-  paid_with_credit_card: number; // SQLite integer: 0 | 1
+  payment_mode: string; // 'cash' | 'credit_card' | 'both'
   default_amount: number;
   household_id: string;
   start_month: string;
@@ -36,6 +36,7 @@ export interface ExpenseRow {
   recorded_by: string;
   created_at: string;
   deleted_at: string | null;
+  paid_with_credit_card: number; // SQLite integer: 0 | 1
 }
 
 export interface IncomeRow {

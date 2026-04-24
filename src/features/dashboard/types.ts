@@ -4,7 +4,7 @@ export interface BudgetRow {
   id: string;
   name: string;
   category_id: string;
-  paid_with_credit_card: number;
+  payment_mode: string; // 'cash' | 'credit_card' | 'both'
   default_amount: number;
   start_month: string;
   end_month: string | null;

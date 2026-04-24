@@ -6,6 +6,7 @@ export interface ExpenseListRow {
   amount: number;
   note: string | null;
   timestamp: string;
+  paid_with_credit_card: number; // 0 | 1
 }
 
 /**
@@ -15,11 +16,11 @@ export interface ExpenseListRow {
 export function useExpensesForBudgetMonth(budgetMonthId: string | null) {
   return useQuery<ExpenseListRow>(
     budgetMonthId
-      ? `SELECT id, amount, note, timestamp
+      ? `SELECT id, amount, note, timestamp, paid_with_credit_card
          FROM expenses
          WHERE budget_month_id = ? AND deleted_at IS NULL
          ORDER BY timestamp DESC, created_at DESC`
-      : `SELECT id, amount, note, timestamp FROM expenses WHERE 1=0`,
+      : `SELECT id, amount, note, timestamp, paid_with_credit_card FROM expenses WHERE 1=0`,
     budgetMonthId ? [budgetMonthId] : [],
   );
 }
@@ -38,6 +39,40 @@ export function useExpenseSumsForMonth(month: string) {
      WHERE bm.month = ? AND e.deleted_at IS NULL
      GROUP BY e.budget_month_id`,
     [month],
+  );
+}
+
+/** Expense totals per budget_month + payment mode for a single month (used by MonthViewData). */
+export interface ExpenseSumByModeRow {
+  budget_month_id: string;
+  paid_with_credit_card: number; // 0 | 1
+  total: number;
+}
+
+export function useExpenseSumsByModeForMonth(month: string) {
+  return useQuery<ExpenseSumByModeRow>(
+    `SELECT e.budget_month_id, e.paid_with_credit_card, SUM(e.amount) as total
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     WHERE bm.month = ? AND e.deleted_at IS NULL
+     GROUP BY e.budget_month_id, e.paid_with_credit_card`,
+    [month],
+  );
+}
+
+/** Expense totals per budget_month + payment mode for a year range (used by YearViewData). */
+export interface ExpenseSumByModeWithMonthRow extends ExpenseSumByModeRow {
+  month: string;
+}
+
+export function useExpenseSumsByModeForRange(fromMonth: string, toMonth: string) {
+  return useQuery<ExpenseSumByModeWithMonthRow>(
+    `SELECT e.budget_month_id, bm.month, e.paid_with_credit_card, SUM(e.amount) as total
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     WHERE bm.month >= ? AND bm.month <= ? AND e.deleted_at IS NULL
+     GROUP BY e.budget_month_id, bm.month, e.paid_with_credit_card`,
+    [fromMonth, toMonth],
   );
 }
 
@@ -79,12 +114,14 @@ export interface RecentExpenseRow {
   timestamp: string;
   budget_name: string;
   category_id: string;
+  paid_with_credit_card: number; // 0 | 1
 }
 
 /** Latest N positive expenses for the given month (for the dashboard feed). */
 export function useRecentExpenses(month: string, limit = 10) {
   return useQuery<RecentExpenseRow>(
-    `SELECT e.id, e.amount, e.note, e.timestamp, b.name as budget_name, b.category_id
+    `SELECT e.id, e.amount, e.note, e.timestamp, b.name as budget_name, b.category_id,
+            e.paid_with_credit_card
      FROM expenses e
      JOIN budgets b ON b.id = e.budget_id
      JOIN budget_months bm ON bm.id = e.budget_month_id
@@ -130,14 +167,14 @@ export function useDailyExpensesByBudgetName(month: string, budgetName: string, 
   );
 }
 
-/** Daily spending for all credit-card budgets in a month (CreditCardBurnUpChart). */
+/** Daily spending for all credit-card expenses in a month (CreditCardBurnUpChart). */
 export function useDailyExpensesByCreditCard(month: string, householdId: string) {
   return useQuery<DailyExpenseRow>(
     `SELECT substr(e.timestamp, 1, 10) as day, SUM(e.amount) as total
      FROM expenses e
      JOIN budget_months bm ON bm.id = e.budget_month_id
      JOIN budgets b ON b.id = bm.budget_id
-     WHERE bm.month = ? AND b.paid_with_credit_card = 1 AND b.household_id = ?
+     WHERE bm.month = ? AND e.paid_with_credit_card = 1 AND b.household_id = ?
        AND e.deleted_at IS NULL AND e.amount > 0
      GROUP BY substr(e.timestamp, 1, 10)
      ORDER BY day ASC`,

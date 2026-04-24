@@ -9,7 +9,7 @@
 
 import { db } from '../client';
 import type { IBudgetRepository } from '@/domain/budget/IBudgetRepository';
-import type { Budget, BudgetMonth } from '@/domain/budget/Budget';
+import type { Budget, BudgetMonth, PaymentMode } from '@/domain/budget/Budget';
 
 // ---------------------------------------------------------------------------
 // Raw row shapes (as returned by SQLite)
@@ -23,7 +23,7 @@ interface BudgetRow {
   category_id: string;
   start_month: string;
   default_amount: number;
-  paid_with_credit_card: number; // 0 | 1
+  payment_mode: string; // 'cash' | 'credit_card' | 'both'
   credit_card_id: string | null;
   debt_id: string | null;
   created_by: string;
@@ -60,7 +60,7 @@ function toBudget(row: BudgetRow): Budget {
     categoryId: row.category_id,
     startMonth: row.start_month,
     defaultAmount: row.default_amount,
-    paidWithCreditCard: row.paid_with_credit_card === 1,
+    paymentMode: row.payment_mode as PaymentMode,
     creditCardId: row.credit_card_id,
     debtId: row.debt_id,
     createdBy: row.created_by,

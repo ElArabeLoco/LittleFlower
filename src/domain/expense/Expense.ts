@@ -22,4 +22,5 @@ export interface Expense {
   createdAt: ISODateTime; // system timestamp — immutable after creation
   linkedExpenseId: EntityId | null; // set when this record reverses another
   deletedAt: ISODateTime | null; // MVP soft-delete
+  paidWithCreditCard: boolean; // mode used for this specific transaction
 }

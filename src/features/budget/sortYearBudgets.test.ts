@@ -17,7 +17,7 @@ function makeBudget(
     name,
     description: null,
     category_id: categoryId,
-    paid_with_credit_card: 0,
+    payment_mode: 'cash',
     default_amount: defaultAmount,
     household_id: 'hh-1',
     start_month: '2026-01',

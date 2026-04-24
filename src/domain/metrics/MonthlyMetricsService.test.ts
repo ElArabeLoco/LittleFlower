@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import {
   getEffectiveRate,
   computeMonthlyMetrics,
@@ -25,8 +26,8 @@ const MONTH = '2025-03';
 const PREV_MONTH = '2025-02';
 const FUTURE_MONTH = '2025-04';
 
-function makeBudget(id: string, paidWithCreditCard = false): BudgetRow {
-  return { id, paidWithCreditCard, defaultAmount: 0 };
+function makeBudget(id: string, paymentMode: PaymentMode = 'cash'): BudgetRow {
+  return { id, paymentMode, defaultAmount: 0 };
 }
 
 function makeBudgetMonth(
@@ -246,8 +247,8 @@ describe('_executedBudget', () => {
 
   it('sums only executed non-credit-card budget amounts', () => {
     const budgets = new Map([
-      ['b-cash', makeBudget('b-cash', false)],
-      ['b-cc', makeBudget('b-cc', true)],
+      ['b-cash', makeBudget('b-cash', 'cash')],
+      ['b-cc', makeBudget('b-cc', 'credit_card')],
     ]);
     const budgetMonths = [
       makeBudgetMonth('b-cash', 800_000, true),  // executed cash → included
@@ -259,7 +260,7 @@ describe('_executedBudget', () => {
 
   it('returns 0 when all budgets are credit card budgets', () => {
     // Edge case 5: all budgets are credit card budgets
-    const budgets = new Map([['b-cc', makeBudget('b-cc', true)]]);
+    const budgets = new Map([['b-cc', makeBudget('b-cc', 'credit_card')]]);
     const budgetMonths = [makeBudgetMonth('b-cc', 1_200_000, true)];
     expect(_executedBudget(budgetMonths, budgets)).toBe(0);
   });
@@ -282,8 +283,8 @@ describe('_pendingBudget', () => {
 
   it('sums only unexecuted non-credit-card budget amounts', () => {
     const budgets = new Map([
-      ['b-cash', makeBudget('b-cash', false)],
-      ['b-cc', makeBudget('b-cc', true)],
+      ['b-cash', makeBudget('b-cash', 'cash')],
+      ['b-cc', makeBudget('b-cc', 'credit_card')],
     ]);
     const budgetMonths = [
       makeBudgetMonth('b-cash', 800_000, false), // unexecuted cash → included
@@ -295,7 +296,7 @@ describe('_pendingBudget', () => {
 
   it('returns 0 when all budgets are credit card budgets', () => {
     // Edge case 5 (also applies to pending)
-    const budgets = new Map([['b-cc', makeBudget('b-cc', true)]]);
+    const budgets = new Map([['b-cc', makeBudget('b-cc', 'credit_card')]]);
     const budgetMonths = [makeBudgetMonth('b-cc', 1_200_000, false)];
     expect(_pendingBudget(budgetMonths, budgets)).toBe(0);
   });
@@ -308,15 +309,15 @@ describe('_pendingBudget', () => {
 describe('_budgetedBalance', () => {
   it('returns availableIncome unchanged when no credit card budgets', () => {
     // Edge case 6: no credit card budgets → totalCreditCardBudgeted = 0
-    const budgets = new Map([['b-cash', makeBudget('b-cash', false)]]);
+    const budgets = new Map([['b-cash', makeBudget('b-cash', 'cash')]]);
     const budgetMonths = [makeBudgetMonth('b-cash', 500_000)];
     expect(_budgetedBalance(5_000_000, budgetMonths, budgets)).toBe(5_000_000);
   });
 
   it('subtracts credit card budget slice from available income', () => {
     const budgets = new Map([
-      ['b-cc', makeBudget('b-cc', true)],
-      ['b-cash', makeBudget('b-cash', false)],
+      ['b-cc', makeBudget('b-cc', 'credit_card')],
+      ['b-cash', makeBudget('b-cash', 'cash')],
     ]);
     const budgetMonths = [
       makeBudgetMonth('b-cc', 1_200_000),
@@ -380,19 +381,19 @@ describe('_realBalance', () => {
   });
 
   it('subtracts executed credit card budget amounts', () => {
-    const budgets = new Map([['b-cc', makeBudget('b-cc', true)]]);
+    const budgets = new Map([['b-cc', makeBudget('b-cc', 'credit_card')]]);
     const budgetMonths = [makeBudgetMonth('b-cc', 1_200_000, true)]; // executed CC
     expect(_realBalance(5_000_000, [], budgetMonths, budgets)).toBe(3_800_000);
   });
 
   it('does NOT subtract unexecuted credit card budget amounts', () => {
-    const budgets = new Map([['b-cc', makeBudget('b-cc', true)]]);
+    const budgets = new Map([['b-cc', makeBudget('b-cc', 'credit_card')]]);
     const budgetMonths = [makeBudgetMonth('b-cc', 1_200_000, false)]; // NOT executed
     expect(_realBalance(5_000_000, [], budgetMonths, budgets)).toBe(5_000_000);
   });
 
   it('combines all deductions: expenses + executed credit card', () => {
-    const budgets = new Map([['b-cc', makeBudget('b-cc', true)]]);
+    const budgets = new Map([['b-cc', makeBudget('b-cc', 'credit_card')]]);
     const budgetMonths = [makeBudgetMonth('b-cc', 1_200_000, true)];
     const expenses = [makeExpense(300_000)];
     // 5,000,000 - 300,000 (expense) - 1,200,000 (executed CC) = 3,500,000
@@ -407,10 +408,10 @@ describe('_realBalance', () => {
 describe('computeMonthlyMetrics — happy path', () => {
   it('computes all 10 output fields correctly for a representative month', () => {
     const budgets = new Map([
-      ['b-rent', makeBudget('b-rent', false)], // cash: rent 1,500,000
-      ['b-market', makeBudget('b-market', false)], // cash: market 800,000 — unexecuted
-      ['b-netflix', makeBudget('b-netflix', true)], // credit card: Netflix 50,000
-      ['b-card', makeBudget('b-card', true)], // credit card: card quota 1,200,000 — executed
+      ['b-rent', makeBudget('b-rent', 'cash')], // cash: rent 1,500,000
+      ['b-market', makeBudget('b-market', 'cash')], // cash: market 800,000 — unexecuted
+      ['b-netflix', makeBudget('b-netflix', 'credit_card')], // credit card: Netflix 50,000
+      ['b-card', makeBudget('b-card', 'credit_card')], // credit card: card quota 1,200,000 — executed
     ]);
 
     const budgetMonths: BudgetMonthRow[] = [
@@ -508,8 +509,8 @@ describe('computeMonthlyMetrics — edge cases', () => {
 
   it('edge case 5: all budgets are credit card — executedBudget and pendingBudget are 0', () => {
     const budgets = new Map([
-      ['b-cc1', makeBudget('b-cc1', true)],
-      ['b-cc2', makeBudget('b-cc2', true)],
+      ['b-cc1', makeBudget('b-cc1', 'credit_card')],
+      ['b-cc2', makeBudget('b-cc2', 'credit_card')],
     ]);
     const budgetMonths = [
       makeBudgetMonth('b-cc1', 1_200_000, true),
@@ -523,7 +524,7 @@ describe('computeMonthlyMetrics — edge cases', () => {
   });
 
   it('edge case 6: no credit card budgets — totalCreditCardBudgeted is 0', () => {
-    const budgets = new Map([['b-cash', makeBudget('b-cash', false)]]);
+    const budgets = new Map([['b-cash', makeBudget('b-cash', 'cash')]]);
     const budgetMonths = [makeBudgetMonth('b-cash', 800_000, false)];
     const result = computeMonthlyMetrics(makeInput({ budgets, budgetMonths }));
     expect(result.totalCreditCardBudgeted).toBe(0);
@@ -565,7 +566,7 @@ describe('computeMonthlyMetrics — edge cases', () => {
   });
 
   it('edge case 10: BudgetMonth.amount = 0 contributes 0 to all totals', () => {
-    const budgets = new Map([['b-zero', makeBudget('b-zero', false)]]);
+    const budgets = new Map([['b-zero', makeBudget('b-zero', 'cash')]]);
     const budgetMonths = [makeBudgetMonth('b-zero', 0, true)];
     const result = computeMonthlyMetrics(makeInput({ budgets, budgetMonths }));
     expect(result.totalBudgeted).toBe(0);
@@ -574,7 +575,7 @@ describe('computeMonthlyMetrics — edge cases', () => {
   });
 
   it('edge case 11: large COP amounts (10 digits) do not overflow', () => {
-    const budgets = new Map([['b-big', makeBudget('b-big', false)]]);
+    const budgets = new Map([['b-big', makeBudget('b-big', 'cash')]]);
     const budgetMonths = [makeBudgetMonth('b-big', 10_000_000_000, false)]; // 10 billion COP
     const incomes = [makeIncomeMonth(10_000_000_000, 'COP')];
     const result = computeMonthlyMetrics(
@@ -595,10 +596,10 @@ describe('computeMonthlyMetrics — edge cases', () => {
 describe('invariant: executedBudget + pendingBudget === totalBudgeted - totalCreditCardBudgeted', () => {
   it('holds for a typical month with mixed budget types', () => {
     const budgets = new Map([
-      ['b-cash-exec', makeBudget('b-cash-exec', false)],
-      ['b-cash-pend', makeBudget('b-cash-pend', false)],
-      ['b-cc-exec', makeBudget('b-cc-exec', true)],
-      ['b-cc-pend', makeBudget('b-cc-pend', true)],
+      ['b-cash-exec', makeBudget('b-cash-exec', 'cash')],
+      ['b-cash-pend', makeBudget('b-cash-pend', 'cash')],
+      ['b-cc-exec', makeBudget('b-cc-exec', 'credit_card')],
+      ['b-cc-pend', makeBudget('b-cc-pend', 'credit_card')],
     ]);
     const budgetMonths: BudgetMonthRow[] = [
       makeBudgetMonth('b-cash-exec', 1_500_000, true),
@@ -620,7 +621,7 @@ describe('invariant: executedBudget + pendingBudget === totalBudgeted - totalCre
   });
 
   it('holds when all budgets are credit card', () => {
-    const budgets = new Map([['b-cc', makeBudget('b-cc', true)]]);
+    const budgets = new Map([['b-cc', makeBudget('b-cc', 'credit_card')]]);
     const budgetMonths = [makeBudgetMonth('b-cc', 1_200_000, true)];
     const result = computeMonthlyMetrics(makeInput({ budgets, budgetMonths }));
     expect(result.executedBudget + result.pendingBudget).toBe(
@@ -630,8 +631,8 @@ describe('invariant: executedBudget + pendingBudget === totalBudgeted - totalCre
 
   it('holds when all budgets are cash', () => {
     const budgets = new Map([
-      ['b1', makeBudget('b1', false)],
-      ['b2', makeBudget('b2', false)],
+      ['b1', makeBudget('b1', 'cash')],
+      ['b2', makeBudget('b2', 'cash')],
     ]);
     const budgetMonths = [
       makeBudgetMonth('b1', 500_000, true),
