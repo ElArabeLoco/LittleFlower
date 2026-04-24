@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propuesta — Interacción de celdas en Vista Anual</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink-50:  #fdf2f8; --pink-100: #fce7f3; --pink-200: #fbcfe8;
+      --pink-400: #f472b6; --pink-500: #ec4899; --pink-600: #db2777;
+      --violet-50:  #f5f3ff; --violet-100: #ede9fe; --violet-200: #ddd6fe;
+      --violet-400: #a78bfa; --violet-500: #8b5cf6; --violet-600: #7c3aed; --violet-700: #6d28d9;
+      --green-50: #f0fdf4; --green-100: #dcfce7; --green-600: #16a34a; --green-700: #15803d;
+      --red-400: #f87171; --red-500: #ef4444;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db;
+      --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563;
+      --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #faf9fb;
+      color: var(--gray-800);
+      min-height: 100vh;
+      padding: 0 0 80px;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: white; border-bottom: 1px solid var(--gray-200);
+      padding: 20px 24px 16px;
+    }
+    .page-header h1 { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+    .page-header p  { font-size: 13px; color: var(--gray-500); margin-top: 4px; line-height: 1.5; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 2px; background: var(--gray-100);
+      border-bottom: 1px solid var(--gray-200); padding: 0 24px;
+    }
+    .tab-btn {
+      padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--gray-500);
+      background: transparent; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--violet-600); }
+    .tab-btn.active { color: var(--violet-700); border-bottom-color: var(--violet-500); font-weight: 600; }
+
+    .tab-panel { display: none; padding: 24px; }
+    .tab-panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card { background: white; border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+    .card-header {
+      padding: 14px 18px 12px; border-bottom: 1px solid var(--gray-100);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header h2 { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+    .badge-new { background: var(--violet-100); color: var(--violet-700); }
+    .card-body { padding: 18px; }
+
+    /* ── Hint box ── */
+    .hint-box {
+      background: var(--violet-50); border: 1px solid var(--violet-200);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;
+    }
+    .hint-box h3 { font-size: 12.5px; font-weight: 700; color: var(--violet-700); margin-bottom: 8px; }
+    .hint-row { display: flex; gap: 8px; font-size: 12px; color: var(--gray-700); margin-bottom: 6px; line-height: 1.5; }
+    .hint-row:last-child { margin-bottom: 0; }
+    .hint-icon { flex-shrink: 0; }
+
+    /* ── Spreadsheet ── */
+    .spreadsheet-wrap { overflow-x: auto; border: 1px solid var(--gray-200); border-radius: 8px; }
+    .spreadsheet {
+      border-collapse: collapse; font-size: 12px; min-width: 500px; width: 100%;
+    }
+    .spreadsheet th {
+      background: var(--gray-50); padding: 6px 10px; text-align: center;
+      font-weight: 600; color: var(--gray-500);
+      border-bottom: 2px solid var(--gray-200); border-right: 1px solid var(--gray-200);
+      min-width: 80px;
+    }
+    .spreadsheet th.name-col { text-align: left; min-width: 150px; }
+    .spreadsheet th.current-month { color: var(--violet-600); background: var(--violet-50); }
+    .spreadsheet th .dot {
+      display: block; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--violet-500); margin: 3px auto 0;
+    }
+    .spreadsheet td { border-right: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); }
+    .spreadsheet td.name-col {
+      padding: 8px 10px; font-weight: 500; color: var(--gray-700);
+      background: white; white-space: nowrap;
+    }
+
+    /* ── Budget cell ── */
+    .budget-cell {
+      position: relative; padding: 6px 8px; text-align: right;
+      cursor: default; transition: background 0.12s; user-select: none;
+      min-width: 80px;
+    }
+    .budget-cell:hover { background: var(--pink-50); }
+    .budget-cell.executed { background: var(--green-50); }
+    .budget-cell.current:not(.executed) { background: var(--pink-50); }
+    .budget-cell.editing { background: var(--violet-50) !important; overflow: visible; z-index: 10; }
+
+    .cell-amount {
+      font-weight: 600; font-size: 12px; color: var(--gray-800);
+      line-height: 1.3; display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    }
+    .cell-amount.exec { color: var(--green-700); }
+    .cell-amount.future { color: var(--gray-400); }
+    .cell-spent { font-size: 10px; color: var(--violet-600); line-height: 1; margin-top: 2px; text-align: right; }
+    .cell-spent.over { color: var(--red-500); font-weight: 600; }
+    .progress-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--gray-200); }
+    .progress-fill { height: 100%; background: var(--violet-400); border-radius: 1px; }
+    .progress-fill.over { background: var(--red-400); }
+    .edit-hint {
+      position: absolute; top: 3px; right: 4px; font-size: 9px; color: var(--gray-400);
+      opacity: 0; transition: opacity 0.15s; pointer-events: none;
+    }
+    .budget-cell:hover:not(.editing) .edit-hint { opacity: 1; }
+
+    /* ── Edit mode input ── */
+    .cell-input {
+      width: 100%; text-align: right; font-size: 12px; font-weight: 600;
+      padding: 3px 5px; border: 1.5px solid var(--violet-400); border-radius: 4px;
+      background: white; outline: none; color: var(--gray-900);
+      display: block;
+    }
+
+    /* ── Edit toolbar (popover below cell) ── */
+    .edit-toolbar {
+      position: absolute; top: calc(100% + 4px); right: 0; z-index: 100;
+      background: white; border: 1px solid var(--gray-200); border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.07);
+      min-width: 210px; overflow: hidden;
+      animation: pop-in 0.14s ease-out;
+    }
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .toolbar-row {
+      display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+      cursor: pointer; background: transparent; border: none; width: 100%;
+      text-align: left; transition: background 0.1s;
+    }
+    .toolbar-row:hover { background: var(--gray-50); }
+    .toolbar-row:active { background: var(--gray-100); }
+    .toolbar-row + .toolbar-row { border-top: 1px solid var(--gray-100); }
+    .toolbar-icon {
+      width: 26px; height: 26px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+    }
+    .toolbar-icon.violet { background: var(--violet-100); }
+    .toolbar-icon.green  { background: var(--green-100); }
+    .toolbar-icon.orange { background: #fff7ed; }
+    .toolbar-text-title { font-size: 12px; font-weight: 500; color: var(--gray-800); display: block; }
+    .toolbar-text-desc  { font-size: 10px; color: var(--gray-400); display: block; margin-top: 1px; }
+    .toolbar-kbd {
+      margin-left: auto; font-size: 10px; color: var(--gray-400);
+      background: var(--gray-100); padding: 2px 5px; border-radius: 4px;
+      font-family: monospace; flex-shrink: 0;
+    }
+
+    /* ── Confirmation dialog ── */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    }
+    .confirm-overlay.visible { opacity: 1; pointer-events: all; }
+    .confirm-box {
+      background: white; border-radius: 16px; padding: 24px;
+      max-width: 340px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      transform: scale(0.94); transition: transform 0.2s;
+    }
+    .confirm-overlay.visible .confirm-box { transform: scale(1); }
+    .confirm-box h3 { font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .confirm-box p  { font-size: 13px; color: var(--gray-600); line-height: 1.6; margin-bottom: 20px; }
+    .confirm-box .months-pill {
+      display: inline-block; background: var(--violet-100); color: var(--violet-700);
+      font-weight: 600; padding: 2px 8px; border-radius: 6px; font-size: 12px; margin: 2px 0;
+    }
+    .confirm-actions { display: flex; gap: 10px; }
+    .btn { padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; flex: 1; transition: all 0.12s; }
+    .btn-cancel { background: var(--gray-100); color: var(--gray-700); }
+    .btn-cancel:hover { background: var(--gray-200); }
+    .btn-confirm { background: var(--violet-600); color: white; }
+    .btn-confirm:hover { background: var(--violet-700); }
+
+    /* ── Context menu ── */
+    .ctx-menu {
+      position: fixed; background: white; border: 1px solid var(--gray-200);
+      border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      min-width: 230px; overflow: hidden; z-index: 400;
+      animation: ctx-pop 0.12s ease-out;
+      display: none;
+    }
+    @keyframes ctx-pop {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .ctx-header { padding: 8px 14px 7px; border-bottom: 1px solid var(--gray-100); }
+    .ctx-header .ctx-name { font-size: 12px; font-weight: 700; color: var(--gray-800); }
+    .ctx-header .ctx-sub  { font-size: 10px; color: var(--gray-400); margin-top: 1px; }
+    .ctx-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+      font-size: 12.5px; color: var(--gray-700); cursor: pointer; transition: background 0.1s;
+      border: none; width: 100%; background: transparent; text-align: left;
+    }
+    .ctx-item:hover { background: var(--gray-50); }
+    .ctx-item + .ctx-item { border-top: 1px solid var(--gray-100); }
+    .ctx-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .ctx-icon.green  { background: var(--green-100); }
+    .ctx-icon.violet { background: var(--violet-100); }
+    .ctx-icon.pink   { background: var(--pink-100); }
+    .ctx-icon.orange { background: #fff7ed; }
+    .ctx-item-title { font-weight: 500; display: block; }
+    .ctx-item-desc  { font-size: 10.5px; color: var(--gray-400); display: block; margin-top: 1px; }
+
+    /* ── Overlay backdrop for menus ── */
+    #menu-backdrop { position: fixed; inset: 0; z-index: 300; display: none; }
+
+    /* ── Success flash ── */
+    @keyframes flash-success {
+      0%   { background: var(--violet-100); }
+      100% { background: ''; }
+    }
+    .flash { animation: flash-success 0.5s ease-out forwards; }
+
+    /* ── Interaction legend ── */
+    .legend-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px;
+    }
+    @media (max-width: 540px) { .legend-grid { grid-template-columns: 1fr; } }
+    .legend-item {
+      border: 1px solid var(--gray-200); border-radius: 8px;
+      padding: 12px; background: var(--gray-50);
+    }
+    .legend-gesture { font-size: 11px; font-weight: 700; color: var(--violet-700); margin-bottom: 4px; }
+    .legend-action  { font-size: 12px; color: var(--gray-600); line-height: 1.5; }
+    .legend-kbd {
+      display: inline-block; background: var(--gray-200); color: var(--gray-700);
+      font-family: monospace; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin: 0 1px;
+    }
+
+    /* ── Mobile frame ── */
+    .mobile-frame {
+      max-width: 375px; margin: 0 auto; background: white;
+      border: 1.5px solid var(--gray-300); border-radius: 32px; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+    }
+    .mobile-status-bar {
+      background: white; height: 44px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 20px;
+      font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--gray-100);
+    }
+    .mobile-app-header { background: white; padding: 10px 16px 8px; border-bottom: 1px solid var(--gray-200); }
+    .mobile-app-header h3 { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+    .mobile-app-header p  { font-size: 12px; color: var(--gray-400); }
+
+    .mobile-table-wrap { overflow-x: auto; }
+    .mobile-table { border-collapse: collapse; font-size: 11px; min-width: 300px; }
+    .mobile-table th {
+      background: var(--gray-50); padding: 5px 8px; text-align: center;
+      font-weight: 600; color: var(--gray-500);
+      border-bottom: 2px solid var(--gray-200); border-right: 1px solid var(--gray-200);
+      min-width: 66px;
+    }
+    .mobile-table th.name-col { text-align: left; min-width: 110px; }
+    .mobile-table td { border-right: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); }
+    .mobile-table td.name-col {
+      padding: 7px 8px; font-weight: 500; color: var(--gray-700);
+      background: white; white-space: nowrap;
+    }
+    .mobile-cell { position: relative; padding: 6px 8px; text-align: right; user-select: none; }
+    .mobile-cell.current { background: var(--pink-50); }
+    .mobile-cell.executed { background: var(--green-50); }
+    .m-amount { font-weight: 600; font-size: 11px; }
+    .m-spent  { font-size: 9px; color: var(--violet-600); }
+
+    /* ── Action sheet ── */
+    .sheet-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; transition: opacity 0.25s; pointer-events: none;
+    }
+    .sheet-overlay.visible { opacity: 1; pointer-events: all; }
+    .action-sheet {
+      width: 100%; max-width: 375px; background: white;
+      border-radius: 20px 20px 0 0; padding-bottom: 24px;
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    }
+    .sheet-overlay.visible .action-sheet { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: var(--gray-300); border-radius: 2px; margin: 10px auto 14px; }
+    .sheet-title { padding: 0 20px 12px; border-bottom: 1px solid var(--gray-100); }
+    .sheet-title .s-name   { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+    .sheet-title .s-month  { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .sheet-title .s-row    { display: flex; justify-content: space-between; margin-top: 10px; }
+    .sheet-title .s-label  { font-size: 11px; color: var(--gray-400); }
+    .sheet-title .s-amount { font-size: 20px; font-weight: 700; color: var(--gray-900); }
+    .sheet-title .s-spent  { font-size: 12px; color: var(--violet-600); margin-top: 2px; }
+    .sheet-action {
+      display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+      background: transparent; border: none; width: 100%; cursor: pointer;
+      text-align: left; transition: background 0.1s;
+    }
+    .sheet-action:hover { background: var(--gray-50); }
+    .sheet-action + .sheet-action { border-top: 1px solid var(--gray-100); }
+    .sa-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .sa-icon.green  { background: var(--green-100); }
+    .sa-icon.violet { background: var(--violet-100); }
+    .sa-icon.pink   { background: var(--pink-100); }
+    .sa-icon.orange { background: #fff7ed; }
+    .sa-title { font-size: 15px; font-weight: 500; color: var(--gray-800); display: block; }
+    .sa-desc  { font-size: 12px; color: var(--gray-400); display: block; margin-top: 2px; }
+
+    .demo-btn {
+      display: block; margin: 14px 16px 4px; padding: 10px 16px;
+      background: var(--violet-500); color: white; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer; width: calc(100% - 32px);
+      transition: background 0.15s; text-align: center;
+    }
+    .demo-btn:hover { background: var(--violet-600); }
+    .demo-btn.secondary {
+      background: white; color: var(--violet-600);
+      border: 1.5px solid var(--violet-300); margin-top: 8px;
+    }
+    .demo-btn.secondary:hover { background: var(--violet-50); }
+
+    .mobile-bottom-nav {
+      display: flex; justify-content: space-around; padding: 10px 0 16px;
+      border-top: 1px solid var(--gray-200); margin-top: 12px;
+    }
+    .mobile-bottom-nav span { font-size: 20px; }
+
+    kbd {
+      display: inline-block; background: var(--gray-100); color: var(--gray-700);
+      font-family: monospace; font-size: 11px; padding: 2px 6px;
+      border-radius: 4px; border: 1px solid var(--gray-300); margin: 0 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <h1>📅 Propuesta — Interacción de celdas en Vista Anual</h1>
+  <p>v2 — incluye: Tab para saltar entre celdas en modo edición · "Aplicar de aquí en adelante" · Menú contextual completo</p>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('desktop', this)">🖥️ Escritorio</button>
+  <button class="tab-btn" onclick="switchTab('mobile', this)">📱 Móvil</button>
+</div>
+
+<!-- ════════════════════════════════════════════════ TAB: DESKTOP -->
+<div id="tab-desktop" class="tab-panel active">
+
+  <div class="hint-box">
+    <h3>💡 Cómo interactuar</h3>
+    <div class="hint-row"><span class="hint-icon">✏️</span><span><strong>Doble-clic</strong> en cualquier celda → modo edición con toolbar de acciones</span></div>
+    <div class="hint-row"><span class="hint-icon">⌨️</span><span>En modo edición: <kbd>Tab</kbd> guarda y abre la siguiente celda en edición · <kbd>Enter</kbd> guarda solo este mes · <kbd>Esc</kbd> cancela</span></div>
+    <div class="hint-row"><span class="hint-icon">📋</span><span>En la toolbar que aparece: clic en <strong>"De aquí en adelante"</strong> → diálogo de confirmación</span></div>
+    <div class="hint-row"><span class="hint-icon">🖱️</span><span><strong>Clic derecho</strong> → menú contextual con las 4 acciones (incluyendo la nueva "De aquí en adelante")</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Vista Anual 2025</h2>
+      <span class="badge badge-new">Propuesta v2</span>
+    </div>
+    <div class="card-body">
+      <div class="spreadsheet-wrap">
+        <table class="spreadsheet">
+          <thead>
+            <tr>
+              <th class="name-col">Ítem</th>
+              <th>Feb</th>
+              <th>Mar</th>
+              <th class="current-month">Abr<span class="dot"></span></th>
+              <th>May</th>
+              <th>Jun</th>
+              <th>Jul</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- CC group -->
+            <tr>
+              <td colspan="7" style="padding:5px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c3aed;background:#f5f3ff;border-right:none;">
+                💳 Tarjeta de Crédito
+              </td>
+            </tr>
+            <tr id="row-0">
+              <td class="name-col">🏠 Arriendo</td>
+              <!-- bi=0 = budget index, mi=0..5 = month index -->
+              <td class="budget-cell executed" data-bi="0" data-mi="0" data-name="Arriendo" data-month="Feb" data-amount="1800000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount exec">1,8M ✓</div>
+                <div class="cell-spent">1,8M</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+              </td>
+              <td class="budget-cell executed" data-bi="0" data-mi="1" data-name="Arriendo" data-month="Mar" data-amount="1800000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount exec">1,8M ✓</div>
+                <div class="cell-spent">1,8M</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+              </td>
+              <td class="budget-cell current" data-bi="0" data-mi="2" data-name="Arriendo" data-month="Abr" data-amount="1800000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount">1,8M</div>
+                <div class="cell-spent">620K</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:34%"></div></div>
+              </td>
+              <td class="budget-cell" data-bi="0" data-mi="3" data-name="Arriendo" data-month="May" data-amount="1800000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">1,8M</div>
+              </td>
+              <td class="budget-cell" data-bi="0" data-mi="4" data-name="Arriendo" data-month="Jun" data-amount="1800000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">1,8M</div>
+              </td>
+              <td class="budget-cell" data-bi="0" data-mi="5" data-name="Arriendo" data-month="Jul" data-amount="1800000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">1,8M</div>
+              </td>
+            </tr>
+            <tr id="row-1">
+              <td class="name-col">📱 Internet</td>
+              <td class="budget-cell executed" data-bi="1" data-mi="0" data-name="Internet" data-month="Feb" data-amount="180000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount exec">180K ✓</div>
+              </td>
+              <td class="budget-cell executed" data-bi="1" data-mi="1" data-name="Internet" data-month="Mar" data-amount="180000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount exec">180K ✓</div>
+              </td>
+              <td class="budget-cell current" data-bi="1" data-mi="2" data-name="Internet" data-month="Abr" data-amount="180000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount">180K</div>
+              </td>
+              <td class="budget-cell" data-bi="1" data-mi="3" data-name="Internet" data-month="May" data-amount="180000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">180K</div>
+              </td>
+              <td class="budget-cell" data-bi="1" data-mi="4" data-name="Internet" data-month="Jun" data-amount="180000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">180K</div>
+              </td>
+              <td class="budget-cell" data-bi="1" data-mi="5" data-name="Internet" data-month="Jul" data-amount="180000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">180K</div>
+              </td>
+            </tr>
+            <!-- Cash group -->
+            <tr>
+              <td colspan="7" style="padding:5px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#15803d;background:#f0fdf4;border-right:none;border-top:1px solid #e5e7eb;">
+                💵 Efectivo
+              </td>
+            </tr>
+            <tr id="row-2">
+              <td class="name-col">🛒 Mercado</td>
+              <td class="budget-cell executed" data-bi="2" data-mi="0" data-name="Mercado" data-month="Feb" data-amount="600000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount exec">600K ✓</div>
+                <div class="cell-spent">588K</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:98%"></div></div>
+              </td>
+              <td class="budget-cell executed" data-bi="2" data-mi="1" data-name="Mercado" data-month="Mar" data-amount="600000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount exec">600K ✓</div>
+                <div class="cell-spent" style="color:var(--red-500);font-weight:600">632K ⚠</div>
+                <div class="progress-bar"><div class="progress-fill over" style="width:100%"></div></div>
+              </td>
+              <td class="budget-cell current" data-bi="2" data-mi="2" data-name="Mercado" data-month="Abr" data-amount="600000" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount">600K</div>
+                <div class="cell-spent">310K</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:52%"></div></div>
+              </td>
+              <td class="budget-cell" data-bi="2" data-mi="3" data-name="Mercado" data-month="May" data-amount="600000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">600K</div>
+              </td>
+              <td class="budget-cell" data-bi="2" data-mi="4" data-name="Mercado" data-month="Jun" data-amount="600000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">600K</div>
+              </td>
+              <td class="budget-cell" data-bi="2" data-mi="5" data-name="Mercado" data-month="Jul" data-amount="600000" data-future="1" oncontextmenu="showCtx(event,this)" ondblclick="startEdit(this)">
+                <span class="edit-hint">doble-clic</span>
+                <div class="cell-amount future">600K</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="legend-gesture">✏️ Doble-clic → editar</div>
+          <div class="legend-action">Abre el input inline. La toolbar muestra las opciones de guardado.</div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-gesture">⌨️ <span class="legend-kbd">Tab</span> en edición</div>
+          <div class="legend-action">Guarda el valor actual y abre la celda del mes siguiente en edición — sin perder el flujo.</div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-gesture">📋 De aquí en adelante</div>
+          <div class="legend-action">Aplica el nuevo valor a todos los meses restantes del año. Solo disponible en mes actual y futuros. Requiere confirmación.</div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-gesture">🖱️ Clic derecho</div>
+          <div class="legend-action">Menú contextual con: Marcar pagado · Registrar pago total · De aquí en adelante · Ver transacciones.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ TAB: MOBILE -->
+<div id="tab-mobile" class="tab-panel">
+
+  <div class="hint-box">
+    <h3>💡 Cómo interactuar</h3>
+    <div class="hint-row"><span class="hint-icon">👆</span><span><strong>Simular Long Press</strong> → Action Sheet con las 4 acciones (incluyendo "De aquí en adelante")</span></div>
+    <div class="hint-row"><span class="hint-icon">✏️</span><span><strong>Simular Doble-tap + "De aquí en adelante"</strong> → flujo completo en móvil con diálogo de confirmación</span></div>
+  </div>
+
+  <div style="max-width:420px; margin:0 auto;">
+    <div class="mobile-frame">
+      <div class="mobile-status-bar">
+        <span>9:41</span><span>📶 🔋</span>
+      </div>
+      <div class="mobile-app-header">
+        <h3>📅 Vista Anual</h3>
+        <p>Presupuesto 2025</p>
+      </div>
+      <div class="mobile-table-wrap">
+        <table class="mobile-table">
+          <thead>
+            <tr>
+              <th class="name-col">Ítem</th>
+              <th>Mar</th>
+              <th style="color:var(--violet-600);background:var(--violet-50)">Abr ●</th>
+              <th>May</th>
+              <th>Jun</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5" style="padding:4px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7c3aed;background:#f5f3ff;">💳 Tarjeta</td></tr>
+            <tr>
+              <td class="name-col" style="font-size:11px;">🏠 Arriendo</td>
+              <td class="mobile-cell executed"><div class="m-amount" style="color:var(--green-700)">1,8M ✓</div></td>
+              <td class="mobile-cell current"><div class="m-amount">1,8M</div><div class="m-spent">620K</div></td>
+              <td class="mobile-cell"><div class="m-amount" style="color:var(--gray-400)">1,8M</div></td>
+              <td class="mobile-cell"><div class="m-amount" style="color:var(--gray-400)">1,8M</div></td>
+            </tr>
+            <tr><td colspan="5" style="padding:4px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#15803d;background:#f0fdf4;border-top:1px solid #e5e7eb;">💵 Efectivo</td></tr>
+            <tr>
+              <td class="name-col" style="font-size:11px;">🛒 Mercado</td>
+              <td class="mobile-cell executed"><div class="m-amount" style="color:var(--green-700)">600K ✓</div></td>
+              <td class="mobile-cell current"><div class="m-amount">600K</div><div class="m-spent">310K</div></td>
+              <td class="mobile-cell"><div class="m-amount" style="color:var(--gray-400)">600K</div></td>
+              <td class="mobile-cell"><div class="m-amount" style="color:var(--gray-400)">600K</div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button class="demo-btn" onclick="showSheet()">👆 Simular Long Press — Arriendo · Abr</button>
+      <button class="demo-btn secondary" onclick="showMobileForwardFlow()">✏️ Simular Doble-tap + "De aquí en adelante"</button>
+
+      <div class="mobile-bottom-nav">
+        <span>📊</span><span>📅</span><span>⚙️</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ MENUS / OVERLAYS -->
+
+<!-- Backdrop -->
+<div id="menu-backdrop" onclick="closeAll()"></div>
+
+<!-- Context menu -->
+<div id="ctx-menu" class="ctx-menu">
+  <div class="ctx-header">
+    <div class="ctx-name" id="ctx-name">Arriendo</div>
+    <div class="ctx-sub"  id="ctx-sub">Abr 2025 · $1.800.000</div>
+  </div>
+  <button class="ctx-item" onclick="closeAll(); toast('✅ Marcado como pagado')">
+    <div class="ctx-icon green">✅</div>
+    <span><span class="ctx-item-title">Marcar como pagado</span><span class="ctx-item-desc">Marca el mes como ejecutado</span></span>
+  </button>
+  <button class="ctx-item" onclick="closeAll(); toast('💳 Gasto registrado y mes marcado como pagado')">
+    <div class="ctx-icon violet">💳</div>
+    <span><span class="ctx-item-title">Registrar pago total</span><span class="ctx-item-desc" id="ctx-payment-desc">Crea gasto por restante y marca pagado</span></span>
+  </button>
+  <button class="ctx-item" id="ctx-forward-btn" onclick="closeAll(); showConfirm('ctx')">
+    <div class="ctx-icon orange">→</div>
+    <span><span class="ctx-item-title">De aquí en adelante…</span><span class="ctx-item-desc" id="ctx-forward-desc">Cambiar valor para todos los meses restantes</span></span>
+  </button>
+  <button class="ctx-item" onclick="closeAll(); toast('📋 Abriendo popup de transacciones…')">
+    <div class="ctx-icon pink">📋</div>
+    <span><span class="ctx-item-title">Ver transacciones</span><span class="ctx-item-desc">Gestionar gastos de este mes</span></span>
+  </button>
+</div>
+
+<!-- Confirmation dialog -->
+<div id="confirm-overlay" class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-box">
+    <h3>Aplicar de aquí en adelante</h3>
+    <p id="confirm-text">
+      ¿Aplicar <strong id="confirm-amount">$2.000.000</strong> a
+      <span class="months-pill" id="confirm-months">Abr → Dic</span> (<strong id="confirm-count">9 meses</strong>)?
+      <br><br>
+      Los meses ya ejecutados <strong>no se modificarán</strong>.
+    </p>
+    <div class="confirm-actions">
+      <button class="btn btn-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-confirm" onclick="applyForward()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Action Sheet (mobile) -->
+<div id="sheet-overlay" class="sheet-overlay" onclick="if(event.target===this)hideSheet()">
+  <div class="action-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">
+      <div class="s-name">🏠 Arriendo</div>
+      <div class="s-month">Abril 2025</div>
+      <div class="s-row">
+        <div><div class="s-label">Presupuestado</div><div class="s-amount">$1.800.000</div></div>
+        <div style="text-align:right"><div class="s-label">Ejecutado</div><div class="s-spent">$620.000 (34%)</div></div>
+      </div>
+    </div>
+    <div style="padding:6px 0;">
+      <button class="sheet-action" onclick="hideSheet(); toast('✅ Marcado como pagado')">
+        <div class="sa-icon green">✅</div>
+        <div><span class="sa-title">Marcar como pagado</span><span class="sa-desc">Marca el mes como ejecutado</span></div>
+      </button>
+      <button class="sheet-action" onclick="hideSheet(); toast('💳 Gasto registrado por $1.180.000')">
+        <div class="sa-icon violet">💳</div>
+        <div><span class="sa-title">Registrar pago total</span><span class="sa-desc">Crea gasto por $1.180.000 restantes</span></div>
+      </button>
+      <button class="sheet-action" onclick="hideSheet(); showMobileForwardFlow()">
+        <div class="sa-icon orange">→</div>
+        <div><span class="sa-title">De aquí en adelante…</span><span class="sa-desc">Cambia el valor para Abr → Dic</span></div>
+      </button>
+      <button class="sheet-action" onclick="hideSheet(); toast('📋 Abriendo transacciones…')">
+        <div class="sa-icon pink">📋</div>
+        <div><span class="sa-title">Ver transacciones</span><span class="sa-desc">2 transacciones este mes</span></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--gray-900); color:white; padding:10px 18px; border-radius:10px;
+  font-size:13px; font-weight:500; z-index:900; opacity:0;
+  transition:opacity 0.2s, transform 0.2s; pointer-events:none; white-space:nowrap;
+"></div>
+
+<script>
+/* ── Tabs ── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  closeAll();
+}
+
+/* ── Toast ── */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2800);
+}
+
+/* ── Close all ── */
+function closeAll() {
+  // close context menu
+  document.getElementById('ctx-menu').style.display = 'none';
+  document.getElementById('menu-backdrop').style.display = 'none';
+  // close any open edit toolbar (restore cell)
+  document.querySelectorAll('.budget-cell.editing').forEach(cell => cancelEdit(cell));
+}
+
+/* ─────────────────────────────── EDIT FLOW ── */
+let currentEditCell = null;
+
+function cancelEdit(cell) {
+  if (!cell || !cell._originalHTML) return;
+  cell.innerHTML = cell._originalHTML;
+  cell.classList.remove('editing');
+  cell._originalHTML = null;
+  currentEditCell = null;
+}
+
+function startEdit(cell) {
+  if (cell.classList.contains('editing')) return;
+  // Close any other edit in progress
+  if (currentEditCell) cancelEdit(currentEditCell);
+
+  const amount = cell.dataset.amount || '0';
+  const name   = cell.dataset.name  || '';
+  const month  = cell.dataset.month || '';
+  const isFuture = cell.dataset.future === '1';
+  const isPast   = !isFuture && !cell.classList.contains('current');
+
+  // Remaining months label for "forward" action
+  const monthOrder = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mi = parseInt(cell.dataset.mi || '0');
+  const remainingMonths = 6 - mi; // simplified for demo (6 cols: Feb=0..Jul=5)
+  const monthName = monthOrder[mi + 1] || month; // offset since Feb=index0 in demo
+
+  cell._originalHTML = cell.innerHTML;
+  cell._amount = amount;
+  cell.classList.add('editing');
+  currentEditCell = cell;
+
+  // Build input + toolbar
+  const forwardDisabled = isPast; // can't apply forward to past months
+  const forwardLabel = remainingMonths > 1
+    ? `${month} → ${['Feb','Mar','Abr','May','Jun','Jul'][5]}`
+    : month;
+
+  cell.innerHTML = `
+    <input
+      class="cell-input"
+      id="cell-input"
+      type="text"
+      inputmode="numeric"
+      value="${Number(amount).toLocaleString('es-CO')}"
+      autocomplete="off"
+    />
+    <div class="edit-toolbar" id="edit-toolbar">
+      <button class="toolbar-row" onclick="commitEdit('single')">
+        <div class="toolbar-icon violet">✓</div>
+        <div>
+          <span class="toolbar-text-title">Solo este mes</span>
+          <span class="toolbar-text-desc">${name} · ${month}</span>
+        </div>
+        <span class="toolbar-kbd">Enter</span>
+      </button>
+      <button class="toolbar-row" ${forwardDisabled ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''} onclick="${forwardDisabled ? '' : 'showConfirm(\'edit\')'}">
+        <div class="toolbar-icon orange">→</div>
+        <div>
+          <span class="toolbar-text-title">De aquí en adelante</span>
+          <span class="toolbar-text-desc">${forwardDisabled ? 'No disponible en meses pasados' : forwardLabel + ' (' + remainingMonths + ' meses)'}</span>
+        </div>
+        <span class="toolbar-kbd">⇧ Enter</span>
+      </button>
+    </div>
+  `;
+
+  const input = document.getElementById('cell-input');
+  input.select();
+  input.focus();
+
+  input.addEventListener('keydown', handleEditKey);
+}
+
+function handleEditKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit('single'); }
+  else if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); showConfirm('edit'); }
+  else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(currentEditCell); }
+  else if (e.key === 'Tab')   { e.preventDefault(); tabToNext(e.shiftKey); }
+}
+
+function getNewValue() {
+  const input = document.getElementById('cell-input');
+  if (!input) return null;
+  const raw = input.value.replace(/\D/g, '');
+  return raw ? parseInt(raw, 10) : null;
+}
+
+function commitEdit(mode) {
+  const cell = currentEditCell;
+  if (!cell) return;
+  const newVal = getNewValue();
+
+  cell.innerHTML = cell._originalHTML;
+  cell.classList.remove('editing');
+  cell._originalHTML = null;
+  currentEditCell = null;
+
+  if (newVal !== null) {
+    // Update the displayed amount in the cell
+    const amountEl = cell.querySelector('.cell-amount');
+    if (amountEl) {
+      const formatted = newVal >= 1000000
+        ? (newVal / 1000000).toFixed(1).replace('.0','') + 'M'
+        : newVal >= 1000 ? Math.round(newVal/1000) + 'K' : String(newVal);
+      const wasExec = amountEl.classList.contains('exec');
+      const wasFuture = amountEl.classList.contains('future');
+      amountEl.innerHTML = formatted + (wasExec ? ' ✓' : '');
+    }
+    // Flash
+    cell.style.background = '#ede9fe';
+    setTimeout(() => { cell.style.background = ''; }, 500);
+    cell.dataset.amount = String(newVal);
+  }
+
+  if (mode === 'forward') toast('✅ Valor aplicado a todos los meses restantes');
+}
+
+function tabToNext(backwards) {
+  const cell = currentEditCell;
+  if (!cell) return;
+  const newVal = getNewValue();
+  const bi = parseInt(cell.dataset.bi || '0');
+  const mi = parseInt(cell.dataset.mi || '0');
+
+  commitEdit('single');
+
+  // Find next cell
+  const nextMi = backwards ? mi - 1 : mi + 1;
+  const nextCell = document.querySelector(`.budget-cell[data-bi="${bi}"][data-mi="${nextMi}"]`);
+  if (nextCell) {
+    setTimeout(() => startEdit(nextCell), 30);
+  }
+}
+
+/* ─────────────────────────────── CONFIRM DIALOG ── */
+let confirmSource = null;
+
+function showConfirm(source) {
+  confirmSource = source;
+  const cell = currentEditCell;
+  const newVal = source === 'edit' ? (getNewValue() || parseInt(cell?.dataset.amount || '0')) : null;
+  const name  = cell?.dataset.name  || 'Arriendo';
+  const month = cell?.dataset.month || 'Abr';
+  const mi    = parseInt(cell?.dataset.mi || '2');
+
+  // Calculate remaining months in demo (6 cols: 0=Feb..5=Jul)
+  const remainingCount = 6 - mi;
+  const months = ['Feb','Mar','Abr','May','Jun','Jul'];
+  const fromLabel = months[mi] || month;
+  const toLabel   = months[5];
+  const rangeLabel = fromLabel === toLabel ? fromLabel : `${fromLabel} → ${toLabel}`;
+
+  const formatted = newVal
+    ? '$' + newVal.toLocaleString('es-CO')
+    : `[valor actual de ${name}]`;
+
+  document.getElementById('confirm-amount').textContent = formatted;
+  document.getElementById('confirm-months').textContent = rangeLabel;
+  document.getElementById('confirm-count').textContent  = remainingCount + ' meses';
+
+  const overlay = document.getElementById('confirm-overlay');
+  overlay.style.display = 'flex';
+  overlay.offsetHeight;
+  overlay.classList.add('visible');
+}
+
+function closeConfirm() {
+  const overlay = document.getElementById('confirm-overlay');
+  overlay.classList.remove('visible');
+  setTimeout(() => { overlay.style.display = 'none'; }, 200);
+}
+
+function applyForward() {
+  closeConfirm();
+  if (confirmSource === 'edit') commitEdit('forward');
+  else toast('✅ Valor aplicado a todos los meses restantes');
+}
+
+/* ─────────────────────────────── CONTEXT MENU ── */
+function showCtx(e, cell) {
+  e.preventDefault();
+  closeAll(); // close any open edit
+
+  const name   = cell.dataset.name  || '';
+  const month  = cell.dataset.month || '';
+  const amount = parseInt(cell.dataset.amount || '0');
+  const isPast = !cell.dataset.future && !cell.classList.contains('current') && !cell.classList.contains('future');
+  const isFuture = cell.dataset.future === '1';
+
+  document.getElementById('ctx-name').textContent = name;
+  document.getElementById('ctx-sub').textContent  = `${month} 2025 · $${amount.toLocaleString('es-CO')}`;
+
+  const forwardBtn = document.getElementById('ctx-forward-btn');
+  const forwardDesc = document.getElementById('ctx-forward-desc');
+  if (isPast) {
+    forwardBtn.disabled = true;
+    forwardBtn.style.opacity = '0.4';
+    forwardBtn.style.cursor = 'not-allowed';
+    forwardDesc.textContent = 'No disponible en meses pasados';
+  } else {
+    forwardBtn.disabled = false;
+    forwardBtn.style.opacity = '';
+    forwardBtn.style.cursor = '';
+    forwardDesc.textContent = `Cambiar valor de ${month} en adelante`;
+    // Store cell for confirm dialog
+    forwardBtn.onclick = () => { closeAll(); showCtxForward(cell); };
+  }
+
+  const menu = document.getElementById('ctx-menu');
+  const backdrop = document.getElementById('menu-backdrop');
+  menu.style.display = 'block';
+  backdrop.style.display = 'block';
+
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX, y = e.clientY;
+  menu.style.left = '0'; menu.style.top = '0'; // reset to measure
+  menu.style.display = 'block';
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  if (x + mw > vw - 8) x = vw - mw - 8;
+  if (y + mh > vh - 8) y = vh - mh - 8;
+  menu.style.left = x + 'px';
+  menu.style.top  = y + 'px';
+  menu.style.animation = 'none'; menu.offsetHeight; menu.style.animation = '';
+}
+
+function showCtxForward(cell) {
+  // Simulate having a value — use current amount
+  currentEditCell = cell;
+  showConfirm('ctx');
+}
+
+/* ─────────────────────────────── MOBILE ── */
+function showSheet() {
+  if (navigator.vibrate) navigator.vibrate(10);
+  const overlay = document.getElementById('sheet-overlay');
+  overlay.style.display = 'flex';
+  overlay.offsetHeight;
+  overlay.classList.add('visible');
+}
+function hideSheet() {
+  const overlay = document.getElementById('sheet-overlay');
+  overlay.classList.remove('visible');
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
+}
+
+function showMobileForwardFlow() {
+  // Simulate: user chose "De aquí en adelante" from sheet or double-tap + toolbar
+  // Show directly the confirm dialog for Arriendo Abr
+  document.getElementById('confirm-amount').textContent = '$2.000.000';
+  document.getElementById('confirm-months').textContent = 'Abr → Dic';
+  document.getElementById('confirm-count').textContent  = '9 meses';
+  confirmSource = 'mobile';
+
+  const overlay = document.getElementById('confirm-overlay');
+  overlay.style.display = 'flex';
+  overlay.offsetHeight;
+  overlay.classList.add('visible');
+}
+
+/* ─────────────────────────────── MISC ── */
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('.budget-cell')) e.preventDefault();
+});
+// Click outside edit toolbar closes it
+document.addEventListener('mousedown', e => {
+  if (currentEditCell && !currentEditCell.contains(e.target)) {
+    cancelEdit(currentEditCell);
+  }
+});
+</script>
+</body>
+</html>

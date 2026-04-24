@@ -636,7 +636,7 @@ export function YearView() {
 
   const {
     budgets, creditCardBudgets, cashBudgets, bmMap, expenseMap,
-    availableMap, ccMetricsMap, cashMetricsMap,
+    availableMap, ccMetricsMap, cashMetricsMap, cashExpenseByMonth,
   } = useYearViewData(year, months);
 
   // Sort + filter
@@ -1093,8 +1093,8 @@ export function YearView() {
               ))}
             </tr>
 
-            {/* Balance real */}
-            <tr className="bg-[var(--group-balance-bg)] border-b-2 border-[var(--border-subtle)]">
+            {/* Balance ideal = Disponible − Presupuestado efectivo */}
+            <tr className="bg-[var(--group-balance-bg)]">
               <td className={cn(
                 'sticky left-0 z-10 bg-[var(--group-balance-bg)] py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
                 nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
@@ -1116,6 +1116,34 @@ export function YearView() {
                     )}
                   >
                     {balance > 0 && '+'}{fmt(balance)}
+                  </td>
+                );
+              })}
+            </tr>
+
+            {/* Balance real = Disponible − Gasto total real */}
+            <tr className="bg-[var(--group-balance-bg)] border-b-2 border-[var(--border-subtle)]">
+              <td className={cn(
+                'sticky left-0 z-10 bg-[var(--group-balance-bg)] py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
+                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
+              )}>
+                {nameColCollapsed ? '💸' : `💸 ${t.yearView.trueRealBalanceRow}`}
+              </td>
+              {months.map(month => {
+                const available     = availableMap.get(month) ?? 0;
+                const cashSpent     = cashExpenseByMonth.get(month) ?? 0;
+                const realBalance   = available - cashSpent;
+                return (
+                  <td
+                    key={month}
+                    className={cn(
+                      'border-r border-[var(--border-subtle)] px-2 py-2 text-right text-xs tabular-nums font-bold',
+                      realBalance > 0 ? 'text-green-600 dark:text-green-400'
+                        : realBalance < 0 ? 'text-red-600 dark:text-red-400'
+                        : 'text-[var(--text-muted)]',
+                    )}
+                  >
+                    {realBalance > 0 && '+'}{fmt(realBalance)}
                   </td>
                 );
               })}

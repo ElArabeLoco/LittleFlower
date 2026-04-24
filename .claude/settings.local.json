@@ -85,7 +85,16 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//Users/jaimegarcia/dev/personal/LittleFlower/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(sed -n '460,470p' /Users/jaimegarcia/dev/personal/LittleFlower/src/shared/i18n/translations/es.ts)",
+      "Bash(sed -n '460,470p' /Users/jaimegarcia/dev/personal/LittleFlower/src/shared/i18n/translations/en.ts)",
+      "Bash(open:*)",
+      "Bash(pnpm tsc:*)",
+      "Read(//Users/jaimegarcia/.agents/skills/ui-ux-pro-max/**)",
+      "Bash(python3 scripts/search.py \"context menu long press touch interaction table cell\" --domain ux -n 10)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__execute_sql"
     ]
   }
 }

@@ -672,18 +672,18 @@ interface BalanceCardProps {
   available: number;
   totalBudgeted: number;
   totalSpent: number;
+  totalRealSpent: number;
   month: string;
   hasMissingTrm: boolean;
   formatMonthLabel: (m: string) => string;
 }
 
-function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTrm, formatMonthLabel }: BalanceCardProps) {
+function BalanceCard({ available, totalBudgeted, totalSpent, totalRealSpent, month, hasMissingTrm, formatMonthLabel }: BalanceCardProps) {
   const { t } = useI18n();
-  // Balance real = Disponible − Presupuestado (efectivo)
-  // Answers: "¿cuánto del ingreso queda libre después de comprometer el presupuesto?"
+  // Balance ideal = Disponible − Presupuestado (efectivo)
   const balance = available - totalBudgeted;
-  // Por ejecutar = Presupuestado − Ejecutado (efectivo)
-  // Answers: "¿cuánto del presupuesto comprometido aún no se ha gastado?"
+  // Balance real = Disponible − Gasto total real (todas las transacciones)
+  const realBalance = available - totalRealSpent;
   const pending = Math.max(0, totalBudgeted - totalSpent);
   const positive = balance >= 0;
 
@@ -700,8 +700,8 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
         {formatMonthLabel(month)}
       </p>
 
-      {/* Main balance number */}
-      <div className="flex items-end justify-between mb-4">
+      {/* Main balance number — Balance ideal */}
+      <div className="flex items-end justify-between mb-3">
         <div>
           <p className="text-xs opacity-70 mb-0.5">{t.monthView.balanceReal}</p>
           <p className="text-3xl font-bold tabular-nums leading-none tracking-tight">
@@ -710,6 +710,17 @@ function BalanceCard({ available, totalBudgeted, totalSpent, month, hasMissingTr
           <p className="text-[10px] opacity-60 mt-0.5">{t.monthView.availableMinusBudgeted}</p>
         </div>
         <Wallet size={28} className="opacity-25 mb-1" />
+      </div>
+
+      {/* Secondary — Balance real (actual spending) */}
+      <div className="flex items-center gap-3 py-2.5 mb-3 border-y border-white/20">
+        <div>
+          <p className="text-[10px] opacity-60 mb-0.5">{t.monthView.trueBalanceReal}</p>
+          <p className={cn('text-lg font-bold tabular-nums leading-none', realBalance < 0 && 'text-red-200')}>
+            {realBalance > 0 ? '+' : ''}<AbbreviatedAmount value={realBalance} />
+          </p>
+          <p className="text-[10px] opacity-50 mt-0.5">{t.monthView.availableMinusSpent}</p>
+        </div>
       </div>
 
       {hasMissingTrm && (
@@ -868,6 +879,7 @@ export function MonthViewPage() {
     cashBudgets,
     bmMap,
     expenseMap,
+    cashExpenseMap,
     activeIncomes,
     imMap,
     trm,
@@ -889,9 +901,14 @@ export function MonthViewPage() {
 
   const totalMatchCount = sortedCCBudgets.length + sortedCashBudgets.length;
 
-  // Balance real uses cash-only figures: CC budgets are not real cash outflows.
+  // Balance ideal uses cash-only figures: CC budgets are not real cash outflows.
   const totalBudgeted = cashTotals.budgeted;
   const totalSpent = cashTotals.spent;
+  // Balance real = cash-only expenses (excludes CC transactions).
+  const totalRealSpent = useMemo(
+    () => Array.from(cashExpenseMap.values()).reduce((s, v) => s + v, 0),
+    [cashExpenseMap],
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -935,6 +952,7 @@ export function MonthViewPage() {
             available={totalAvailable}
             totalBudgeted={totalBudgeted}
             totalSpent={totalSpent}
+            totalRealSpent={totalRealSpent}
             month={month}
             hasMissingTrm={hasMissingTrm}
             formatMonthLabel={formatMonthLabel}
