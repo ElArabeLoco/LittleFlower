@@ -11,7 +11,6 @@ import { db } from '../client';
 import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import { buildMonthRange } from '@/shared/helpers/dateRange';
 import { recordExpense } from './PowerSyncExpenseRepository';
-import type { PaymentMode } from '@/domain/budget/Budget';
 import type { IBudgetRepository } from '@/domain/budget/IBudgetRepository';
 import type { Budget, BudgetMonth, PaymentMode } from '@/domain/budget/Budget';
 
