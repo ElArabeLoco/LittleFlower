@@ -11,6 +11,18 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.11.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.10.0...littleflower-v0.11.0) (2026-04-27)
+
+
+### Features
+
+* **year-view:** make CC and Cash sections collapsible ([#53](https://github.com/ElArabeLoco/LittleFlower/issues/53)) ([c9f602a](https://github.com/ElArabeLoco/LittleFlower/commit/c9f602a3f5614eddaecf34ba2fe8df6ca34a60d1))
+
+
+### Bug Fixes
+
+* **build:** resolve TS6133 and TS2300 errors blocking Vercel deploy ([#56](https://github.com/ElArabeLoco/LittleFlower/issues/56)) ([3cec729](https://github.com/ElArabeLoco/LittleFlower/commit/3cec72980d5069d322759b41438aa8583741992c))
+
 ## [0.10.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.9.0...littleflower-v0.10.0) (2026-04-24)
 
 
