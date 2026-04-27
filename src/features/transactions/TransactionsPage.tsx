@@ -7,26 +7,11 @@ import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import { useTransactionsForMonth, type TransactionRow } from '@/infrastructure/powersync/queries';
+import { getCurrentMonth, prevMonth, nextMonth } from '@/shared/helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-function prevMonth(m: string): string {
-  const [y, mo] = m.split('-').map(Number);
-  if (mo === 1) return `${y - 1}-12`;
-  return `${y}-${String(mo - 1).padStart(2, '0')}`;
-}
-
-function nextMonth(m: string): string {
-  const [y, mo] = m.split('-').map(Number);
-  if (mo === 12) return `${y + 1}-01`;
-  return `${y}-${String(mo + 1).padStart(2, '0')}`;
-}
 
 function formatDate(timestamp: string): string {
   const [, m, d] = timestamp.slice(0, 10).split('-');

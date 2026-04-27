@@ -6,7 +6,7 @@ import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { cn } from '@/shared/ui/cn';
-import { insertIncome, updateIncome } from '@/infrastructure/powersync/mutationWrappers';
+import { useIncomeMutations } from '@/application/useIncomeMutations';
 import { getCurrentMonth } from './helpers';
 import type { IncomeFormState } from './types';
 
@@ -36,6 +36,7 @@ interface IncomeFormDialogProps {
 
 export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone, trigger, defaultOpen = false }: IncomeFormDialogProps) {
   const { t } = useI18n();
+  const { insertIncome, updateIncome } = useIncomeMutations(householdId, userId);
   const [open, setOpen] = useState(defaultOpen);
   const [form, setForm] = useState<IncomeFormState>(initial ?? defaultIncomeForm());
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +64,6 @@ export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId,
     try {
       if (mode === 'create') {
         await insertIncome({
-          household_id: householdId,
           name: form.name.trim(),
           person: userId,
           is_fixed: form.is_fixed,

@@ -21,7 +21,6 @@ import { cn } from '@/shared/ui/cn';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
-import { updateBudgetMonthExecution, upsertBudgetMonth } from '@/infrastructure/powersync/mutationWrappers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { useI18n } from '@/shared/i18n/I18nContext';
@@ -32,6 +31,8 @@ import {
   type IncomeRow,
   type IncomeMonthRow,
 } from '@/application/useMonthViewData';
+import { useBudgetMutations } from '@/application/useBudgetMutations';
+import { getCurrentMonth, prevMonth, nextMonth } from '@/shared/helpers';
 
 // ---------------------------------------------------------------------------
 // Types & constants
@@ -53,26 +54,6 @@ const SORT_CHIPS: {
   { dimension: 'name',     ascKey: 'name-asc',     descKey: 'name-desc',     defaultDir: 'asc'  },
   { dimension: 'category', ascKey: 'category-asc', descKey: 'category-desc', defaultDir: 'asc'  },
 ];
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-function prevMonth(m: string): string {
-  const [y, mo] = m.split('-').map(Number);
-  if (mo === 1) return `${y - 1}-12`;
-  return `${y}-${String(mo - 1).padStart(2, '0')}`;
-}
-
-function nextMonth(m: string): string {
-  const [y, mo] = m.split('-').map(Number);
-  if (mo === 12) return `${y + 1}-01`;
-  return `${y}-${String(mo + 1).padStart(2, '0')}`;
-}
 
 /** Returns a copy of budgets filtered by name query and sorted by sortKey. */
 export function sortAndFilterBudgets(
@@ -344,9 +325,10 @@ interface BudgetCardProps {
   householdId: string;
   userId: string;
   highlightText?: string;
+  onToggleExecution: (bm: BudgetMonthRow | null, budget: BudgetRow, month: string, amount: number, isExecuted: boolean) => Promise<void>;
 }
 
-function BudgetCard({ budget, bm, spentAmount, month, householdId, userId, highlightText = '' }: BudgetCardProps) {
+function BudgetCard({ budget, bm, spentAmount, month, householdId, userId, highlightText = '', onToggleExecution }: BudgetCardProps) {
   const { t } = useI18n();
   const [expenseOpen, setExpenseOpen] = useState(false);
   const expenseOpenKeyRef = useRef(0);
@@ -359,14 +341,7 @@ function BudgetCard({ budget, bm, spentAmount, month, householdId, userId, highl
   const hasExpenses = spentAmount > 0;
 
   async function toggleExecution() {
-    if (bm) {
-      await updateBudgetMonthExecution(bm.id, !isExecuted, userId);
-    } else {
-      await upsertBudgetMonth(
-        { household_id: householdId, budget_id: budget.id, month, amount, is_executed: true },
-        userId,
-      );
-    }
+    await onToggleExecution(bm, budget, month, amount, isExecuted);
   }
 
   return (
@@ -494,11 +469,12 @@ interface BudgetCardListProps {
   filterText: string;
   pendingLabel: string;
   executedLabel: string;
+  onToggleExecution: BudgetCardProps['onToggleExecution'];
 }
 
 function BudgetCardList({
   budgets, bmMap, expenseMap, month, householdId, userId,
-  sortKey, filterText, pendingLabel, executedLabel,
+  sortKey, filterText, pendingLabel, executedLabel, onToggleExecution,
 }: BudgetCardListProps) {
   const showDividers = sortKey === 'pending-desc';
 
@@ -522,6 +498,7 @@ function BudgetCardList({
         householdId={householdId}
         userId={userId}
         highlightText={filterText}
+        onToggleExecution={onToggleExecution}
       />
     );
   }
@@ -568,12 +545,13 @@ interface GroupSectionProps {
   totalSpent: number;
   sortKey: SortKey;
   filterText: string;
+  onToggleExecution: BudgetCardProps['onToggleExecution'];
 }
 
 function GroupSection({
   label, icon, accent, budgets, bmMap, expenseMap,
   month, householdId, userId, totalBudgeted, totalSpent,
-  sortKey, filterText,
+  sortKey, filterText, onToggleExecution,
 }: GroupSectionProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useI18n();
@@ -658,6 +636,7 @@ function GroupSection({
           filterText={filterText}
           pendingLabel={t.monthView.pending}
           executedLabel={t.monthView.executed}
+          onToggleExecution={onToggleExecution}
         />
       )}
     </section>
@@ -872,6 +851,24 @@ export function MonthViewPage() {
     return `${t.months.full[mo] ?? mo} ${y}`;
   };
 
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
+  const { upsertBudgetMonth, updateBudgetMonthExecution } = useBudgetMutations(householdId, userId);
+
+  async function handleToggleExecution(
+    bm: BudgetMonthRow | null,
+    budget: BudgetRow,
+    month: string,
+    amount: number,
+    isExecuted: boolean,
+  ) {
+    if (bm) {
+      await updateBudgetMonthExecution(bm.id, !isExecuted);
+    } else {
+      await upsertBudgetMonth({ budget_id: budget.id, month, amount, is_executed: true });
+    }
+  }
+
   // ── Data via application hook ──────────────────────────────────────────────
 
   const {
@@ -995,6 +992,7 @@ export function MonthViewPage() {
               totalSpent={ccTotals.spent}
               sortKey={sortKey}
               filterText={filterText}
+              onToggleExecution={handleToggleExecution}
             />
 
             {/* Cash group */}
@@ -1012,6 +1010,7 @@ export function MonthViewPage() {
               totalSpent={cashTotals.spent}
               sortKey={sortKey}
               filterText={filterText}
+              onToggleExecution={handleToggleExecution}
             />
           </div>
 

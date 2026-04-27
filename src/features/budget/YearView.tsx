@@ -24,12 +24,6 @@ import { ChevronLeft, ChevronRight, ChevronDown, Search, X, RotateCcw } from 'lu
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
-import {
-  upsertBudgetMonth,
-  updateBudgetMonthExecution,
-  registerFullPaymentAndExecute,
-  applyBudgetMonthAmountForward,
-} from '@/infrastructure/powersync/mutationWrappers';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import { AppNav } from '@/shared/ui/AppNav';
@@ -38,8 +32,13 @@ import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useYearViewData, type BudgetRow } from '@/application/useYearViewData';
+import { useBudgetMutations } from '@/application/useBudgetMutations';
+import { getCurrentMonth } from '@/shared/helpers';
 import type { PaymentMode } from '@/domain/budget/Budget';
 import type { BudgetMonthRow } from '@/infrastructure/powersync/queries/types';
+import { YearViewContextMenu } from './YearViewContextMenu';
+import { YearViewForwardConfirmDialog } from './YearViewForwardConfirmDialog';
+import type { CellContextData, ContextMenuPos, CtxMenuState, ForwardConfirmState } from './yearViewTypes';
 
 // ---------------------------------------------------------------------------
 // Sort constants & utility (exported — used by sortYearBudgets.test.ts)
@@ -92,7 +91,6 @@ function yearMonths(year: number): string[] {
 }
 
 function getCurrentYear(): number  { return new Date().getFullYear(); }
-function getCurrentMonth(): string { return new Date().toISOString().slice(0, 7); }
 
 // ---------------------------------------------------------------------------
 // BudgetCell types
@@ -102,27 +100,6 @@ function getCurrentMonth(): string { return new Date().toISOString().slice(0, 7)
 export interface BudgetCellHandle {
   startEdit(): void;
   cancelEdit(): void;
-}
-
-/** Data passed to the parent context-menu handler. */
-interface CellContextData {
-  budgetId: string;
-  budgetName: string;
-  budgetMonthId: string | null;
-  month: string;
-  amount: number;
-  spentAmount: number;
-  isExecuted: boolean;
-  /** month < currentMonth */
-  isPast: boolean;
-  debtId: string | null;
-  paymentMode: string;
-}
-
-interface ContextMenuPos {
-  x: number;
-  y: number;
-  source: 'mouse' | 'touch';
 }
 
 interface BudgetCellProps {
@@ -146,6 +123,7 @@ interface BudgetCellProps {
   onOpenExpenses: () => void;
   onContextMenu: (pos: ContextMenuPos, data: CellContextData) => void;
   onForwardRequest: (amount: number) => void;
+  onSave: (budgetMonthId: string | null, month: string, amount: number, isExecuted: boolean, newAmount: number) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,8 +133,8 @@ interface BudgetCellProps {
 const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
   function BudgetCell({
     budgetId, budgetName, budgetMonthId, month, amount, spentAmount,
-    isExecuted, householdId, userId, isCurrent, isFuture, hasStarted, debtId, paymentMode,
-    onTabNext, onTabPrev, onEnterDown, onOpenExpenses, onContextMenu, onForwardRequest,
+    isExecuted, isCurrent, isFuture, hasStarted, debtId, paymentMode,
+    onTabNext, onTabPrev, onEnterDown, onOpenExpenses, onContextMenu, onForwardRequest, onSave,
   }, ref) {
     const { t } = useI18n();
     const [editing,   setEditing]   = useState(false);
@@ -166,7 +144,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
     const longPressTimer            = useRef<ReturnType<typeof setTimeout> | null>(null);
     const touchOrigin               = useRef<{ x: number; y: number } | null>(null);
 
-    // Expose imperative API (hooks must run before any early return)
     useImperativeHandle(ref, () => ({
       startEdit() {
         if (!hasStarted || isExecuted) return;
@@ -178,36 +155,26 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
 
     useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
 
-    // Derived
     const isPast = !isCurrent && !isFuture && hasStarted;
-    const canForward = !isPast; // current + future months may have forward applied
+    const canForward = !isPast;
 
     const ctxData: CellContextData = {
       budgetId, budgetName, budgetMonthId, month, amount, spentAmount,
       isExecuted, isPast, debtId, paymentMode,
     };
 
-    // ── Save ────────────────────────────────────────────────────────
     async function save(value: string) {
       const parsed = parseInt(value.replace(/\D/g, ''), 10);
       if (!isNaN(parsed) && parsed !== amount) {
-        await upsertBudgetMonth({
-          id: budgetMonthId ?? undefined,
-          household_id: householdId,
-          budget_id: budgetId,
-          month,
-          amount: parsed,
-          is_executed: isExecuted,
-        }, userId);
+        await onSave(budgetMonthId, month, amount, isExecuted, parsed);
       }
     }
 
-    // ── Keyboard in edit mode ───────────────────────────────────────
     function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
       if (e.key === 'Tab') {
         e.preventDefault();
-        const val      = draft;
-        const next     = e.shiftKey ? onTabPrev : onTabNext;
+        const val  = draft;
+        const next = e.shiftKey ? onTabPrev : onTabNext;
         setEditing(false);
         save(val).then(next).catch(err => {
           console.error('[BudgetCell] save failed:', err);
@@ -231,7 +198,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
       }
     }
 
-    // ── Long press (touch) ──────────────────────────────────────────
     function handleTouchStart(e: React.TouchEvent<HTMLTableCellElement>) {
       const touch = e.touches[0];
       touchOrigin.current = { x: touch.clientX, y: touch.clientY };
@@ -252,13 +218,11 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
     }
 
-    // ── Right-click ─────────────────────────────────────────────────
     function handleNativeContextMenu(e: React.MouseEvent<HTMLTableCellElement>) {
       e.preventDefault();
       onContextMenu({ x: e.clientX, y: e.clientY, source: 'mouse' }, ctxData);
     }
 
-    // ── Non-started months: show dash ───────────────────────────────
     if (!hasStarted) {
       return (
         <td className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-center text-[var(--text-muted)] text-xs w-20">
@@ -267,17 +231,16 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
       );
     }
 
-    // ── Edit mode ───────────────────────────────────────────────────
     if (editing) {
       const monthLabels = t.months?.short;
-      const monthIdx  = parseInt(month.slice(5)) - 1; // 0-based
+      const monthIdx  = parseInt(month.slice(5)) - 1;
       const yearLabel = month.slice(0, 4);
       const endLabel  = `${yearLabel}-12`;
       const fromLabel = monthLabels
         ? monthLabels[String(monthIdx + 1).padStart(2, '0')]
         : month;
       const toLabel   = monthLabels ? monthLabels['12'] : endLabel;
-      const rangeCount = 12 - monthIdx; // months from current to Dec
+      const rangeCount = 12 - monthIdx;
 
       return (
         <td
@@ -294,13 +257,11 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
             onKeyDown={handleKeyDown}
             className="w-full text-right text-xs px-1 py-0.5 border border-violet-400 rounded focus:outline-none bg-violet-50 dark:bg-[var(--bg-surface-2)] dark:text-[var(--text-primary)] dark:border-violet-700"
           />
-          {/* Edit toolbar */}
           <div className="absolute top-full right-0 mt-1 z-50 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-xl shadow-lg min-w-[210px] overflow-hidden">
-            {/* Solo este mes */}
             <button
               className="flex items-center gap-2 px-3 py-2.5 w-full text-left hover:bg-[var(--bg-hover)] transition-colors border-none bg-transparent"
               onMouseDown={e => {
-                e.preventDefault(); // prevent input blur before we read draft
+                e.preventDefault();
                 const val = draft;
                 setEditing(false);
                 save(val).then(onEnterDown).catch(err => {
@@ -315,7 +276,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
                 <span className="block text-[10px] text-[var(--text-muted)]">Enter</span>
               </span>
             </button>
-            {/* De aquí en adelante */}
             <button
               className={cn(
                 'flex items-center gap-2 px-3 py-2.5 w-full text-left transition-colors border-none bg-transparent border-t border-[var(--border-subtle)]',
@@ -348,7 +308,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
       );
     }
 
-    // ── Display mode ────────────────────────────────────────────────
     const hasExpenses = spentAmount > 0;
     const overBudget  = hasExpenses && spentAmount > amount;
     const pct         = amount > 0 ? Math.min(100, Math.round((spentAmount / amount) * 100)) : 0;
@@ -367,7 +326,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
         onTouchEnd={handleTouchEnd}
         style={{ touchAction: 'manipulation' }}
       >
-        {/* Budget amount — double-click/tap to edit */}
         <div
           className={cn(
             'font-medium leading-tight cursor-pointer',
@@ -387,7 +345,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
           {isExecuted && <span className="ml-1 text-green-600">✓</span>}
         </div>
 
-        {/* Executed amount — click opens expense modal */}
         {hasExpenses && (
           <div
             className={cn(
@@ -403,7 +360,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
           </div>
         )}
 
-        {/* Progress bar */}
         {hasExpenses && (
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--border-subtle)]">
             <div
@@ -413,7 +369,6 @@ const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
           </div>
         )}
 
-        {/* Save error tooltip */}
         {saveError && (
           <div
             className="absolute bottom-full right-0 mb-1 z-50 bg-red-600 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap shadow-lg"
@@ -495,6 +450,7 @@ interface BudgetTableSectionProps {
   onCellEnterDown: (globalBudgetIdx: number, monthIdx: number) => void;
   onCellContextMenu: (pos: ContextMenuPos, data: CellContextData) => void;
   onCellForwardRequest: (globalBudgetIdx: number, monthIdx: number, amount: number) => void;
+  onCellSave: (budgetId: string, householdId: string, budgetMonthId: string | null, month: string, amount: number, isExecuted: boolean, newAmount: number) => Promise<void>;
   onOpenExpenses: (params: {
     budgetId: string; budgetName: string; budgetMonthId: string | null;
     budgetMonthAmount: number; month: string; debtId: string | null; paymentMode: string;
@@ -505,7 +461,7 @@ function BudgetTableSection({
   budgets, metricsMap, startIdx, months, currentMonth,
   bmMap, expenseMap, householdId, userId, nameColCollapsed, getCellRef,
   onCellTabNext, onCellTabPrev, onCellEnterDown,
-  onCellContextMenu, onCellForwardRequest, onOpenExpenses,
+  onCellContextMenu, onCellForwardRequest, onCellSave, onOpenExpenses,
 }: BudgetTableSectionProps) {
   return (
     <>
@@ -564,6 +520,9 @@ function BudgetTableSection({
                   onEnterDown={() => onCellEnterDown(globalIdx, mIdx)}
                   onContextMenu={onCellContextMenu}
                   onForwardRequest={amount => onCellForwardRequest(globalIdx, mIdx, amount)}
+                  onSave={(bmId, m, amt, exec, newAmt) =>
+                    onCellSave(budget.id, householdId, bmId, m, amt, exec, newAmt)
+                  }
                   onOpenExpenses={() => onOpenExpenses({
                     budgetId: budget.id,
                     budgetName: budget.name,
@@ -599,19 +558,6 @@ interface ExpenseModalState {
   openKey: number;
 }
 
-interface CtxMenuState {
-  pos: ContextMenuPos;
-  data: CellContextData;
-}
-
-interface ForwardConfirmState {
-  budgetId: string;
-  budgetName: string;
-  fromMonth: string;
-  toMonth: string;
-  amount: number;
-}
-
 export function YearView() {
   const { session }   = useAuth();
   const { t }         = useI18n();
@@ -620,7 +566,6 @@ export function YearView() {
   const [yearFilter, setYearFilter]   = useState('');
   const [yearSortKey, setYearSortKey] = useState<YearSortKey>(YEAR_DEFAULT_SORT);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  // Left-column collapse: auto-collapse on narrow screens (mobile)
   const [nameColCollapsed, setNameColCollapsed] = useState(false);
   useEffect(() => {
     if (window.innerWidth < 640) setNameColCollapsed(true);
@@ -635,6 +580,15 @@ export function YearView() {
   const householdId = session?.householdId ?? '';
   const userId      = session?.userId      ?? '';
 
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
+  const {
+    upsertBudgetMonth,
+    updateBudgetMonthExecution,
+    registerFullPaymentAndExecute,
+    applyBudgetMonthAmountForward,
+  } = useBudgetMutations(householdId, userId);
+
   // ── Data ──────────────────────────────────────────────────────────────────
 
   const {
@@ -642,7 +596,6 @@ export function YearView() {
     availableMap, ccMetricsMap, cashMetricsMap, cashExpenseByMonth,
   } = useYearViewData(year, months);
 
-  // Sort + filter
   const displayCCBudgets = useMemo(() => {
     const q = yearFilter.toLowerCase().trim();
     const filtered = q ? creditCardBudgets.filter(b => b.name.toLowerCase().includes(q)) : creditCardBudgets;
@@ -655,11 +608,8 @@ export function YearView() {
     return sortYearBudgets(filtered, yearSortKey);
   }, [cashBudgets, yearFilter, yearSortKey]);
 
-  // Year-range filter (months outside the budget's active range render as "—")
-  // We keep all display budgets in the section — hasStarted logic is per cell.
   const yearMatchCount = displayCCBudgets.length + displayCashBudgets.length;
 
-  // allVisibleBudgets drives Tab navigation order
   const allVisibleBudgets = useMemo(
     () => [...displayCCBudgets, ...displayCashBudgets],
     [displayCCBudgets, displayCashBudgets],
@@ -670,7 +620,6 @@ export function YearView() {
   const cellHandleRefs = useRef<Map<string, React.RefObject<BudgetCellHandle | null>>>(new Map());
   const activeEditRef  = useRef<React.RefObject<BudgetCellHandle | null> | null>(null);
 
-  // Clear ref map when ordering/filtering/year changes (refs become stale)
   useEffect(() => { cellHandleRefs.current = new Map(); }, [year, yearFilter, yearSortKey]);
 
   function getCellRef(globalIdx: number, mIdx: number): React.RefObject<BudgetCellHandle | null> {
@@ -682,12 +631,31 @@ export function YearView() {
   }
 
   function openCellForEdit(globalIdx: number, mIdx: number) {
-    // Cancel any in-progress edit first
     activeEditRef.current?.current?.cancelEdit();
     const ref = getCellRef(globalIdx, mIdx);
     activeEditRef.current = ref;
-    // Slight delay to allow React to process the cancelEdit state update
     setTimeout(() => ref.current?.startEdit(), 0);
+  }
+
+  // ── Cell save handler ─────────────────────────────────────────────────────
+
+  async function handleCellSave(
+    budgetId: string,
+    hId: string,
+    budgetMonthId: string | null,
+    month: string,
+    _currentAmount: number,
+    isExecuted: boolean,
+    newAmount: number,
+  ) {
+    await upsertBudgetMonth({
+      id: budgetMonthId ?? undefined,
+      budget_id: budgetId,
+      month,
+      amount: newAmount,
+      is_executed: isExecuted,
+    });
+    void hId; // householdId injected by hook
   }
 
   // ── Expense modal ─────────────────────────────────────────────────────────
@@ -698,30 +666,10 @@ export function YearView() {
   // ── Context menu ──────────────────────────────────────────────────────────
 
   const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null);
-  const ctxMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!ctxMenu) return;
-    function onDown(e: MouseEvent) {
-      if (ctxMenuRef.current && !ctxMenuRef.current.contains(e.target as Node)) {
-        setCtxMenu(null);
-      }
-    }
-    function onEsc(e: KeyboardEvent) { if (e.key === 'Escape') setCtxMenu(null); }
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onEsc);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onEsc);
-    };
-  }, [ctxMenu]);
 
   function handleCellContextMenu(pos: ContextMenuPos, data: CellContextData) {
-    // Cancel any open edit before showing the menu
     activeEditRef.current?.current?.cancelEdit();
     activeEditRef.current = null;
-
-    // Clamp position to viewport
     const menuW = 240, menuH = 220;
     const x = Math.min(pos.x, window.innerWidth  - menuW - 8);
     const y = Math.min(pos.y, window.innerHeight - menuH - 8);
@@ -734,12 +682,14 @@ export function YearView() {
     setCtxMenu(null);
     try {
       if (data.budgetMonthId) {
-        await updateBudgetMonthExecution(data.budgetMonthId, !data.isExecuted, userId);
+        await updateBudgetMonthExecution(data.budgetMonthId, !data.isExecuted);
       } else if (!data.isExecuted) {
         await upsertBudgetMonth({
-          household_id: householdId, budget_id: data.budgetId,
-          month: data.month, amount: data.amount, is_executed: true,
-        }, userId);
+          budget_id: data.budgetId,
+          month: data.month,
+          amount: data.amount,
+          is_executed: true,
+        });
       }
     } catch (err) {
       console.error('[YearView] handleMarkExecuted failed:', err);
@@ -751,9 +701,12 @@ export function YearView() {
     setCtxMenu(null);
     try {
       await registerFullPaymentAndExecute({
-        budgetId: data.budgetId, budgetMonthId: data.budgetMonthId,
-        householdId, month: data.month, amount: data.amount,
-        spentAmount: data.spentAmount, debtId: data.debtId, userId,
+        budgetId: data.budgetId,
+        budgetMonthId: data.budgetMonthId,
+        month: data.month,
+        amount: data.amount,
+        spentAmount: data.spentAmount,
+        debtId: data.debtId,
         paidWithCreditCard: data.paymentMode !== 'cash',
       });
     } catch (err) {
@@ -798,7 +751,6 @@ export function YearView() {
   async function applyForward() {
     if (!forwardConfirm || isApplying) return;
     const { budgetId, fromMonth, toMonth, amount } = forwardConfirm;
-    // Collect all existing BudgetMonth rows for this budget in the affected range
     const existingMonths = months
       .filter(m => m >= fromMonth && m <= toMonth)
       .map(m => bmMap.get(`${budgetId}|${m}`))
@@ -806,7 +758,7 @@ export function YearView() {
     setIsApplying(true);
     try {
       await applyBudgetMonthAmountForward({
-        budgetId, householdId, fromMonth, toMonth, amount, existingMonths, userId,
+        budgetId, fromMonth, toMonth, amount, existingMonths,
       });
       setForwardConfirm(null);
     } catch (err) {
@@ -838,8 +790,6 @@ export function YearView() {
       openCellForEdit(globalIdx + 1, mIdx);
     }
   }
-
-  // ── Month label helpers for confirm dialog ────────────────────────────────
 
   function monthLabel(month: string): string {
     const idx = String(parseInt(month.slice(5))).padStart(2, '0');
@@ -1039,6 +989,7 @@ export function YearView() {
                     onCellEnterDown={onCellEnterDown}
                     onCellContextMenu={handleCellContextMenu}
                     onCellForwardRequest={handleCellForwardRequest}
+                    onCellSave={handleCellSave}
                     onOpenExpenses={params => {
                       expenseModalKeyRef.current += 1;
                       setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
@@ -1093,6 +1044,7 @@ export function YearView() {
                     onCellEnterDown={onCellEnterDown}
                     onCellContextMenu={handleCellContextMenu}
                     onCellForwardRequest={handleCellForwardRequest}
+                    onCellSave={handleCellSave}
                     onOpenExpenses={params => {
                       expenseModalKeyRef.current += 1;
                       setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
@@ -1141,9 +1093,9 @@ export function YearView() {
                 {nameColCollapsed ? '⚖️' : `⚖️ ${t.yearView.realBalanceRow}`}
               </td>
               {months.map(month => {
-                const available   = availableMap.get(month) ?? 0;
+                const available    = availableMap.get(month) ?? 0;
                 const cashBudgeted = cashMetricsMap.get(month)?.budgeted ?? 0;
-                const balance     = available - cashBudgeted;
+                const balance      = available - cashBudgeted;
                 return (
                   <td
                     key={month}
@@ -1169,9 +1121,9 @@ export function YearView() {
                 {nameColCollapsed ? '💸' : `💸 ${t.yearView.trueRealBalanceRow}`}
               </td>
               {months.map(month => {
-                const available     = availableMap.get(month) ?? 0;
-                const cashSpent     = cashExpenseByMonth.get(month) ?? 0;
-                const realBalance   = available - cashSpent;
+                const available   = availableMap.get(month) ?? 0;
+                const cashSpent   = cashExpenseByMonth.get(month) ?? 0;
+                const realBalance = available - cashSpent;
                 return (
                   <td
                     key={month}
@@ -1221,207 +1173,30 @@ export function YearView() {
         />
       )}
 
-      {/* ── Context menu (desktop dropdown) ───────────────────────────────── */}
-      {ctxMenu && ctxMenu.pos.source === 'mouse' && (
-        <div
-          ref={ctxMenuRef}
-          className="fixed z-50 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-xl shadow-xl overflow-hidden"
-          style={{ left: ctxMenu.pos.x, top: ctxMenu.pos.y, minWidth: 240 }}
-        >
-          {/* Header */}
-          <div className="px-3.5 py-2 border-b border-[var(--border-subtle)]">
-            <p className="text-xs font-semibold text-[var(--text-primary)]">{ctxMenu.data.budgetName}</p>
-            <p className="text-[10px] text-[var(--text-muted)]">
-              {monthLabel(ctxMenu.data.month)} {year} · <AbbreviatedAmount value={ctxMenu.data.amount} />
-            </p>
-          </div>
-          {/* Mark executed / unmark */}
-          <button
-            className="flex items-center gap-2.5 px-3.5 py-2.5 w-full text-left hover:bg-[var(--bg-hover)] transition-colors"
-            onClick={() => handleMarkExecuted(ctxMenu.data)}
-          >
-            <span className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-sm flex-shrink-0">
-              {ctxMenu.data.isExecuted ? '↩' : '✅'}
-            </span>
-            <span className="text-xs font-medium text-[var(--text-primary)]">
-              {ctxMenu.data.isExecuted ? t.yearView.ctxMarkUnexecuted : t.yearView.ctxMarkExecuted}
-            </span>
-          </button>
-          {/* Register full payment */}
-          {!ctxMenu.data.isExecuted && (
-            <button
-              className="flex items-center gap-2.5 px-3.5 py-2.5 w-full text-left hover:bg-[var(--bg-hover)] transition-colors border-t border-[var(--border-subtle)]"
-              onClick={() => handleRegisterFullPayment(ctxMenu.data)}
-            >
-              <span className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-sm flex-shrink-0">💳</span>
-              <span>
-                <span className="block text-xs font-medium text-[var(--text-primary)]">{t.yearView.ctxRegisterFullPayment}</span>
-                <span className="block text-[10px] text-[var(--text-muted)]">{t.yearView.ctxRegisterFullPaymentDesc}</span>
-              </span>
-            </button>
-          )}
-          {/* Apply forward */}
-          <button
-            className={cn(
-              'flex items-center gap-2.5 px-3.5 py-2.5 w-full text-left transition-colors border-t border-[var(--border-subtle)]',
-              ctxMenu.data.isPast ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-hover)]',
-            )}
-            disabled={ctxMenu.data.isPast}
-            onClick={() => !ctxMenu.data.isPast && handleCtxForwardRequest(ctxMenu.data)}
-          >
-            <span className="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-sm flex-shrink-0">→</span>
-            <span>
-              <span className="block text-xs font-medium text-[var(--text-primary)]">{t.yearView.ctxForwardAmount}</span>
-              <span className="block text-[10px] text-[var(--text-muted)]">
-                {ctxMenu.data.isPast
-                  ? t.yearView.ctxForwardPastNotAvailable
-                  : t.yearView.ctxForwardAmountDesc(monthLabel(ctxMenu.data.month))}
-              </span>
-            </span>
-          </button>
-          {/* View expenses */}
-          <button
-            className="flex items-center gap-2.5 px-3.5 py-2.5 w-full text-left hover:bg-[var(--bg-hover)] transition-colors border-t border-[var(--border-subtle)]"
-            onClick={() => handleViewExpenses(ctxMenu.data)}
-          >
-            <span className="w-7 h-7 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-sm flex-shrink-0">📋</span>
-            <span className="text-xs font-medium text-[var(--text-primary)]">{t.yearView.ctxViewExpenses}</span>
-          </button>
-        </div>
-      )}
-
-      {/* ── Action sheet (mobile — bottom sheet) ──────────────────────────── */}
-      {ctxMenu && ctxMenu.pos.source === 'touch' && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.4)' }}
-          onClick={() => setCtxMenu(null)}
-        >
-          <div
-            className="w-full max-w-lg bg-white dark:bg-[var(--bg-surface)] rounded-t-2xl pb-safe overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Handle */}
-            <div className="w-9 h-1 bg-gray-300 rounded-full mx-auto mt-2.5 mb-3" />
-            {/* Header */}
-            <div className="px-5 pb-3 border-b border-[var(--border-subtle)]">
-              <p className="font-semibold text-[var(--text-primary)]">{ctxMenu.data.budgetName}</p>
-              <p className="text-sm text-[var(--text-muted)] mt-0.5">
-                {monthLabel(ctxMenu.data.month)} {year}
-              </p>
-              <div className="flex justify-between items-end mt-2">
-                <div>
-                  <p className="text-[10px] text-[var(--text-muted)]">{t.yearView.budgetedRow}</p>
-                  <p className="text-xl font-bold text-[var(--text-primary)]">
-                    <AbbreviatedAmount value={ctxMenu.data.amount} />
-                  </p>
-                </div>
-                {ctxMenu.data.spentAmount > 0 && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-[var(--text-muted)]">{t.yearView.executedRow}</p>
-                    <p className="text-sm text-violet-600 dark:text-violet-400 font-medium">
-                      <AbbreviatedAmount value={ctxMenu.data.spentAmount} />
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-            {/* Actions */}
-            <div>
-              <button
-                className="flex items-center gap-4 px-5 py-4 w-full text-left hover:bg-[var(--bg-hover)] active:bg-[var(--bg-app)] transition-colors"
-                onClick={() => handleMarkExecuted(ctxMenu.data)}
-              >
-                <span className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg flex-shrink-0">
-                  {ctxMenu.data.isExecuted ? '↩' : '✅'}
-                </span>
-                <div>
-                  <span className="block text-sm font-medium text-[var(--text-primary)]">
-                    {ctxMenu.data.isExecuted ? t.yearView.ctxMarkUnexecuted : t.yearView.ctxMarkExecuted}
-                  </span>
-                </div>
-              </button>
-              {!ctxMenu.data.isExecuted && (
-                <button
-                  className="flex items-center gap-4 px-5 py-4 w-full text-left hover:bg-[var(--bg-hover)] active:bg-[var(--bg-app)] transition-colors border-t border-[var(--border-subtle)]"
-                  onClick={() => handleRegisterFullPayment(ctxMenu.data)}
-                >
-                  <span className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-lg flex-shrink-0">💳</span>
-                  <div>
-                    <span className="block text-sm font-medium text-[var(--text-primary)]">{t.yearView.ctxRegisterFullPayment}</span>
-                    <span className="block text-xs text-[var(--text-muted)] mt-0.5">{t.yearView.ctxRegisterFullPaymentDesc}</span>
-                  </div>
-                </button>
-              )}
-              <button
-                className={cn(
-                  'flex items-center gap-4 px-5 py-4 w-full text-left transition-colors border-t border-[var(--border-subtle)]',
-                  ctxMenu.data.isPast ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-hover)]',
-                )}
-                disabled={ctxMenu.data.isPast}
-                onClick={() => !ctxMenu.data.isPast && handleCtxForwardRequest(ctxMenu.data)}
-              >
-                <span className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-lg flex-shrink-0">→</span>
-                <div>
-                  <span className="block text-sm font-medium text-[var(--text-primary)]">{t.yearView.ctxForwardAmount}</span>
-                  <span className="block text-xs text-[var(--text-muted)] mt-0.5">
-                    {ctxMenu.data.isPast ? t.yearView.ctxForwardPastNotAvailable
-                      : t.yearView.ctxForwardAmountDesc(monthLabel(ctxMenu.data.month))}
-                  </span>
-                </div>
-              </button>
-              <button
-                className="flex items-center gap-4 px-5 py-4 w-full text-left hover:bg-[var(--bg-hover)] active:bg-[var(--bg-app)] transition-colors border-t border-[var(--border-subtle)]"
-                onClick={() => handleViewExpenses(ctxMenu.data)}
-              >
-                <span className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-lg flex-shrink-0">📋</span>
-                <span className="block text-sm font-medium text-[var(--text-primary)]">{t.yearView.ctxViewExpenses}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ── Context menu ──────────────────────────────────────────────────── */}
+      {ctxMenu && (
+        <YearViewContextMenu
+          ctxMenu={ctxMenu}
+          year={year}
+          monthLabel={monthLabel}
+          onClose={() => setCtxMenu(null)}
+          onMarkExecuted={handleMarkExecuted}
+          onRegisterFullPayment={handleRegisterFullPayment}
+          onViewExpenses={handleViewExpenses}
+          onForwardRequest={handleCtxForwardRequest}
+        />
       )}
 
       {/* ── Apply-forward confirm dialog ───────────────────────────────────── */}
       {forwardConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.45)' }}
-          onClick={() => setForwardConfirm(null)}
-        >
-          <div
-            className="bg-white dark:bg-[var(--bg-surface)] rounded-2xl p-6 max-w-sm w-full shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 className="text-base font-bold text-[var(--text-primary)] mb-2">
-              {t.yearView.forwardDialogTitle}
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-1">
-              {t.yearView.forwardDialogMsg(
-                `$${forwardConfirm.amount.toLocaleString('es-CO')}`,
-                `${monthLabel(forwardConfirm.fromMonth)}–${monthLabel(forwardConfirm.toMonth)}`,
-                months.filter(m => m >= forwardConfirm.fromMonth && m <= forwardConfirm.toMonth).length,
-              )}
-            </p>
-            <p className="text-xs text-[var(--text-muted)] mb-5">{t.yearView.forwardDialogNote}</p>
-            <div className="flex gap-3">
-              <button
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-[var(--bg-app)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
-                onClick={() => setForwardConfirm(null)}
-                disabled={isApplying}
-              >
-                {t.yearView.forwardCancel}
-              </button>
-              <button
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={applyForward}
-                disabled={isApplying}
-              >
-                {isApplying ? '…' : t.yearView.forwardApply}
-              </button>
-            </div>
-          </div>
-        </div>
+        <YearViewForwardConfirmDialog
+          forwardConfirm={forwardConfirm}
+          isApplying={isApplying}
+          months={months}
+          monthLabel={monthLabel}
+          onApply={applyForward}
+          onClose={() => setForwardConfirm(null)}
+        />
       )}
 
       <AppNav />

@@ -6,7 +6,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { cn } from '@/shared/ui/cn';
-import { upsertIncomeMonth } from '@/infrastructure/powersync/mutationWrappers';
+import { useIncomeMutations } from '@/application/useIncomeMutations';
 import { computeSalaryTotal } from './helpers';
 import type { IncomeRow, IncomeMonthRow } from './types';
 
@@ -28,6 +28,7 @@ export function SalaryBreakdownDialog({
 }: SalaryBreakdownDialogProps) {
   const { t } = useI18n();
   const { formatCOP, formatNumber } = useNumberFormat();
+  const { upsertIncomeMonth } = useIncomeMutations(householdId, userId);
   const [currency, setCurrency] = useState<string>('COP');
   const [baseSalary, setBaseSalary] = useState('');
   const [deductions, setDeductions] = useState('');
@@ -75,7 +76,6 @@ export function SalaryBreakdownDialog({
     try {
       await upsertIncomeMonth({
         id: incomeMonth?.id,
-        household_id: householdId,
         income_id: income.id,
         month,
         real_amount: total,
@@ -83,7 +83,7 @@ export function SalaryBreakdownDialog({
         base_salary: parsedBase,
         deductions: parsedDed,
         extra_days: parsedExtra,
-      }, userId);
+      });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.unexpectedError);

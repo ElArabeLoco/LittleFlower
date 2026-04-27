@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { toCOP } from '@/shared/helpers';
 import { useBudgetsQuery, useBudgetMonthsForRange } from '@/infrastructure/powersync/queries/useBudgetQueries';
 import { useExpenseSumsByModeForRange } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useActiveIncomes, useIncomeMonthsForRange } from '@/infrastructure/powersync/queries/useIncomeQueries';
@@ -105,9 +106,7 @@ export function useYearViewData(year: number, months: string[]): YearViewData {
         const im = imMap.get(`${inc.id}|${month}`);
         const amount = im ? im.real_amount : inc.default_amount;
         const currency = im ? im.currency : inc.currency;
-        if (currency === 'COP') return sum + amount;
-        if (trm) return sum + Math.round(amount * trm);
-        return sum;
+        return sum + toCOP(amount, currency, trm ?? null);
       }, 0);
       m.set(month, total);
     }

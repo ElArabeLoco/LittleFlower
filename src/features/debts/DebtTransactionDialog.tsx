@@ -6,10 +6,7 @@ import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { cn } from '@/shared/ui/cn';
-import {
-  insertDebtTransaction,
-  type InsertDebtTransactionPayload,
-} from '@/infrastructure/powersync/mutationWrappers';
+import { useDebtMutations, type InsertDebtTransactionPayload } from '@/application/useDebtMutations';
 import { todayISO } from './helpers';
 import type { TransactionFormState } from './types';
 
@@ -26,6 +23,7 @@ export function DebtTransactionDialog({
   debtId, debtCurrency, householdId, userId, currentMonthRate, trigger,
 }: DebtTransactionDialogProps) {
   const { t } = useI18n();
+  const { insertDebtTransaction } = useDebtMutations(householdId, userId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<TransactionFormState>({
     type: 'debit',
@@ -80,8 +78,7 @@ export function DebtTransactionDialog({
 
     setSaving(true);
     try {
-      const payload: InsertDebtTransactionPayload = {
-        household_id: householdId,
+      const payload: Omit<InsertDebtTransactionPayload, 'household_id'> = {
         debt_id: debtId,
         amount: amountCOP,
         original_amount: originalAmount,
@@ -92,7 +89,7 @@ export function DebtTransactionDialog({
         date: form.date,
         source: 'manual',
       };
-      await insertDebtTransaction(payload, userId);
+      await insertDebtTransaction(payload);
       setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.unexpectedError);

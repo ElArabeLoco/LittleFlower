@@ -4,7 +4,7 @@ import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/ui/cn';
-import { upsertIncomeMonth } from '@/infrastructure/powersync/mutationWrappers';
+import { useIncomeMutations } from '@/application/useIncomeMutations';
 import { SalaryBreakdownDialog } from './SalaryBreakdownDialog';
 import type { IncomeRow, IncomeMonthRow } from './types';
 
@@ -22,6 +22,7 @@ interface IncomeCardProps {
 export function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEdit, onDelete }: IncomeCardProps) {
   const { t } = useI18n();
   const { formatCOP, formatNumber } = useNumberFormat();
+  const { upsertIncomeMonth } = useIncomeMutations(householdId, userId);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -45,12 +46,11 @@ export function IncomeCard({ income, incomeMonth, month, householdId, userId, tr
     try {
       await upsertIncomeMonth({
         id: incomeMonth?.id,
-        household_id: householdId,
         income_id: income.id,
         month,
         real_amount: parsed,
         currency: income.currency,
-      }, userId);
+      });
     } finally {
       setSaving(false);
       setEditing(false);

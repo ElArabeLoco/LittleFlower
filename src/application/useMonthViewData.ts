@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { toCOPWithMissing } from '@/shared/helpers';
 import { useBudgetsQuery, useBudgetMonthsForMonth } from '@/infrastructure/powersync/queries/useBudgetQueries';
 import { useExpenseSumsByModeForMonth } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useIncomesForMonth, useIncomeMonthsForMonth } from '@/infrastructure/powersync/queries/useIncomeQueries';
@@ -112,15 +113,11 @@ export function useMonthViewData(month: string): MonthViewData {
       const im = imMap.get(inc.id);
       const amount = im ? im.real_amount : inc.default_amount;
       const currency = im ? im.currency : inc.currency;
-      if (currency === 'COP') {
-        total += amount;
-      } else if (trm) {
-        total += Math.round(amount * trm);
-      } else {
-        missing = true;
-      }
-    }
-    return { totalAvailable: total, hasMissingTrm: missing };
+      const { value, missingTrm } = toCOPWithMissing(amount, currency, trm);
+      total += value;
+      if (missingTrm) missing = true;
+  }
+  return { totalAvailable: total, hasMissingTrm: missing };
   }, [activeIncomes, imMap, trm]);
 
   // Group totals — dual budgets: planned amount only in CC, cash section gets 0 budgeted

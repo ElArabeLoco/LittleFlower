@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { toCOP } from '@/shared/helpers';
 import {
   useDebtsQuery,
   useDebtTransactionsQuery,
@@ -47,8 +48,7 @@ export function useDebtManagementSummary(): DebtManagementSummary {
 
   const getInitialCOP = useCallback(
     (debt: DebtRow): number => {
-      if (debt.currency === 'COP') return debt.initial_amount;
-      return Math.round(debt.initial_amount * (currentMonthRate ?? 0));
+      return toCOP(debt.initial_amount, debt.currency, currentMonthRate);
     },
     [currentMonthRate],
   );
@@ -103,11 +103,15 @@ export function useDashboardDebtSummary(): DashboardDebtSummary {
 
   const debtInitialCOP = useMemo(
     () => (debt: DashboardDebtRow): number => {
-      if (debt.currency === 'COP') return debt.initial_amount;
-      return Math.round(debt.initial_amount * (latestTrm ?? 0));
+      return toCOP(debt.initial_amount, debt.currency, latestTrm);
     },
     [latestTrm],
   );
 
-  return { dashDebts, dashDebtTxs, latestTrm, debtInitialCOP };
+  return useMemo(() => ({
+    dashDebts,
+    dashDebtTxs,
+    latestTrm,
+    debtInitialCOP,
+  }), [dashDebts, dashDebtTxs, latestTrm, debtInitialCOP]);
 }

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { toCOP } from '@/shared/helpers';
 import {
   useBudgetWithExpenseTotals,
   type BudgetWithExpenseTotalsRow,
@@ -32,9 +33,7 @@ export function useAppShellData(month: string): AppShellMetrics {
 
   const availableIncome = useMemo(() => {
     return incomeRows.reduce((sum, row) => {
-      if (row.currency === 'COP') return sum + row.real_amount;
-      if (row.currency === 'USD' && trm) return sum + Math.round(row.real_amount * trm);
-      return sum;
+      return sum + toCOP(row.real_amount, row.currency, trm);
     }, 0);
   }, [incomeRows, trm]);
 

@@ -1,6 +1,21 @@
+import { lazy, Suspense } from 'react';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { getCurrentSession } from '@/infrastructure/auth/SupabaseAuthAdapter';
-import { YearView } from '@/features/budget/YearView';
+import { FeatureErrorBoundary } from '@/shared/ui/FeatureErrorBoundary';
+
+const LazyYearView = lazy(() =>
+  import('@/features/budget/YearView').then(m => ({ default: m.YearView })),
+);
+
+function YearRoute() {
+  return (
+    <FeatureErrorBoundary feature="Anual">
+      <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="h-5 w-5 animate-spin rounded-full border-2 border-pink-400 border-t-transparent" /></div>}>
+        <LazyYearView />
+      </Suspense>
+    </FeatureErrorBoundary>
+  );
+}
 
 export const Route = createFileRoute('/anual')({
   beforeLoad: async () => {
@@ -8,5 +23,5 @@ export const Route = createFileRoute('/anual')({
     if (!session) throw redirect({ to: '/login' });
     if (!session.householdId) throw redirect({ to: '/onboarding' });
   },
-  component: YearView,
+  component: YearRoute,
 });

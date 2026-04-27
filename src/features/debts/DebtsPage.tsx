@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
-import { softDeleteDebt } from '@/infrastructure/powersync/mutationWrappers';
+import { useDebtMutations } from '@/application/useDebtMutations';
 import { useDebtsData } from './useDebtsData';
 import { DebtFormDialog } from './DebtFormDialog';
 import { DebtCard } from './DebtCard';
@@ -18,10 +18,11 @@ export function DebtsPage() {
   const { t } = useI18n();
 
   const { debts, txByDebt, currentMonthRate, totalBalance, activeDebts } = useDebtsData();
+  const { softDeleteDebt } = useDebtMutations(householdId, userId);
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(t.debts.confirmDelete(name))) return;
-    await softDeleteDebt(id, userId);
+    await softDeleteDebt(id);
   }
 
   return (

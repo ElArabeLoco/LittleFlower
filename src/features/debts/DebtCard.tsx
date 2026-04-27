@@ -5,7 +5,7 @@ import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { computeDebtBalance } from '@/domain/debt/Debt';
-import { softDeleteDebtTransaction } from '@/infrastructure/powersync/mutationWrappers';
+import { useDebtMutations } from '@/application/useDebtMutations';
 import { DebtFormDialog } from './DebtFormDialog';
 import { DebtTransactionDialog } from './DebtTransactionDialog';
 import { formatDate } from './helpers';
@@ -24,6 +24,7 @@ interface DebtCardProps {
 export function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, formatCOP, onDelete }: DebtCardProps) {
   const { t } = useI18n();
   const { formatNumber } = useNumberFormat();
+  const { softDeleteDebtTransaction } = useDebtMutations(householdId, userId);
   const [expanded, setExpanded] = useState(false);
 
   const initialAmountCOP = useMemo(() => {
