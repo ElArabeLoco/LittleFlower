@@ -6,6 +6,7 @@
  * the dashboard's selected month.
  */
 import { useMemo } from 'react';
+import { toCOP, prevNMonthsFrom } from '@/shared/helpers';
 import { useActiveIncomes, useIncomeMonthsForMonths } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRatesForMonths } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
 
@@ -14,20 +15,10 @@ export interface IncomeDataPoint {
   income: number;
 }
 
-function buildLastNMonths(n: number, fromMonth: string): string[] {
-  const [y, m] = fromMonth.split('-').map(Number);
-  const months: string[] = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(y, m - 1 - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  }
-  return months;
-}
-
 export function useIncomeHistoryData(n: number, currentMonth: string): IncomeDataPoint[] {
-  const months = useMemo(() => buildLastNMonths(n, currentMonth), [n, currentMonth]);
+  const months = useMemo(() => prevNMonthsFrom(n, currentMonth), [n, currentMonth]);
 
-  const { data: incomes      = [] } = useActiveIncomes();
+  const { data: incomes = [] } = useActiveIncomes();
   const { data: incomeMonths = [] } = useIncomeMonthsForMonths(months);
   const { data: exchangeRates = [] } = useExchangeRatesForMonths(months);
 
@@ -51,10 +42,9 @@ export function useIncomeHistoryData(n: number, currentMonth: string): IncomeDat
         if (inc.start_month > month) continue;
         if (inc.end_month != null && inc.end_month < month) continue;
         const im = imMap.get(`${inc.id}|${month}`);
-        const amount   = im ? im.real_amount   : inc.default_amount;
-        const currency = im ? im.currency       : inc.currency;
-        if (currency === 'COP') income += amount;
-        else if (trm)           income += Math.round(amount * trm);
+        const amount = im ? im.real_amount : inc.default_amount;
+        const currency = im ? im.currency : inc.currency;
+        income += toCOP(amount, currency, trm);
       }
       return { month, income };
     });

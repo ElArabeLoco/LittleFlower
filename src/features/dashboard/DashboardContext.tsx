@@ -9,12 +9,12 @@
  * simultaneously, overwhelming the JS thread and crashing the tab.
  *
  * With this provider the dashboard runs exactly:
- *   6 queries (useDashboardData)
- *   3 queries (useDashboardDebtSummary)
+ * 6 queries (useDashboardData)
+ * 3 queries (useDashboardDebtSummary)
  * regardless of how many chart components are mounted.
  */
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { useDashboardData, type DashboardData } from '@/application/useDashboardData';
 import { useDashboardDebtSummary, type DashboardDebtSummary } from '@/application/useDebtSummary';
 
@@ -32,8 +32,13 @@ export function DashboardDataProvider({
   const data = useDashboardData(selectedMonth);
   const debtData = useDashboardDebtSummary();
 
+  const value = useMemo<DashboardContextValue>(
+    () => ({ ...data, ...debtData }),
+    [data, debtData],
+  );
+
   return (
-    <DashboardContext.Provider value={{ ...data, ...debtData }}>
+    <DashboardContext.Provider value={value}>
       {children}
     </DashboardContext.Provider>
   );

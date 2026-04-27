@@ -1,9 +1,7 @@
 import type { DailyExpenseRow, BurnUpExpenseRow, BurnUpDataPoint } from './types';
+import { getCurrentMonth, nextMonth } from '@/shared/helpers';
 
-export function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
+export { getCurrentMonth, nextMonth };
 
 export function formatK(v: number): string {
   if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
@@ -39,12 +37,6 @@ export function getPreviousMonth(month: string): string {
   const [y, m] = month.split('-').map(Number);
   const d = new Date(y, m - 2, 1); // m-2 because months are 0-indexed
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-export function nextMonth(month: string): string {
-  const [y, m] = month.split('-').map(Number);
-  if (m === 12) return `${y + 1}-01`;
-  return `${y}-${String(m + 1).padStart(2, '0')}`;
 }
 
 export function makeFullMonthLabel(t: { months: { full: Record<string, string> } }) {

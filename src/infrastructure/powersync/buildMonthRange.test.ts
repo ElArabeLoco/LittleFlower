@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildMonthRange } from './mutationWrappers';
+import { buildMonthRange } from '@/shared/helpers/dateRange';
 
 describe('buildMonthRange', () => {
   it('returns a single month when from === to', () => {

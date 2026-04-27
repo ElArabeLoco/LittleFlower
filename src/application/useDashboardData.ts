@@ -6,24 +6,12 @@
  * All financial calculations live here, not in components.
  */
 import { useMemo } from 'react';
+import { toCOP, prevNMonthsFrom } from '@/shared/helpers';
 import { useBudgetsQuery, useBudgetMonthsForMonths } from '@/infrastructure/powersync/queries/useBudgetQueries';
 import { useExpenseSumsForMonths } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useActiveIncomes, useIncomeMonthsForMonths } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRatesForMonths } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
 
-// ---------------------------------------------------------------------------
-// Helpers (private)
-// ---------------------------------------------------------------------------
-
-function prevNMonthsFrom(n: number, fromMonth: string): string[] {
-  const [y, m] = fromMonth.split('-').map(Number);
-  const months: string[] = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const t = new Date(y, m - 1 - i, 1);
-    months.push(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`);
-  }
-  return months;
-}
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -120,8 +108,7 @@ export function useDashboardData(selectedMonth: string): DashboardData {
         const im = imMap.get(`${inc.id}|${month}`);
         const amount = im ? im.real_amount : inc.default_amount;
         const currency = im ? im.currency : inc.currency;
-        if (currency === 'COP') available += amount;
-        else if (trm) available += Math.round(amount * trm);
+        available += toCOP(amount, currency, trm);
       }
 
       // Cash budgets only (credit card and dual are not direct cash outflows)
@@ -144,5 +131,13 @@ export function useDashboardData(selectedMonth: string): DashboardData {
     });
   }, [last6, budgets, incomes, budgetAmountMap, bmIdMap, expenseByBmId, imMap, trmMap]);
 
-  return { monthlyData, currentMonth: selectedMonth, last6, budgets, bmIdMap, expenseByBmId, budgetAmountMap };
+  return useMemo(() => ({
+    monthlyData,
+    currentMonth: selectedMonth,
+    last6,
+    budgets,
+    bmIdMap,
+    expenseByBmId,
+    budgetAmountMap,
+  }), [monthlyData, selectedMonth, last6, budgets, bmIdMap, expenseByBmId, budgetAmountMap]);
 }

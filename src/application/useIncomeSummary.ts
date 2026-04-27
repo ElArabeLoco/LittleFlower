@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useIncomesForMonth, useIncomeMonthsForMonth } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRateForMonth } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
 import type { IncomeRow, IncomeMonthRow, ExchangeRateRow } from '@/infrastructure/powersync/queries/types';
+import { toCOP } from '@/shared/helpers';
 
 export type { IncomeRow, IncomeMonthRow, ExchangeRateRow };
 
@@ -46,9 +47,7 @@ export function useIncomeSummary(month: string): IncomeSummary {
       const im = imMap.get(inc.id);
       const amount = im?.real_amount ?? inc.default_amount;
       const currency = im ? im.currency : inc.currency;
-      if (currency === 'COP') return sum + amount;
-      if (trm) return sum + Math.round(amount * trm);
-      return sum;
+      return sum + toCOP(amount, currency, trm);
     }, 0);
   }, [incomes, imMap, trm]);
 

@@ -1,6 +1,21 @@
+import { lazy, Suspense } from 'react';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { getCurrentSession } from '@/infrastructure/auth/SupabaseAuthAdapter';
-import { DebtsPage } from '@/features/debts/DebtsPage';
+import { FeatureErrorBoundary } from '@/shared/ui/FeatureErrorBoundary';
+
+const LazyDebtsPage = lazy(() =>
+  import('@/features/debts/DebtsPage').then(m => ({ default: m.DebtsPage })),
+);
+
+function DebtsRoute() {
+  return (
+    <FeatureErrorBoundary feature="Deudas">
+      <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="h-5 w-5 animate-spin rounded-full border-2 border-pink-400 border-t-transparent" /></div>}>
+        <LazyDebtsPage />
+      </Suspense>
+    </FeatureErrorBoundary>
+  );
+}
 
 export const Route = createFileRoute('/debts')({
   beforeLoad: async () => {
@@ -8,5 +23,5 @@ export const Route = createFileRoute('/debts')({
     if (!session) throw redirect({ to: '/login' });
     if (!session.householdId) throw redirect({ to: '/onboarding' });
   },
-  component: DebtsPage,
+  component: DebtsRoute,
 });
