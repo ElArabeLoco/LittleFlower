@@ -17,7 +17,7 @@ const YEAR_SORT_CHIPS: {
 
 interface YearViewHeaderProps {
   year: number;
-  budgets: { length: number }[];
+  budgets: unknown[];
   yearFilter: string;
   yearSortKey: YearSortKey;
   matchCount: number;
