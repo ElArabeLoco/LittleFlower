@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.11.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.11.0...littleflower-v0.11.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* **build:** export missing types from components/yearViewTypes and fix budgets prop type ([#58](https://github.com/ElArabeLoco/LittleFlower/issues/58)) ([3a03c7e](https://github.com/ElArabeLoco/LittleFlower/commit/3a03c7e2e34b373970dcf7fb3be0825f961e4255))
+
 ## [0.11.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.10.0...littleflower-v0.11.0) (2026-04-27)
 
 
