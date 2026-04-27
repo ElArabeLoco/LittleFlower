@@ -3,6 +3,7 @@
  */
 
 import { db } from '../client';
+import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import type { IExchangeRateRepository } from '@/domain/exchangeRate/IExchangeRateRepository';
 import type { ExchangeRate } from '@/domain/exchangeRate/ExchangeRate';
 
@@ -68,4 +69,82 @@ export class PowerSyncExchangeRateRepository implements IExchangeRateRepository 
     );
     return row ? toExchangeRate(row) : null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Write operations
+// ---------------------------------------------------------------------------
+
+export interface UpsertExchangeRatePayload {
+  id?: string;
+  household_id: string;
+  from_currency: string;
+  to_currency: string;
+  month: string;            // 'YYYY-MM'
+  rate: number;
+  source: 'manual' | 'fallback';
+}
+
+export async function upsertExchangeRate(
+  payload: UpsertExchangeRatePayload,
+  userId: string,
+): Promise<string> {
+  assertAuth(payload.household_id, userId);
+  // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
+  const stamp = authorshipStamp(userId);
+  const ts = now();
+
+  if (payload.id) {
+    const result = await db.execute(
+      `UPDATE exchange_rates
+       SET rate = ?, source = ?,
+           updated_at = ?, last_edited_by = ?, last_edited_at = ?
+       WHERE id = ?`,
+      [
+        payload.rate,
+        payload.source,
+        ts,
+        stamp.last_edited_by,
+        stamp.last_edited_at,
+        payload.id,
+      ],
+    );
+    if ((result.rowsAffected ?? 0) > 0) return payload.id;
+  }
+
+  const id = payload.id ?? newId();
+  await db.execute(
+    `INSERT INTO exchange_rates
+       (id, household_id, from_currency, to_currency, month, rate, source,
+        updated_at, last_edited_by, last_edited_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      payload.household_id,
+      payload.from_currency,
+      payload.to_currency,
+      payload.month,
+      payload.rate,
+      payload.source,
+      ts,
+      stamp.last_edited_by,
+      stamp.last_edited_at,
+    ],
+  );
+  return id;
+}
+
+export async function updateExchangeRate(
+  id: string,
+  rate: number,
+  source: 'manual' | 'fallback',
+  userId: string,
+): Promise<void> {
+  const stamp = authorshipStamp(userId);
+  await db.execute(
+    `UPDATE exchange_rates
+     SET rate = ?, source = ?, updated_at = ?, last_edited_by = ?, last_edited_at = ?
+     WHERE id = ?`,
+    [rate, source, now(), stamp.last_edited_by, stamp.last_edited_at, id],
+  );
 }

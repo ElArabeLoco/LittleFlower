@@ -8,6 +8,10 @@
  */
 
 import { db } from '../client';
+import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
+import { buildMonthRange } from '@/shared/helpers/dateRange';
+import { recordExpense } from './PowerSyncExpenseRepository';
+import type { PaymentMode } from '@/domain/budget/Budget';
 import type { IBudgetRepository } from '@/domain/budget/IBudgetRepository';
 import type { Budget, BudgetMonth, PaymentMode } from '@/domain/budget/Budget';
 
@@ -129,5 +133,262 @@ export class PowerSyncBudgetRepository implements IBudgetRepository {
       [budgetId, month],
     );
     return row ? toBudgetMonth(row) : null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Write operations
+// ---------------------------------------------------------------------------
+
+export interface InsertBudgetPayload {
+  household_id: string;
+  name: string;
+  description?: string;
+  category_id: string;
+  start_month: string;       // 'YYYY-MM'
+  end_month?: string | null; // 'YYYY-MM' | null | undefined — null/undefined = no end date
+  default_amount: number;    // integer COP
+  payment_mode: PaymentMode;
+  credit_card_id?: string;
+  /** FK to debts.id — when set, expenses auto-create a debit transaction on this debt */
+  debt_id?: string | null;
+  created_by: string;        // userId
+}
+
+export async function insertBudget(payload: InsertBudgetPayload, userId: string): Promise<string> {
+  assertAuth(payload.household_id, userId);
+  const id = newId();
+  const stamp = authorshipStamp(userId);
+  await db.execute(
+    `INSERT INTO budgets
+       (id, household_id, name, description, category_id, start_month, end_month,
+        default_amount, payment_mode, credit_card_id, debt_id,
+        created_by, created_at, last_edited_by, last_edited_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      payload.household_id,
+      payload.name,
+      payload.description ?? null,
+      payload.category_id,
+      payload.start_month,
+      payload.end_month ?? null,
+      payload.default_amount,
+      payload.payment_mode,
+      payload.credit_card_id ?? null,
+      payload.debt_id ?? null,
+      payload.created_by,
+      now(),
+      stamp.last_edited_by,
+      stamp.last_edited_at,
+    ],
+  );
+  return id;
+}
+
+export async function updateBudget(
+  id: string,
+  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'end_month' | 'debt_id' | 'payment_mode'>>,
+  userId: string,
+): Promise<void> {
+  const stamp = authorshipStamp(userId);
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  if (patch.name !== undefined) { fields.push('name = ?'); values.push(patch.name); }
+  if (patch.description !== undefined) { fields.push('description = ?'); values.push(patch.description); }
+  if (patch.default_amount !== undefined) { fields.push('default_amount = ?'); values.push(patch.default_amount); }
+  if (patch.category_id !== undefined) { fields.push('category_id = ?'); values.push(patch.category_id); }
+  if (patch.payment_mode !== undefined) { fields.push('payment_mode = ?'); values.push(patch.payment_mode); }
+  if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
+  if ('debt_id' in patch) { fields.push('debt_id = ?'); values.push(patch.debt_id ?? null); }
+
+  fields.push('last_edited_by = ?', 'last_edited_at = ?');
+  values.push(stamp.last_edited_by, stamp.last_edited_at, id);
+
+  await db.execute(`UPDATE budgets SET ${fields.join(', ')} WHERE id = ?`, values);
+}
+
+/** Soft-delete: sets deleted_at to now. Does not remove the record. */
+export async function deleteBudget(id: string, userId: string): Promise<void> {
+  const stamp = authorshipStamp(userId);
+  await db.execute(
+    `UPDATE budgets SET deleted_at = ?, last_edited_by = ?, last_edited_at = ? WHERE id = ?`,
+    [now(), stamp.last_edited_by, stamp.last_edited_at, id],
+  );
+}
+
+export interface UpsertBudgetMonthPayload {
+  id?: string;              // if provided → update; if omitted → insert new
+  household_id: string;
+  budget_id: string;
+  month: string;            // 'YYYY-MM'
+  amount: number;           // integer COP
+  is_executed?: boolean;
+  notes?: string;
+}
+
+export async function upsertBudgetMonth(
+  payload: UpsertBudgetMonthPayload,
+  userId: string,
+): Promise<string> {
+  assertAuth(payload.household_id, userId);
+  // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
+  // Pattern: UPDATE first; if no rows affected, INSERT.
+  const stamp = authorshipStamp(userId);
+  const ts = now();
+
+  if (payload.id) {
+    const result = await db.execute(
+      `UPDATE budget_months
+       SET amount = ?, is_executed = ?, notes = ?,
+           updated_at = ?, last_edited_by = ?, last_edited_at = ?
+       WHERE id = ?`,
+      [
+        payload.amount,
+        payload.is_executed ? 1 : 0,
+        payload.notes ?? null,
+        ts,
+        stamp.last_edited_by,
+        stamp.last_edited_at,
+        payload.id,
+      ],
+    );
+    if ((result.rowsAffected ?? 0) > 0) return payload.id;
+  }
+
+  const id = payload.id ?? newId();
+  await db.execute(
+    `INSERT INTO budget_months
+       (id, household_id, budget_id, month, amount, is_executed, notes,
+        created_at, updated_at, last_edited_by, last_edited_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      payload.household_id,
+      payload.budget_id,
+      payload.month,
+      payload.amount,
+      payload.is_executed ? 1 : 0,
+      payload.notes ?? null,
+      ts,
+      ts,
+      stamp.last_edited_by,
+      stamp.last_edited_at,
+    ],
+  );
+  return id;
+}
+
+export async function updateBudgetMonthExecution(
+  id: string,
+  isExecuted: boolean,
+  userId: string,
+): Promise<void> {
+  const stamp = authorshipStamp(userId);
+  await db.execute(
+    `UPDATE budget_months
+     SET is_executed = ?, updated_at = ?, last_edited_by = ?, last_edited_at = ?
+     WHERE id = ?`,
+    [isExecuted ? 1 : 0, now(), stamp.last_edited_by, stamp.last_edited_at, id],
+  );
+}
+
+export interface RegisterFullPaymentPayload {
+  budgetId: string;
+  /** Existing budget_month id. If null, a new row is created before recording the expense. */
+  budgetMonthId: string | null;
+  householdId: string;
+  month: string;           // 'YYYY-MM'
+  amount: number;          // full budgeted amount for the month
+  spentAmount: number;     // already recorded (SUM of expenses — may be 0)
+  debtId: string | null;
+  userId: string;
+  paidWithCreditCard: boolean;
+}
+
+/**
+ * Registers an expense for the remaining unspent balance and marks the budget
+ * month as executed. Creates the budget_month row if it doesn't exist yet.
+ * If spentAmount >= amount there is no remaining balance — only marks executed.
+ */
+export async function registerFullPaymentAndExecute(
+  payload: RegisterFullPaymentPayload,
+): Promise<void> {
+  assertAuth(payload.householdId, payload.userId);
+
+  let bmId = payload.budgetMonthId;
+  if (!bmId) {
+    bmId = await upsertBudgetMonth(
+      {
+        household_id: payload.householdId,
+        budget_id: payload.budgetId,
+        month: payload.month,
+        amount: payload.amount,
+        is_executed: false,
+      },
+      payload.userId,
+    );
+  }
+
+  const remaining = Math.max(0, payload.amount - payload.spentAmount);
+  if (remaining > 0) {
+    await recordExpense({
+      household_id: payload.householdId,
+      budget_id: payload.budgetId,
+      budget_month_id: bmId,
+      amount: remaining,
+      note: 'Pago total registrado automáticamente',
+      recorded_by: payload.userId,
+      timestamp: new Date().toISOString(),
+      paid_with_credit_card: payload.paidWithCreditCard,
+      ...(payload.debtId ? { debt_id: payload.debtId } : {}),
+    });
+  }
+
+  await updateBudgetMonthExecution(bmId, true, payload.userId);
+}
+
+export interface ApplyForwardPayload {
+  budgetId: string;
+  householdId: string;
+  fromMonth: string;  // inclusive, 'YYYY-MM'
+  toMonth: string;    // inclusive, 'YYYY-MM'
+  amount: number;
+  /**
+   * All existing BudgetMonth rows for this budget within the affected range.
+   * Used to skip executed months and reuse existing row ids on upsert.
+   */
+  existingMonths: ReadonlyArray<{ id: string; month: string; is_executed: number }>;
+  userId: string;
+}
+
+/**
+ * Applies a new monthly amount to all non-executed budget months in [fromMonth, toMonth].
+ * Creates new budget_month rows where they don't exist yet.
+ * Silently skips months where is_executed = 1.
+ */
+export async function applyBudgetMonthAmountForward(
+  payload: ApplyForwardPayload,
+): Promise<void> {
+  assertAuth(payload.householdId, payload.userId);
+
+  const months = buildMonthRange(payload.fromMonth, payload.toMonth);
+  const existing = new Map(payload.existingMonths.map(m => [m.month, m]));
+
+  for (const month of months) {
+    const row = existing.get(month);
+    if (row?.is_executed) continue;
+    await upsertBudgetMonth(
+      {
+        id: row?.id,
+        household_id: payload.householdId,
+        budget_id: payload.budgetId,
+        month,
+        amount: payload.amount,
+        is_executed: false,
+      },
+      payload.userId,
+    );
   }
 }
