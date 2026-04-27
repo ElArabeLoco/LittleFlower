@@ -4,7 +4,7 @@ import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/ui/cn';
-import { upsertExchangeRate } from '@/infrastructure/powersync/mutationWrappers';
+import { useExchangeRateMutations } from '@/application/useExchangeRateMutations';
 import type { ExchangeRateRow } from './types';
 
 interface TrmSectionProps {
@@ -17,6 +17,7 @@ interface TrmSectionProps {
 export function TrmSection({ month, householdId, userId, exchangeRate }: TrmSectionProps) {
   const { t } = useI18n();
   const { formatNumber } = useNumberFormat();
+  const { upsertExchangeRate } = useExchangeRateMutations(householdId, userId);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -33,13 +34,12 @@ export function TrmSection({ month, householdId, userId, exchangeRate }: TrmSect
     try {
       await upsertExchangeRate({
         id: exchangeRate?.id,
-        household_id: householdId,
         from_currency: 'USD',
         to_currency: 'COP',
         month,
         rate: parsed,
         source: 'manual',
-      }, userId);
+      });
     } finally {
       setSaving(false);
       setEditing(false);

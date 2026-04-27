@@ -3,7 +3,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/shared/ui/button';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
-import { deleteBudget } from '@/infrastructure/powersync/mutationWrappers';
+import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useBudgetsQuery } from '@/infrastructure/powersync/queries/useBudgetQueries';
 import { useDebtOptionsQuery } from '@/infrastructure/powersync/queries/useDebtQueries';
@@ -18,13 +18,14 @@ export function BudgetManagementPage() {
 
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: debtOptions = [] } = useDebtOptionsQuery();
+  const { deleteBudget } = useBudgetMutations(householdId, userId);
 
   const creditCard = budgets.filter(b => b.payment_mode === 'credit_card' || b.payment_mode === 'both');
   const cash = budgets.filter(b => b.payment_mode === 'cash' || b.payment_mode === 'both');
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(t.budgets.confirmDelete(name))) return;
-    await deleteBudget(id, userId);
+    await deleteBudget(id);
   }
 
   return (

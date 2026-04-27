@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/shared/ui/cn';
 import { CATEGORIES } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
-import { insertBudget, updateBudget } from '@/infrastructure/powersync/mutationWrappers';
+import { useBudgetMutations } from '@/application/useBudgetMutations';
 import type { BudgetFormState, DebtOption } from './types';
 
 const defaultForm = (): BudgetFormState => ({
@@ -57,6 +57,7 @@ const MODE_STYLES: Record<PaymentMode, { active: string; inactive: string }> = {
 
 export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, onDone, trigger }: BudgetFormDialogProps) {
   const { t } = useI18n();
+  const { insertBudget, updateBudget } = useBudgetMutations(householdId, userId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BudgetFormState>(initial ?? defaultForm());
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +86,6 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
     try {
       if (mode === 'create') {
         await insertBudget({
-          household_id: householdId,
           name: form.name.trim(),
           description: form.description.trim() || undefined,
           category_id: form.category_id,
@@ -94,8 +94,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           default_amount: amount,
           payment_mode: form.payment_mode,
           debt_id: form.debt_id || null,
-          created_by: userId,
-        }, userId);
+        });
       } else if (mode === 'edit' && budgetId) {
         await updateBudget(budgetId, {
           name: form.name.trim(),
@@ -105,7 +104,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           end_month: form.end_month || null,
           debt_id: form.debt_id || null,
           payment_mode: form.payment_mode,
-        }, userId);
+        });
       }
       setOpen(false);
       onDone();

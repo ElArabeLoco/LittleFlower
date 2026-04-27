@@ -5,10 +5,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
-import {
-  insertDebt, updateDebt,
-  type InsertDebtPayload,
-} from '@/infrastructure/powersync/mutationWrappers';
+import { useDebtMutations, type InsertDebtPayload } from '@/application/useDebtMutations';
 import { todayISO } from './helpers';
 import type { DebtFormState } from './types';
 
@@ -32,6 +29,7 @@ interface DebtFormDialogProps {
 
 export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onDone, trigger }: DebtFormDialogProps) {
   const { t } = useI18n();
+  const { insertDebt, updateDebt } = useDebtMutations(householdId, userId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<DebtFormState>(initial ?? defaultDebtForm());
   const [saving, setSaving] = useState(false);
@@ -59,16 +57,14 @@ export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onD
     setSaving(true);
     try {
       if (mode === 'create') {
-        const payload: InsertDebtPayload = {
-          household_id: householdId,
+        const payload: Omit<InsertDebtPayload, 'household_id' | 'created_by'> = {
           name: form.name.trim(),
           description: form.description.trim() || undefined,
           initial_amount: amount,
           currency: form.currency,
           disbursed_at: form.disbursed_at,
-          created_by: userId,
         };
-        await insertDebt(payload, userId);
+        await insertDebt(payload);
       } else if (mode === 'edit' && debtId) {
         await updateDebt(debtId, {
           name: form.name.trim(),
@@ -76,7 +72,7 @@ export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onD
           initial_amount: amount,
           currency: form.currency,
           disbursed_at: form.disbursed_at,
-        }, userId);
+        });
       }
       setOpen(false);
       onDone();

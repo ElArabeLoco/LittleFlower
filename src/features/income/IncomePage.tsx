@@ -5,7 +5,7 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
-import { deleteIncome } from '@/infrastructure/powersync/mutationWrappers';
+import { useIncomeMutations } from '@/application/useIncomeMutations';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { getCurrentMonth, prevMonth, nextMonth } from './helpers';
@@ -26,6 +26,7 @@ export function IncomePage() {
   const userId = session?.userId ?? '';
 
   const { incomes, imMap, exchangeRate, trm, hasUSDIncome, totalCOP, missingTrm } = useIncomeData(month);
+  const { deleteIncome } = useIncomeMutations(householdId, userId);
 
   const fmtMonth = (m: string) => {
     const [y, mo] = m.split('-');

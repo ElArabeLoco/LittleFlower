@@ -18,12 +18,8 @@ import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 import { cn } from '@/shared/ui/cn';
 import type { PaymentMode } from '@/domain/budget/Budget';
-import {
-  upsertBudgetMonth,
-  recordExpense,
-  softDeleteExpense,
-  updateBudgetMonthExecution,
-} from '@/infrastructure/powersync/mutationWrappers';
+import { useExpenseMutations } from '@/application/useExpenseMutations';
+import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { useExpensesForBudgetMonth } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
@@ -76,6 +72,8 @@ export function ExpenseFormDialog({
 }: ExpenseFormDialogProps) {
   const { formatCOP } = useNumberFormat();
   const { t } = useI18n();
+  const { recordExpense, softDeleteExpense } = useExpenseMutations(userId);
+  const { upsertBudgetMonth, updateBudgetMonthExecution } = useBudgetMutations(householdId, userId);
   const [open, setOpen] = useState(defaultOpen);
 
   // Form state
@@ -141,8 +139,7 @@ export function ExpenseFormDialog({
     let bmId = resolvedBmId;
     if (!bmId) {
       bmId = await upsertBudgetMonth(
-        { household_id: householdId, budget_id: budgetId, month, amount: budgetMonthAmount, is_executed: false },
-        userId,
+        { budget_id: budgetId, month, amount: budgetMonthAmount, is_executed: false },
       );
       setResolvedBmId(bmId);
     }
@@ -152,7 +149,6 @@ export function ExpenseFormDialog({
       budget_month_id: bmId,
       amount: expenseAmount,
       note: expenseNote || undefined,
-      recorded_by: userId,
       timestamp: new Date(expenseDate + 'T12:00:00').toISOString(),
       paid_with_credit_card: modeCC,
       debt_id: debtId ?? undefined,
@@ -194,7 +190,7 @@ export function ExpenseFormDialog({
     setQuickPaying(true);
     try {
       const bmId = await saveExpense(pendingAmount, todayISO(), '', overrideCC);
-      await updateBudgetMonthExecution(bmId, true, userId);
+      await updateBudgetMonthExecution(bmId, true);
       handleOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.unexpectedError);

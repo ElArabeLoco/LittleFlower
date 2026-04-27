@@ -20,32 +20,17 @@ import { cn } from '@/shared/ui/cn';
 import { Logo } from '@/shared/ui/Logo';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useAppShellData } from '@/application/useAppShellData';
+import { getCurrentMonth, prevMonth, nextMonth } from '@/shared/helpers';
 import type { BudgetWithExpenseTotalsRow } from '@/infrastructure/powersync/queries/useBudgetQueries';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-}
-
 function formatMonth(month: string): string {
   const [year, m] = month.split('-');
   const date = new Date(Number(year), Number(m) - 1, 1);
   return date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).replace(' de ', ' ');
-}
-
-function prevMonth(month: string): string {
-  const [year, m] = month.split('-').map(Number);
-  const d = new Date(year, m - 2, 1);
-  return d.toISOString().slice(0, 7);
-}
-
-function nextMonth(month: string): string {
-  const [year, m] = month.split('-').map(Number);
-  const d = new Date(year, m, 1);
-  return d.toISOString().slice(0, 7);
 }
 
 function formatCOP(amount: number): string {
