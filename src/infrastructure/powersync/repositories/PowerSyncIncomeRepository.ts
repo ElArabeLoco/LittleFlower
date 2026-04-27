@@ -128,7 +128,7 @@ export interface InsertIncomePayload {
   created_by: string;
 }
 
-export async function insertIncome(payload: InsertIncomePayload, userId: string): Promise<string> {
+export async function insertIncome(payload: InsertIncomePayload, _userId: string): Promise<string> {
   assertAuth(payload.household_id, payload.created_by);
   const id = newId();
   await db.execute(
