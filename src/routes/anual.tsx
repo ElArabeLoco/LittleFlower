@@ -4,7 +4,7 @@ import { getCurrentSession } from '@/infrastructure/auth/SupabaseAuthAdapter';
 import { FeatureErrorBoundary } from '@/shared/ui/FeatureErrorBoundary';
 
 const LazyYearView = lazy(() =>
-  import('@/features/budget/YearView').then(m => ({ default: m.YearView })),
+  import('@/features/budget/YearViewV2').then(m => ({ default: m.YearViewV2 })),
 );
 
 function YearRoute() {

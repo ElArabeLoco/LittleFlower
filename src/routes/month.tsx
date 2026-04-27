@@ -4,7 +4,7 @@ import { getCurrentSession } from '@/infrastructure/auth/SupabaseAuthAdapter';
 import { FeatureErrorBoundary } from '@/shared/ui/FeatureErrorBoundary';
 
 const LazyMonthViewPage = lazy(() =>
-  import('@/features/month/MonthViewPage').then(m => ({ default: m.MonthViewPage })),
+  import('@/features/month/MonthViewPageV2').then(m => ({ default: m.MonthViewPageV2 })),
 );
 
 function MonthRoute() {
