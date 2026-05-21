@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.12.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.11.1...littleflower-v0.12.0) (2026-05-21)
+
+
+### Features
+
+* **dashboard:** compact YearView header, expense history charts, remove exceeded budgets, icon alignment fix ([#60](https://github.com/ElArabeLoco/LittleFlower/issues/60)) ([24a5a1f](https://github.com/ElArabeLoco/LittleFlower/commit/24a5a1f3b602f461de8f7ea3c7f93c3ff216ae4b))
+
 ## [0.11.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.11.0...littleflower-v0.11.1) (2026-04-27)
 
 
