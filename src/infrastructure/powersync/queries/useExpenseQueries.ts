@@ -221,3 +221,26 @@ export function useDailyExpensesByCash(month: string, householdId: string) {
     [month, householdId],
   );
 }
+
+/** Monthly expense total for a named budget across a range of months (ExpenseHistoryChart). */
+export interface MonthlyExpenseByBudgetNameRow {
+  month: string;
+  total: number;
+}
+
+export function useMonthlyExpensesByBudgetName(months: string[], budgetName: string, householdId: string) {
+  return useQuery<MonthlyExpenseByBudgetNameRow>(
+    months.length > 0
+      ? `SELECT bm.month, SUM(e.amount) as total
+         FROM expenses e
+         JOIN budget_months bm ON bm.id = e.budget_month_id
+         JOIN budgets b ON b.id = bm.budget_id
+         WHERE bm.month IN (${months.map(() => '?').join(',')})
+           AND b.name = ? AND b.household_id = ?
+           AND e.deleted_at IS NULL AND e.amount > 0
+         GROUP BY bm.month
+         ORDER BY bm.month`
+      : `SELECT month, total FROM budget_months WHERE 1=0`,
+    [...months, budgetName, householdId],
+  );
+}

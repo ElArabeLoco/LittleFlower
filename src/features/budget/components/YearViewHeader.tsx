@@ -36,19 +36,19 @@ export function YearViewHeader({
   return (
     <div className="flex flex-col">
       {/* Year navigator */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
-        <Button variant="outline" size="icon" onClick={() => onYearChange(year - 1)}>
-          <ChevronLeft size={16} />
+      <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => onYearChange(year - 1)}>
+          <ChevronLeft size={14} />
         </Button>
-        <h2 className="text-base font-semibold text-[var(--text-primary)]">{year}</h2>
-        <Button variant="outline" size="icon" onClick={() => onYearChange(year + 1)}>
-          <ChevronRight size={16} />
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">{year}</h2>
+        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => onYearChange(year + 1)}>
+          <ChevronRight size={14} />
         </Button>
       </div>
 
       {/* Sort & filter bar */}
       {hasBudgets && (
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-1 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
           <div className={cn(
             'flex items-center gap-2 flex-1 bg-[var(--bg-app)] border rounded-lg px-3',
             yearFilter ? 'border-violet-400 dark:border-violet-600' : 'border-[var(--border-medium)]',
