@@ -295,6 +295,7 @@ export function YearViewV2() {
         title={t.yearView.title}
         subtitle={t.yearView.budgetYear(year)}
         maxWidth="max-w-full"
+        compact
       />
 
       <YearViewHeader
