@@ -103,6 +103,31 @@ useYearViewData.ts      ← all data for YearView (spreadsheet)
 4. Repository in `src/infrastructure/powersync/repositories/`
 5. Mutations in `mutationWrappers.ts`
 
+### Gotcha: `rowsAffected` unreliable on PowerSync views
+
+PowerSync exposes local tables as **views** (underlying storage is `ps_data__*` tables). `result.rowsAffected` from `UPDATE` / `DELETE` on a view is **NOT reliable** — it can return 0 even when the statement succeeded.
+
+**Do NOT use this pattern for upserts:**
+```typescript
+// BROKEN: rowsAffected is unreliable on views
+await db.execute('UPDATE ... WHERE id = ?', [id]);
+if ((result.rowsAffected ?? 0) > 0) return id;
+// falls through to INSERT with same id → UNIQUE constraint violation!
+```
+
+**Use explicit `SELECT EXISTS` instead:**
+```typescript
+// CORRECT: verify existence explicitly
+const exists = !!(await db.get('SELECT id FROM table WHERE id = ?', [id]));
+if (exists) {
+  await db.execute('UPDATE ... WHERE id = ?', [id]);
+  return id;
+}
+// safe INSERT here
+```
+
+Affected functions: `upsertBudgetMonth`, `upsertIncomeMonth`, `upsertExchangeRate`.
+
 ---
 
 ## Domain model

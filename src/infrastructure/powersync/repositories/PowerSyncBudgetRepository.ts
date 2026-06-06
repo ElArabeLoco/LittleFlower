@@ -232,13 +232,21 @@ export async function upsertBudgetMonth(
   userId: string,
 ): Promise<string> {
   assertAuth(payload.household_id, userId);
-  // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
-  // Pattern: UPDATE first; if no rows affected, INSERT.
+  // PowerSync exposes tables as views — ON CONFLICT is not supported on views,
+  // and result.rowsAffected is unreliable on views. Use explicit SELECT EXISTS
+  // to decide between UPDATE and INSERT.
   const stamp = authorshipStamp(userId);
   const ts = now();
 
-  if (payload.id) {
-    const result = await db.execute(
+  const exists =
+    !!payload.id &&
+    !!(await db.get<{ id: string }>(
+      `SELECT id FROM budget_months WHERE id = ?`,
+      [payload.id],
+    ));
+
+  if (exists) {
+    await db.execute(
       `UPDATE budget_months
        SET amount = ?, is_executed = ?, notes = ?,
            updated_at = ?, last_edited_by = ?, last_edited_at = ?
@@ -250,10 +258,10 @@ export async function upsertBudgetMonth(
         ts,
         stamp.last_edited_by,
         stamp.last_edited_at,
-        payload.id,
+        payload.id!,
       ],
     );
-    if ((result.rowsAffected ?? 0) > 0) return payload.id;
+    return payload.id!;
   }
 
   const id = payload.id ?? newId();

@@ -198,7 +198,9 @@ export async function upsertIncomeMonth(
   userId: string,
 ): Promise<string> {
   assertAuth(payload.household_id, userId);
-  // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
+  // PowerSync exposes tables as views — ON CONFLICT is not supported on views,
+  // and result.rowsAffected is unreliable on views. Use explicit SELECT EXISTS
+  // to decide between UPDATE and INSERT.
   const stamp = authorshipStamp(userId);
   const ts = now();
 
@@ -206,8 +208,15 @@ export async function upsertIncomeMonth(
   const deductions = payload.deductions ?? 0;
   const extraDays = payload.extra_days ?? 0;
 
-  if (payload.id) {
-    const result = await db.execute(
+  const exists =
+    !!payload.id &&
+    !!(await db.get<{ id: string }>(
+      `SELECT id FROM income_months WHERE id = ?`,
+      [payload.id],
+    ));
+
+  if (exists) {
+    await db.execute(
       `UPDATE income_months
        SET real_amount = ?, currency = ?, note = ?,
            base_salary = ?, deductions = ?, extra_days = ?,
@@ -223,10 +232,10 @@ export async function upsertIncomeMonth(
         ts,
         stamp.last_edited_by,
         stamp.last_edited_at,
-        payload.id,
+        payload.id!,
       ],
     );
-    if ((result.rowsAffected ?? 0) > 0) return payload.id;
+    return payload.id!;
   }
 
   const id = payload.id ?? newId();
