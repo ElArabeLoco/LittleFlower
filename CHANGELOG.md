@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.12.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.0...littleflower-v0.12.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* **repos:** replace unreliable rowsAffected with SELECT EXISTS in upsert functions ([#62](https://github.com/ElArabeLoco/LittleFlower/issues/62)) ([2473374](https://github.com/ElArabeLoco/LittleFlower/commit/24733749e9ca5093e2ef9c3da40ff46f91f5c93f))
+
 ## [0.12.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.11.1...littleflower-v0.12.0) (2026-05-21)
 
 
