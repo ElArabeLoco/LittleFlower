@@ -90,12 +90,21 @@ export async function upsertExchangeRate(
   userId: string,
 ): Promise<string> {
   assertAuth(payload.household_id, userId);
-  // PowerSync exposes tables as views — ON CONFLICT is not supported on views.
+  // PowerSync exposes tables as views — ON CONFLICT is not supported on views,
+  // and result.rowsAffected is unreliable on views. Use explicit SELECT EXISTS
+  // to decide between UPDATE and INSERT.
   const stamp = authorshipStamp(userId);
   const ts = now();
 
-  if (payload.id) {
-    const result = await db.execute(
+  const exists =
+    !!payload.id &&
+    !!(await db.get<{ id: string }>(
+      `SELECT id FROM exchange_rates WHERE id = ?`,
+      [payload.id],
+    ));
+
+  if (exists) {
+    await db.execute(
       `UPDATE exchange_rates
        SET rate = ?, source = ?,
            updated_at = ?, last_edited_by = ?, last_edited_at = ?
@@ -106,10 +115,10 @@ export async function upsertExchangeRate(
         ts,
         stamp.last_edited_by,
         stamp.last_edited_at,
-        payload.id,
+        payload.id!,
       ],
     );
-    if ((result.rowsAffected ?? 0) > 0) return payload.id;
+    return payload.id!;
   }
 
   const id = payload.id ?? newId();
