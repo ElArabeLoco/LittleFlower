@@ -103,6 +103,7 @@ export function useYearViewData(year: number, months: string[]): YearViewData {
       const trm = rateMap.get(month);
       const total = incomes.reduce((sum, inc) => {
         if (inc.start_month > month) return sum;
+        if (inc.end_month && inc.end_month < month) return sum;
         const im = imMap.get(`${inc.id}|${month}`);
         const amount = im ? im.real_amount : inc.default_amount;
         const currency = im ? im.currency : inc.currency;

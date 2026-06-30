@@ -156,6 +156,26 @@ describe('useYearViewData', () => {
     expect(result.current.availableMap.get('2025-03')).toBe(Math.round(1_000 * trm));
   });
 
+  it('availableMap excludes income whose end_month < the queried month', () => {
+    (useActiveIncomes as Mock).mockReturnValue({
+      data: [
+        makeIncomeRow({
+          id: 'inc-ended',
+          default_amount: 3_000_000,
+          currency: 'COP',
+          start_month: '2025-01',
+          end_month: '2025-03',
+        }),
+      ],
+    });
+
+    const { result } = renderHook(() => useYearViewData(2025, MONTHS_2025));
+    // March (end_month inclusive) — income still counted
+    expect(result.current.availableMap.get('2025-03')).toBe(3_000_000);
+    // April — income already ended, must NOT contribute
+    expect(result.current.availableMap.get('2025-04')).toBe(0);
+  });
+
   it('availableMap excludes income whose start_month > the queried month', () => {
     (useActiveIncomes as Mock).mockReturnValue({
       data: [
