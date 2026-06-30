@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.12.2](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.1...littleflower-v0.12.2) (2026-06-30)
+
+
+### Bug Fixes
+
+* **yearview:** exclude ended incomes from available row ([#64](https://github.com/ElArabeLoco/LittleFlower/issues/64)) ([84d7001](https://github.com/ElArabeLoco/LittleFlower/commit/84d700177839c9d169374c0c3301032c36ed5960))
+
 ## [0.12.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.0...littleflower-v0.12.1) (2026-06-06)
 
 
