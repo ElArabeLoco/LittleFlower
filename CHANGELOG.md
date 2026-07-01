@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.12.3](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.2...littleflower-v0.12.3) (2026-07-01)
+
+
+### Bug Fixes
+
+* **appshell:** split dual budget group totals by payment mode ([#66](https://github.com/ElArabeLoco/LittleFlower/issues/66)) ([e44bc98](https://github.com/ElArabeLoco/LittleFlower/commit/e44bc98383b4849851e70dfcd765c20553eccbb1))
+
 ## [0.12.2](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.1...littleflower-v0.12.2) (2026-06-30)
 
 
