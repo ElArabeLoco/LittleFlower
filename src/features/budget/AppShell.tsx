@@ -160,6 +160,10 @@ export function AppShell() {
     budgetedBalance,
     realBalance,
     missingTrm,
+    ccBudgeted,
+    cashBudgeted,
+    ccExecuted,
+    cashExecuted,
   } = useAppShellData(month);
 
   async function handleLogout() {
@@ -220,15 +224,15 @@ export function AppShell() {
               <BudgetGroup
                 title={`💳 ${t.appShell.creditCardGroup}`}
                 rows={creditCardRows}
-                totalBudgeted={creditCardRows.reduce((s, r) => s + (r.bm_amount ?? r.default_amount), 0)}
-                totalExecuted={creditCardRows.reduce((s, r) => s + r.total_expenses, 0)}
+                totalBudgeted={ccBudgeted}
+                totalExecuted={ccExecuted}
                 headers={{ item: t.appShell.itemHeader, budget: t.appShell.budgetHeader, executed: t.appShell.executedHeader, pending: t.appShell.pendingHeader }}
               />
               <BudgetGroup
                 title={`💵 ${t.appShell.cashGroup}`}
                 rows={cashRows}
-                totalBudgeted={cashRows.reduce((s, r) => s + (r.bm_amount ?? r.default_amount), 0)}
-                totalExecuted={cashRows.reduce((s, r) => s + r.total_expenses, 0)}
+                totalBudgeted={cashBudgeted}
+                totalExecuted={cashExecuted}
                 headers={{ item: t.appShell.itemHeader, budget: t.appShell.budgetHeader, executed: t.appShell.executedHeader, pending: t.appShell.pendingHeader }}
               />
             </>
