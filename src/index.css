@@ -54,7 +54,7 @@
   --group-balance-text: #374151;      /* gray-700 */
 
   /* YearView Excel grid */
-  --border-cell: #f9d5ec;             /* cell gridline, between pink-100/200 */
+  --border-cell: #f7b6da;             /* cell gridline, between pink-200/300 (must stay visible) */
   --row-zebra-1: #ffffff;
   --row-zebra-2: #fdf2f8;             /* pink-50 */
   --row-zebra-1-solid: #ffffff;       /* opaque zebra-1 for sticky name col */
@@ -112,7 +112,7 @@
   --group-balance-text: #c4b5fd;      /* violet-300 */
 
   /* YearView Excel grid — dark palette */
-  --border-cell: #352e4c;             /* slightly lighter than border-subtle */
+  --border-cell: #4a4170;             /* gridline — lighter than border-medium so it reads at 1px */
   --row-zebra-1: #1a1826;             /* same as bg-surface */
   --row-zebra-2: #2a2440;             /* lighter violet tint (NOT #221d35 — collides with group-cc-bg) */
   --row-zebra-1-solid: #1a1826;       /* opaque zebra-1 for sticky name col */
