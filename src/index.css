@@ -52,6 +52,15 @@
   --group-total-text: #4b5563;        /* gray-600 */
   --group-balance-bg: #ffffff;
   --group-balance-text: #374151;      /* gray-700 */
+
+  /* YearView Excel grid */
+  --border-cell: #f7b6da;             /* cell gridline, between pink-200/300 (must stay visible) */
+  --row-zebra-1: #ffffff;
+  --row-zebra-2: #fdf2f8;             /* pink-50 */
+  --row-zebra-1-solid: #ffffff;       /* opaque zebra-1 for sticky name col */
+  --row-zebra-2-solid: #fdf2f8;       /* opaque zebra-2 for sticky name col */
+  --row-hover: #f5f3ff;               /* row hover — violet, distinct from pink zebra */
+  --row-hover-solid: #f5f3ff;         /* opaque sticky hover */
 }
 
 .dark {
@@ -101,6 +110,15 @@
   --group-total-text: #a09ab8;        /* text-secondary */
   --group-balance-bg: #1a1826;        /* same as bg-surface */
   --group-balance-text: #c4b5fd;      /* violet-300 */
+
+  /* YearView Excel grid — dark palette */
+  --border-cell: #4a4170;             /* gridline — lighter than border-medium so it reads at 1px */
+  --row-zebra-1: #1a1826;             /* same as bg-surface */
+  --row-zebra-2: #2a2440;             /* lighter violet tint (NOT #221d35 — collides with group-cc-bg) */
+  --row-zebra-1-solid: #1a1826;       /* opaque zebra-1 for sticky name col */
+  --row-zebra-2-solid: #2a2440;       /* opaque zebra-2 for sticky name col */
+  --row-hover: #332b52;               /* row hover — violet, distinct from pink zebra */
+  --row-hover-solid: #332b52;         /* opaque sticky hover */
 }
 
 /* ---------------------------------------------------------------------------
