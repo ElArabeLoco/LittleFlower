@@ -41,13 +41,13 @@ export function BudgetTableSection({
           <tr
             key={budget.id}
             className={cn(
-              'border-b border-[var(--border-cell)] hover:bg-[var(--bg-hover)] transition-colors group',
+              'border-b border-[var(--border-cell)] hover:bg-[var(--row-hover)] transition-colors group',
               bIdx % 2 === 0 ? 'bg-[var(--row-zebra-1)]' : 'bg-[var(--row-zebra-2)]',
             )}
           >
             <td
               className={cn(
-                'sticky left-0 z-10 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-l border-[var(--border-cell)] group-hover:bg-[var(--bg-hover-solid)] transition-all duration-200',
+                'sticky left-0 z-10 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-l border-[var(--border-cell)] group-hover:bg-[var(--row-hover-solid)] transition-all duration-200',
                 bIdx % 2 === 0 ? 'bg-[var(--row-zebra-1-solid)]' : 'bg-[var(--row-zebra-2-solid)]',
                 nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3 max-w-[160px] truncate',
               )}

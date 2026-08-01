@@ -220,8 +220,9 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
         className={cn(
           'border-r border-[var(--border-cell)] px-2 py-1 text-right text-xs tabular-nums select-none w-20 transition-colors group/cell relative',
           isExecuted ? 'bg-green-50/60 dark:bg-green-950/30' : '',
-          isCurrent && !isExecuted && 'bg-pink-50/60 dark:bg-pink-950/20',
-          'hover:bg-[var(--bg-hover)]',
+          isCurrent && !isExecuted && 'bg-pink-50/30 dark:bg-pink-950/15',
+          isCurrent && 'shadow-[inset_0_0_0_1px_var(--border-medium)]',
+          'hover:bg-[var(--row-hover)]',
         )}
         onContextMenu={handleNativeContextMenu}
         onTouchStart={handleTouchStart}
