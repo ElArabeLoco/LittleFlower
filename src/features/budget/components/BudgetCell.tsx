@@ -128,7 +128,7 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
 
     if (!hasStarted) {
       return (
-        <td className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-center text-[var(--text-muted)] text-xs w-20">
+        <td className="border-r border-[var(--border-cell)] px-2 py-1.5 text-center text-[var(--text-muted)] text-xs w-20">
           —
         </td>
       );
@@ -147,7 +147,7 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
 
       return (
         <td
-          className="border-r border-[var(--border-subtle)] px-1 py-1 w-20 relative overflow-visible"
+          className="border-r border-[var(--border-cell)] px-1 py-1 w-20 relative overflow-visible"
           style={{ zIndex: 40 }}
         >
           <input
@@ -218,7 +218,7 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
     return (
       <td
         className={cn(
-          'border-r border-[var(--border-subtle)] px-2 py-1 text-right text-xs tabular-nums select-none w-20 transition-colors group/cell relative',
+          'border-r border-[var(--border-cell)] px-2 py-1 text-right text-xs tabular-nums select-none w-20 transition-colors group/cell relative',
           isExecuted ? 'bg-green-50/60 dark:bg-green-950/30' : '',
           isCurrent && !isExecuted && 'bg-pink-50/60 dark:bg-pink-950/20',
           'hover:bg-[var(--bg-hover)]',

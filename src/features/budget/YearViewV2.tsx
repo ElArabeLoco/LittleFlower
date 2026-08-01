@@ -329,7 +329,7 @@ export function YearViewV2() {
           <thead className="bg-[var(--bg-surface)] shadow-sm">
             <tr className="border-b-2 border-[var(--border-medium)]">
               <th className={cn(
-                'sticky top-0 left-0 z-30 bg-[var(--bg-surface)] px-2 py-2 border-r border-[var(--border-subtle)] transition-all duration-200',
+                'sticky top-0 left-0 z-30 bg-[var(--bg-surface)] px-2 py-2 border-r border-[var(--border-cell)] transition-all duration-200',
                 nameColCollapsed ? 'w-9' : 'w-40',
               )}>
                 <button
@@ -345,7 +345,7 @@ export function YearViewV2() {
                 <th
                   key={month}
                   className={cn(
-                    'sticky top-0 z-10 px-2 py-2 text-center text-xs font-semibold w-20 border-r border-[var(--border-subtle)]',
+                    'sticky top-0 z-10 px-2 py-2 text-center text-xs font-semibold w-20 border-r border-[var(--border-cell)]',
                     month === currentMonth
                       ? 'text-[var(--text-brand)] bg-[var(--group-available-bg)]'
                       : 'text-[var(--text-secondary)] bg-[var(--bg-surface)]',
