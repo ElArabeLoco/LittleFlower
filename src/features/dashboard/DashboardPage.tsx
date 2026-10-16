@@ -50,7 +50,7 @@ export function DashboardPage() {
   return (
       <DashboardDataProvider selectedMonth={selectedMonth}>
           <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-              <AppHeader emoji="✨" title="Dashboard" maxWidth="max-w-7xl" />
+              <AppHeader title="Dashboard" maxWidth="max-w-7xl" />
 
               {/* Month navigation bar */}
               <div className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] sticky top-14 z-10">

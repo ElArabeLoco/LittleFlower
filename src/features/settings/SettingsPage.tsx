@@ -326,7 +326,6 @@ export function SettingsPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
-        emoji="🌸"
         title={t.settings.profileTitle}
         subtitle={session?.email ?? ''}
         maxWidth="max-w-4xl"

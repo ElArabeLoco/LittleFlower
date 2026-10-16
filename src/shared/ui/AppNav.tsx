@@ -8,10 +8,12 @@
  *   Presupuesto → /budget   (hub: Mensual + Anual)
  *   Finanzas    → /finances (hub: Ingresos + Presupuestos + Deudas)
  *   Perfil      → /settings (avatar con inicial del usuario)
+ *
+ * The active tab is marked by a ribbon hanging from the bar's top edge.
  */
 
-import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { LayoutDashboard, CalendarDays, Wallet } from 'lucide-react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { LayoutDashboard, CalendarDays, Wallet, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useI18n } from '@/shared/i18n/I18nContext';
@@ -36,10 +38,12 @@ function UserAvatar({ email, size = 20 }: { email: string; size?: number }) {
 // Nav item definitions (all except profile — profile is special)
 // ---------------------------------------------------------------------------
 
+type NavPath = '/dashboard' | '/budget' | '/finances' | '/settings';
+
 interface NavItem {
   labelKey: 'dashboard' | 'budget' | 'finances';
-  icon: React.ReactNode;
-  to: string;
+  icon: LucideIcon;
+  to: NavPath;
   /** All paths that should highlight this tab as active */
   match: string[];
 }
@@ -47,20 +51,20 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     labelKey: 'dashboard',
-    icon: <LayoutDashboard size={20} />,
+    icon: LayoutDashboard,
     to: '/dashboard',
     match: ['/dashboard'],
   },
   {
     labelKey: 'budget',
-    icon: <CalendarDays size={20} />,
+    icon: CalendarDays,
     to: '/budget',
     // Active on the hub AND on the sub-pages it contains
     match: ['/budget', '/month', '/anual'],
   },
   {
     labelKey: 'finances',
-    icon: <Wallet size={20} />,
+    icon: Wallet,
     to: '/finances',
     // Active on the hub AND on the sub-pages it contains
     match: ['/finances', '/income', '/settings/budgets', '/debts', '/transactions'],
@@ -68,11 +72,48 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Tab link
+// ---------------------------------------------------------------------------
+
+function NavTab({ to, isActive, label, children }: {
+  to: NavPath;
+  isActive: boolean;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      to={to}
+      // Our `match` lists decide the active tab. Exact matching keeps the router's own
+      // aria-current (fuzzy by default) from flagging /settings on /settings/budgets.
+      activeOptions={{ exact: true, includeSearch: false }}
+      aria-current={isActive ? 'page' : undefined}
+      className={cn(
+        'relative flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] transition-colors',
+        // Inset, rounded focus outline so it stays inside the bar instead of crossing its edges.
+        'rounded-xl focus-visible:-outline-offset-4',
+        isActive
+          ? 'font-semibold text-[var(--nav-active)]'
+          : 'font-medium text-[var(--nav-inactive)] hover:text-[var(--text-secondary)]',
+      )}
+    >
+      {isActive && (
+        <span
+          aria-hidden="true"
+          className="absolute left-1/2 top-0 h-[3px] w-6 -translate-x-1/2 rounded-b-full bg-[var(--nav-active)]"
+        />
+      )}
+      {children}
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // AppNav
 // ---------------------------------------------------------------------------
 
 export function AppNav() {
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const { session } = useAuth();
   const { t } = useI18n();
@@ -85,66 +126,36 @@ export function AppNav() {
   return (
     <>
       {/* Spacer so page content isn't hidden behind the fixed bar */}
-      <div className="h-16" aria-hidden="true" />
+      <div className="h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--nav-bg)] border-t border-[var(--nav-border)] shadow-[0_-1px_8px_rgba(0,0,0,0.12)] transition-colors">
-        <ul className="flex h-16 items-stretch">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--nav-border)] bg-[var(--nav-bg)] pb-[env(safe-area-inset-bottom)] transition-colors">
+        <ul className="mx-auto flex h-16 max-w-lg items-stretch">
           {NAV_ITEMS.map(item => {
             const isActive = item.match.some(m => pathname === m || pathname.startsWith(m + '/'));
+            const Icon = item.icon;
 
             return (
               <li key={item.to} className="flex-1">
-                <button
-                  onClick={() => navigate({ to: item.to })}
-                  className={cn(
-                    'flex h-full w-full flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
-                    isActive
-                      ? 'text-[var(--nav-active)]'
-                      : 'text-[var(--nav-inactive)] hover:text-[var(--text-secondary)]',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex items-center justify-center w-8 h-8 rounded-xl transition-colors',
-                      isActive && 'bg-[var(--nav-active-bg)]',
-                    )}
-                  >
-                    {item.icon}
-                  </span>
-                  <span>{t.nav[item.labelKey]}</span>
-                </button>
+                <NavTab to={item.to} isActive={isActive} label={t.nav[item.labelKey]}>
+                  <Icon size={22} strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
+                </NavTab>
               </li>
             );
           })}
 
           {/* Profile tab — avatar instead of generic icon */}
           <li className="flex-1">
-            <button
-              onClick={() => navigate({ to: '/settings' })}
-              className={cn(
-                'flex h-full w-full flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
-                isProfileActive
-                  ? 'text-[var(--nav-active)]'
-                  : 'text-[var(--nav-inactive)] hover:text-[var(--text-secondary)]',
-              )}
-            >
+            <NavTab to="/settings" isActive={isProfileActive} label={t.nav.profile}>
               <span
+                aria-hidden="true"
                 className={cn(
-                  'flex items-center justify-center w-8 h-8 rounded-xl transition-colors',
-                  isProfileActive && 'bg-[var(--nav-active-bg)]',
+                  'rounded-full transition-shadow',
+                  isProfileActive && 'ring-2 ring-[var(--nav-active)] ring-offset-2 ring-offset-[var(--nav-bg)]',
                 )}
               >
-                <span className={cn(
-                  'rounded-full transition-all',
-                  isProfileActive
-                    ? 'ring-2 ring-[var(--nav-active)] ring-offset-1 ring-offset-[var(--nav-bg)]'
-                    : '',
-                )}>
-                  <UserAvatar email={email} size={22} />
-                </span>
+                <UserAvatar email={email} size={22} />
               </span>
-              <span>{t.nav.profile}</span>
-            </button>
+            </NavTab>
           </li>
         </ul>
       </nav>

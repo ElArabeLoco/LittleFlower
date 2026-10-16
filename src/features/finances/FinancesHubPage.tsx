@@ -70,7 +70,7 @@ export function FinancesHubPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="💳" title={t.finances.title} subtitle={t.finances.subtitle} maxWidth="max-w-3xl" />
+      <AppHeader title={t.finances.title} subtitle={t.finances.subtitle} maxWidth="max-w-3xl" />
 
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8">
 

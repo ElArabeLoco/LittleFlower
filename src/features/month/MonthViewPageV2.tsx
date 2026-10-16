@@ -143,7 +143,6 @@ export function MonthViewPageV2() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
-        emoji="🗓️"
         title={t.monthView.title}
         subtitle={formatMonthLabel(month)}
         maxWidth="max-w-5xl"

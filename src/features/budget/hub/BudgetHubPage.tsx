@@ -49,7 +49,7 @@ export function BudgetHubPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="📊" title={t.budgetHub.title} subtitle={t.budgetHub.subtitle} maxWidth="max-w-2xl" />
+      <AppHeader title={t.budgetHub.title} subtitle={t.budgetHub.subtitle} maxWidth="max-w-2xl" />
 
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
 

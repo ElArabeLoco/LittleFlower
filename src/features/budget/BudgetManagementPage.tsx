@@ -31,7 +31,6 @@ export function BudgetManagementPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)]">
       <AppHeader
-        emoji="📋"
         title={t.budgets.title}
         subtitle={t.budgets.subtitle}
         maxWidth="max-w-5xl"

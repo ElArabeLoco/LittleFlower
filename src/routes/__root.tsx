@@ -120,10 +120,10 @@ function RootInner() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-pink-50">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)]">
         <div className="text-center">
           <Logo size={48} className="mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">{t.common.loading}</p>
+          <p className="text-sm text-[var(--text-muted)]">{t.common.loading}</p>
         </div>
       </div>
     );

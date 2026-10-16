@@ -211,7 +211,7 @@ export function TransactionsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-      <AppHeader emoji="🧾" title={t.transactions.title} subtitle={t.transactions.subtitle} maxWidth="max-w-7xl" />
+      <AppHeader title={t.transactions.title} subtitle={t.transactions.subtitle} maxWidth="max-w-7xl" />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col gap-6">
 

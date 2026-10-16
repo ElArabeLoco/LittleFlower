@@ -291,7 +291,6 @@ export function YearViewV2() {
   return (
     <div className="h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
-        emoji="📅"
         title={t.yearView.title}
         subtitle={t.yearView.budgetYear(year)}
         maxWidth="max-w-full"

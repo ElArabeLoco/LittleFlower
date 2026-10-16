@@ -28,7 +28,6 @@ export function DebtsPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)]">
       <AppHeader
-        emoji="💳"
         title={t.debts.title}
         subtitle={t.debts.subtitle}
         maxWidth="max-w-5xl"
