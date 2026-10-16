@@ -1,124 +1,410 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
+   Theme switching
+
+   AppSettingsProvider toggles a `.dark` class on <html>. Bind Tailwind's
+   `dark:` variant to that class so utilities follow the in-app theme setting
+   instead of the operating system preference.
+   --------------------------------------------------------------------------- */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Theme — typography, shadows and the consolidated color palette
+
+   Typography: two self-hosted variable fonts, like notes written by hand on a
+   printed ledger. Recursive (`font-sans`) is the default UI voice. Shantell
+   Sans (`font-hand`) is the hand-written voice reserved for page titles and
+   hero amounts.
+
+   Palette: Tailwind's families are consolidated into seven brand-tuned scales
+   derived from the logo (carnation petals, golden center). Each scale keeps
+   Tailwind's lightness curve per step so existing utilities keep their
+   contrast, while hue and chroma move to the brand. Sibling families alias
+   the nearest scale, so classes such as `from-pink-400 to-rose-400` no longer
+   produce rainbow gradients.
+   --------------------------------------------------------------------------- */
+
+@theme static {
+  --font-sans: "Recursive Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-hand: "Shantell Sans Variable", "Recursive Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* Petal — brand, primary actions */
+  --color-pink-50: #FDF2F7;
+  --color-pink-100: #FEE7F0;
+  --color-pink-200: #FECFE0;
+  --color-pink-300: #FCA8C7;
+  --color-pink-400: #F372A3;
+  --color-pink-500: #E8538C;
+  --color-pink-600: #CA2F6D;
+  --color-pink-700: #B12259;
+  --color-pink-800: #951B48;
+  --color-pink-900: #7C1C3D;
+  --color-pink-950: #4C0C23;
+
+  /* Iris — credit card, secondary */
+  --color-violet-50: #F4F3FF;
+  --color-violet-100: #EBE9FF;
+  --color-violet-200: #DAD7FF;
+  --color-violet-300: #BEB7FF;
+  --color-violet-400: #9A8FF4;
+  --color-violet-500: #7C6DE1;
+  --color-violet-600: #6859CE;
+  --color-violet-700: #5B4DB6;
+  --color-violet-800: #4B3F98;
+  --color-violet-900: #3F357C;
+  --color-violet-950: #282051;
+
+  /* Leaf — positive, income, cash */
+  --color-green-50: #F0FDF5;
+  --color-green-100: #DFFAEA;
+  --color-green-200: #C2F4D6;
+  --color-green-300: #97EABA;
+  --color-green-400: #67D598;
+  --color-green-500: #47C07E;
+  --color-green-600: #2DA065;
+  --color-green-700: #237D51;
+  --color-green-800: #216341;
+  --color-green-900: #1F5137;
+  --color-green-950: #0C2D1D;
+
+  /* Polen — "now" (current month, today), attention */
+  --color-amber-50: #FFFBEC;
+  --color-amber-100: #FFF2CD;
+  --color-amber-200: #FFE39C;
+  --color-amber-300: #FED06B;
+  --color-amber-400: #F9BA41;
+  --color-amber-500: #F0A126;
+  --color-amber-600: #D47B0E;
+  --color-amber-700: #AD5907;
+  --color-amber-800: #8C450D;
+  --color-amber-900: #733913;
+  --color-amber-950: #411D06;
+
+  /* Brick — negative amounts, errors */
+  --color-red-50: #FFF2F1;
+  --color-red-100: #FFE2DE;
+  --color-red-200: #FFCAC3;
+  --color-red-300: #FFA597;
+  --color-red-400: #F5725F;
+  --color-red-500: #EA4E3C;
+  --color-red-600: #D63429;
+  --color-red-700: #B52621;
+  --color-red-800: #95241E;
+  --color-red-900: #7A2520;
+  --color-red-950: #420F0C;
+
+  /* Agua — information */
+  --color-sky-50: #F0F9FF;
+  --color-sky-100: #E0F2FD;
+  --color-sky-200: #BFE5FB;
+  --color-sky-300: #8AD1F8;
+  --color-sky-400: #51B8F1;
+  --color-sky-500: #32A4E3;
+  --color-sky-600: #1C84C1;
+  --color-sky-700: #16699C;
+  --color-sky-800: #195881;
+  --color-sky-900: #1B496A;
+  --color-sky-950: #112E46;
+
+  /* Mist — plum-tinted neutrals */
+  --color-gray-50: #FCF9FB;
+  --color-gray-100: #F7F3F5;
+  --color-gray-200: #EBE5E9;
+  --color-gray-300: #DBD2D7;
+  --color-gray-400: #A99CA4;
+  --color-gray-500: #7A6D75;
+  --color-gray-600: #5D5058;
+  --color-gray-700: #4A3C45;
+  --color-gray-800: #31242C;
+  --color-gray-900: #1F141B;
+  --color-gray-950: #0B0509;
+
+  /* Sibling families alias the nearest scale */
+  --color-fuchsia-50: var(--color-pink-50);
+  --color-fuchsia-100: var(--color-pink-100);
+  --color-fuchsia-200: var(--color-pink-200);
+  --color-fuchsia-300: var(--color-pink-300);
+  --color-fuchsia-400: var(--color-pink-400);
+  --color-fuchsia-500: var(--color-pink-500);
+  --color-fuchsia-600: var(--color-pink-600);
+  --color-fuchsia-700: var(--color-pink-700);
+  --color-fuchsia-800: var(--color-pink-800);
+  --color-fuchsia-900: var(--color-pink-900);
+  --color-fuchsia-950: var(--color-pink-950);
+
+  --color-rose-50: var(--color-red-50);
+  --color-rose-100: var(--color-red-100);
+  --color-rose-200: var(--color-red-200);
+  --color-rose-300: var(--color-red-300);
+  --color-rose-400: var(--color-red-400);
+  --color-rose-500: var(--color-red-500);
+  --color-rose-600: var(--color-red-600);
+  --color-rose-700: var(--color-red-700);
+  --color-rose-800: var(--color-red-800);
+  --color-rose-900: var(--color-red-900);
+  --color-rose-950: var(--color-red-950);
+
+  --color-purple-50: var(--color-violet-50);
+  --color-purple-100: var(--color-violet-100);
+  --color-purple-200: var(--color-violet-200);
+  --color-purple-300: var(--color-violet-300);
+  --color-purple-400: var(--color-violet-400);
+  --color-purple-500: var(--color-violet-500);
+  --color-purple-600: var(--color-violet-600);
+  --color-purple-700: var(--color-violet-700);
+  --color-purple-800: var(--color-violet-800);
+  --color-purple-900: var(--color-violet-900);
+  --color-purple-950: var(--color-violet-950);
+
+  --color-indigo-50: var(--color-violet-50);
+  --color-indigo-100: var(--color-violet-100);
+  --color-indigo-200: var(--color-violet-200);
+  --color-indigo-300: var(--color-violet-300);
+  --color-indigo-400: var(--color-violet-400);
+  --color-indigo-500: var(--color-violet-500);
+  --color-indigo-600: var(--color-violet-600);
+  --color-indigo-700: var(--color-violet-700);
+  --color-indigo-800: var(--color-violet-800);
+  --color-indigo-900: var(--color-violet-900);
+  --color-indigo-950: var(--color-violet-950);
+
+  --color-emerald-50: var(--color-green-50);
+  --color-emerald-100: var(--color-green-100);
+  --color-emerald-200: var(--color-green-200);
+  --color-emerald-300: var(--color-green-300);
+  --color-emerald-400: var(--color-green-400);
+  --color-emerald-500: var(--color-green-500);
+  --color-emerald-600: var(--color-green-600);
+  --color-emerald-700: var(--color-green-700);
+  --color-emerald-800: var(--color-green-800);
+  --color-emerald-900: var(--color-green-900);
+  --color-emerald-950: var(--color-green-950);
+
+  --color-teal-50: var(--color-green-50);
+  --color-teal-100: var(--color-green-100);
+  --color-teal-200: var(--color-green-200);
+  --color-teal-300: var(--color-green-300);
+  --color-teal-400: var(--color-green-400);
+  --color-teal-500: var(--color-green-500);
+  --color-teal-600: var(--color-green-600);
+  --color-teal-700: var(--color-green-700);
+  --color-teal-800: var(--color-green-800);
+  --color-teal-900: var(--color-green-900);
+  --color-teal-950: var(--color-green-950);
+
+  --color-yellow-50: var(--color-amber-50);
+  --color-yellow-100: var(--color-amber-100);
+  --color-yellow-200: var(--color-amber-200);
+  --color-yellow-300: var(--color-amber-300);
+  --color-yellow-400: var(--color-amber-400);
+  --color-yellow-500: var(--color-amber-500);
+  --color-yellow-600: var(--color-amber-600);
+  --color-yellow-700: var(--color-amber-700);
+  --color-yellow-800: var(--color-amber-800);
+  --color-yellow-900: var(--color-amber-900);
+  --color-yellow-950: var(--color-amber-950);
+
+  --color-orange-50: var(--color-amber-50);
+  --color-orange-100: var(--color-amber-100);
+  --color-orange-200: var(--color-amber-200);
+  --color-orange-300: var(--color-amber-300);
+  --color-orange-400: var(--color-amber-400);
+  --color-orange-500: var(--color-amber-500);
+  --color-orange-600: var(--color-amber-600);
+  --color-orange-700: var(--color-amber-700);
+  --color-orange-800: var(--color-amber-800);
+  --color-orange-900: var(--color-amber-900);
+  --color-orange-950: var(--color-amber-950);
+
+  --color-blue-50: var(--color-sky-50);
+  --color-blue-100: var(--color-sky-100);
+  --color-blue-200: var(--color-sky-200);
+  --color-blue-300: var(--color-sky-300);
+  --color-blue-400: var(--color-sky-400);
+  --color-blue-500: var(--color-sky-500);
+  --color-blue-600: var(--color-sky-600);
+  --color-blue-700: var(--color-sky-700);
+  --color-blue-800: var(--color-sky-800);
+  --color-blue-900: var(--color-sky-900);
+  --color-blue-950: var(--color-sky-950);
+
+  --color-cyan-50: var(--color-sky-50);
+  --color-cyan-100: var(--color-sky-100);
+  --color-cyan-200: var(--color-sky-200);
+  --color-cyan-300: var(--color-sky-300);
+  --color-cyan-400: var(--color-sky-400);
+  --color-cyan-500: var(--color-sky-500);
+  --color-cyan-600: var(--color-sky-600);
+  --color-cyan-700: var(--color-sky-700);
+  --color-cyan-800: var(--color-sky-800);
+  --color-cyan-900: var(--color-sky-900);
+  --color-cyan-950: var(--color-sky-950);
+
+  --color-slate-50: var(--color-gray-50);
+  --color-slate-100: var(--color-gray-100);
+  --color-slate-200: var(--color-gray-200);
+  --color-slate-300: var(--color-gray-300);
+  --color-slate-400: var(--color-gray-400);
+  --color-slate-500: var(--color-gray-500);
+  --color-slate-600: var(--color-gray-600);
+  --color-slate-700: var(--color-gray-700);
+  --color-slate-800: var(--color-gray-800);
+  --color-slate-900: var(--color-gray-900);
+  --color-slate-950: var(--color-gray-950);
+
+  /* Shadows — plum-tinted; cards stay nearly flat, floating layers lift */
+  --shadow-2xs: 0 1px 0 0 rgb(46 28 40 / 0.03);
+  --shadow-xs: 0 1px 1px 0 rgb(46 28 40 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(46 28 40 / 0.04);
+  --shadow-md: 0 2px 6px -1px rgb(46 28 40 / 0.07), 0 1px 2px -1px rgb(46 28 40 / 0.05);
+  --shadow-lg: 0 12px 28px -12px rgb(46 28 40 / 0.22), 0 2px 6px -2px rgb(46 28 40 / 0.08);
+  --shadow-xl: 0 24px 48px -16px rgb(46 28 40 / 0.28), 0 4px 10px -4px rgb(46 28 40 / 0.1);
+  --shadow-2xl: 0 32px 64px -20px rgb(46 28 40 / 0.35);
+}
+
+/* ---------------------------------------------------------------------------
    Semantic design tokens — light mode (default)
    Parallel dark palette via .dark class on <html>
    --------------------------------------------------------------------------- */
 
 :root {
+  color-scheme: light;
+
   /* Brand */
-  --color-primary: #f9a8d4;           /* pink-300 */
-  --color-secondary: #c4b5fd;         /* violet-300 */
+  --color-primary: var(--color-pink-600);   /* petal — primary actions, white text 5.07:1 */
+  --color-primary-hover: var(--color-pink-700);
+  --color-secondary: var(--color-violet-500); /* iris */
+  --color-now: var(--color-amber-500);      /* polen — current month, today */
 
   /* Backgrounds */
-  --bg-app: #fdf2f8;                  /* pink-50 tint — page background */
-  --bg-surface: #ffffff;              /* card / header surface */
-  --bg-surface-2: #fdf4ff;            /* subtle secondary surface */
-  --bg-hover: rgba(249,168,212,0.15); /* pink-300/15 */
-  --bg-hover-solid: #FEF2F9;          /* solid equivalent of --bg-hover over white */
+  --bg-app: #F9F5F7;                  /* mist — page background */
+  --bg-surface: #FFFFFF;              /* card / header surface */
+  --bg-surface-2: #F6F1F3;            /* inset surface: table heads, segmented controls */
+  --bg-hover: rgb(202 47 109 / 0.06); /* petal-600 / 6% */
+  --bg-hover-solid: #FCF4F7;          /* solid equivalent of --bg-hover over white */
 
   /* Text */
-  --text-primary: #1e1b4b;            /* indigo-950 */
-  --text-secondary: #6b7280;          /* gray-500 */
-  --text-muted: #9ca3af;              /* gray-400 */
-  --text-brand: #db2777;              /* pink-600 */
+  --text-primary: #2E1C28;            /* plum ink, 15.9:1 on white */
+  --text-secondary: #62535C;          /* 7.2:1 on white */
+  --text-muted: #776A72;              /* 4.7:1 on --bg-app */
+  --text-brand: var(--color-pink-700);
+  --text-positive: var(--color-green-700);
+  --text-negative: var(--color-red-600);
+  --text-now: var(--color-amber-700);
 
   /* Borders */
-  --border-subtle: #fce7f3;           /* pink-100 */
-  --border-medium: #fbcfe8;           /* pink-200 */
-  --border-strong: #f9a8d4;           /* pink-300 */
+  --border-subtle: #EBE4E8;
+  --border-medium: #DDD2D8;
+  --border-strong: #C8B9C1;
+
+  /* Focus and floating layers */
+  --focus-ring: rgb(202 47 109 / 0.45);
+  --shadow-float: 0 18px 40px -16px rgb(46 28 40 / 0.3), 0 2px 8px -2px rgb(46 28 40 / 0.1);
 
   /* Navigation */
-  --nav-bg: #ffffff;
-  --nav-border: #fce7f3;
-  --nav-active: #db2777;
-  --nav-inactive: #9ca3af;
-  --nav-active-bg: rgba(219,39,119,0.08);
+  --nav-bg: #FFFFFF;
+  --nav-border: #EBE4E8;
+  --nav-active: var(--color-pink-600);
+  --nav-inactive: #776A72;
+  --nav-active-bg: rgb(202 47 109 / 0.08);
 
   /* Spreadsheet group headers / totals rows */
-  --group-cc-bg: #f5f3ff;             /* violet-50 */
-  --group-cc-text: #6d28d9;           /* violet-700 */
-  --group-cc-border: #ede9fe;         /* violet-100 */
-  --group-cash-bg: #f0fdf4;           /* green-50 */
-  --group-cash-text: #15803d;         /* green-700 */
-  --group-cash-border: #dcfce7;       /* green-100 */
-  --group-totals-bg: rgba(253,242,248,0.5);  /* pink-50/50 */
-  --group-totals-sticky: #FDF2F8;     /* pink-50, opaque */
-  --group-available-bg: #fdf2f8;      /* pink-50 */
-  --group-available-sticky: #FCE7F3;  /* pink-100, opaque */
-  --group-available-text: #9d174d;    /* pink-800 */
-  --group-total-bg: #f9fafb;          /* gray-50 */
-  --group-total-sticky: #F3F4F6;      /* gray-100, opaque */
-  --group-total-text: #4b5563;        /* gray-600 */
-  --group-balance-bg: #ffffff;
-  --group-balance-text: #374151;      /* gray-700 */
+  --group-cc-bg: var(--color-violet-50);
+  --group-cc-text: var(--color-violet-700);
+  --group-cc-border: var(--color-violet-100);
+  --group-cash-bg: var(--color-green-50);
+  --group-cash-text: var(--color-green-700);
+  --group-cash-border: var(--color-green-100);
+  --group-totals-bg: rgb(246 241 243 / 0.7); /* surface-2 / 70% */
+  --group-totals-sticky: #F6F1F3;     /* opaque */
+  --group-available-bg: var(--color-pink-50);
+  --group-available-sticky: var(--color-pink-100);
+  --group-available-text: var(--color-pink-800);
+  --group-total-bg: var(--color-gray-50);
+  --group-total-sticky: var(--color-gray-100);
+  --group-total-text: var(--color-gray-600);
+  --group-balance-bg: #FFFFFF;
+  --group-balance-text: var(--color-gray-700);
 
   /* YearView Excel grid */
-  --border-cell: #f7b6da;             /* cell gridline, between pink-200/300 (must stay visible) */
-  --row-zebra-1: #ffffff;
-  --row-zebra-2: #fdf2f8;             /* pink-50 */
-  --row-zebra-1-solid: #ffffff;       /* opaque zebra-1 for sticky name col */
-  --row-zebra-2-solid: #fdf2f8;       /* opaque zebra-2 for sticky name col */
-  --row-hover: #f5f3ff;               /* row hover — violet, distinct from pink zebra */
-  --row-hover-solid: #f5f3ff;         /* opaque sticky hover */
+  --border-cell: #E3BFCF;             /* dusty petal gridline (must stay visible at 1px) */
+  --row-zebra-1: #FFFFFF;
+  --row-zebra-2: #FDF2F7;             /* petal-50 */
+  --row-zebra-1-solid: #FFFFFF;       /* opaque zebra-1 for sticky name col */
+  --row-zebra-2-solid: #FDF2F7;       /* opaque zebra-2 for sticky name col */
+  --row-hover: #F4F3FF;               /* iris-50 — distinct from petal zebra */
+  --row-hover-solid: #F4F3FF;         /* opaque sticky hover */
 }
 
 .dark {
-  /* Brand (brightened for dark backgrounds) */
-  --color-primary: #f472b6;           /* pink-400 */
-  --color-secondary: #a78bfa;         /* violet-400 */
+  color-scheme: dark;
+
+  /* Brand — buttons keep petal-600 so white labels stay above 5:1 */
+  --color-primary: var(--color-pink-600);
+  --color-primary-hover: var(--color-pink-500);
+  --color-secondary: var(--color-violet-400);
+  --color-now: var(--color-amber-400);
 
   /* Backgrounds */
-  --bg-app: #0f0e17;                  /* near-black, warm-violet tint */
-  --bg-surface: #1a1826;              /* dark violet-tinted card */
-  --bg-surface-2: #201e30;            /* slightly lighter surface */
-  --bg-hover: rgba(244,114,182,0.08); /* pink-400/8 */
-  --bg-hover-solid: #231b31;          /* solid equivalent of --bg-hover over bg-surface */
+  --bg-app: #181015;                  /* aubergine night */
+  --bg-surface: #22181F;
+  --bg-surface-2: #2B1F27;
+  --bg-hover: rgb(243 114 163 / 0.08); /* petal-400 / 8% */
+  --bg-hover-solid: #2C1D27;          /* solid equivalent of --bg-hover over bg-surface */
 
   /* Text */
-  --text-primary: #f1e9f5;            /* near-white, lavender tint */
-  --text-secondary: #a09ab8;          /* muted violet-gray */
-  --text-muted: #6b6485;              /* dimmer */
-  --text-brand: #f472b6;              /* pink-400 */
+  --text-primary: #F4EEF2;            /* 15.0:1 on surface */
+  --text-secondary: #C3B6BE;          /* 8.8:1 on surface */
+  --text-muted: #9B8E96;              /* 5.5:1 on surface */
+  --text-brand: #F7A0BF;
+  --text-positive: var(--color-green-400);
+  --text-negative: var(--color-red-400);
+  --text-now: var(--color-amber-400);
 
   /* Borders */
-  --border-subtle: #2d2640;           /* dark violet */
-  --border-medium: #3d3555;
-  --border-strong: #5b4e7a;
+  --border-subtle: #362932;
+  --border-medium: #473841;
+  --border-strong: #5E4C58;
+
+  /* Focus and floating layers */
+  --focus-ring: rgb(247 160 191 / 0.55);
+  --shadow-float: 0 18px 40px -12px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.04);
 
   /* Navigation */
-  --nav-bg: #1a1826;
-  --nav-border: #2d2640;
-  --nav-active: #f472b6;
-  --nav-inactive: #6b6485;
-  --nav-active-bg: rgba(244,114,182,0.12);
+  --nav-bg: #22181F;
+  --nav-border: #362932;
+  --nav-active: #F7A0BF;
+  --nav-inactive: #9B8E96;
+  --nav-active-bg: rgb(247 160 191 / 0.12);
 
   /* Spreadsheet group headers / totals rows — dark palette */
-  --group-cc-bg: #221d35;             /* dark violet, clearly darker than bg-surface */
-  --group-cc-text: #c4b5fd;           /* violet-300 */
-  --group-cc-border: #2d2640;
-  --group-cash-bg: #0f2318;           /* dark green-tinted, clearly different */
-  --group-cash-text: #86efac;         /* green-300 */
-  --group-cash-border: #14362a;
-  --group-totals-bg: rgba(45,38,64,0.45);   /* violet-tinted subtle */
-  --group-totals-sticky: #2D2640;     /* opaque */
-  --group-available-bg: #2a1d36;      /* dark pink-violet */
-  --group-available-sticky: #341C37;  /* opaque */
-  --group-available-text: #f9a8d4;    /* pink-300 */
-  --group-total-bg: #1e1c2e;          /* slightly lighter than bg-surface */
-  --group-total-sticky: #201E30;      /* opaque */
-  --group-total-text: #a09ab8;        /* text-secondary */
-  --group-balance-bg: #1a1826;        /* same as bg-surface */
-  --group-balance-text: #c4b5fd;      /* violet-300 */
+  --group-cc-bg: #222137;             /* iris night, clearly darker than bg-surface */
+  --group-cc-text: var(--color-violet-300);
+  --group-cc-border: #2F2E3F;
+  --group-cash-bg: #12271B;           /* leaf night, clearly different */
+  --group-cash-text: var(--color-green-300);
+  --group-cash-border: #1E3327;
+  --group-totals-bg: rgb(54 41 50 / 0.45);
+  --group-totals-sticky: #362932;     /* opaque */
+  --group-available-bg: #381D25;      /* petal night */
+  --group-available-sticky: #3F202A;  /* opaque */
+  --group-available-text: var(--color-pink-300);
+  --group-total-bg: #2B1F27;          /* surface-2 */
+  --group-total-sticky: #2B1F27;      /* opaque */
+  --group-total-text: #C3B6BE;        /* text-secondary */
+  --group-balance-bg: #22181F;        /* same as bg-surface */
+  --group-balance-text: var(--color-violet-300);
 
   /* YearView Excel grid — dark palette */
-  --border-cell: #4a4170;             /* gridline — lighter than border-medium so it reads at 1px */
-  --row-zebra-1: #1a1826;             /* same as bg-surface */
-  --row-zebra-2: #2a2440;             /* lighter violet tint (NOT #221d35 — collides with group-cc-bg) */
-  --row-zebra-1-solid: #1a1826;       /* opaque zebra-1 for sticky name col */
-  --row-zebra-2-solid: #2a2440;       /* opaque zebra-2 for sticky name col */
-  --row-hover: #332b52;               /* row hover — violet, distinct from pink zebra */
-  --row-hover-solid: #332b52;         /* opaque sticky hover */
+  --border-cell: #55404E;             /* gridline — lighter than border-medium so it reads at 1px */
+  --row-zebra-1: #22181F;             /* same as bg-surface */
+  --row-zebra-2: #2A1F26;             /* lighter plum (NOT iris — collides with group-cc-bg) */
+  --row-zebra-1-solid: #22181F;       /* opaque zebra-1 for sticky name col */
+  --row-zebra-2-solid: #2A1F26;       /* opaque zebra-2 for sticky name col */
+  --row-hover: #2C2B41;               /* row hover — iris, distinct from plum zebra */
+  --row-hover-solid: #2C2B41;         /* opaque sticky hover */
 }
 
 /* ---------------------------------------------------------------------------
@@ -153,9 +439,37 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   background-color: var(--bg-app);
   color: var(--text-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::selection {
+  background-color: var(--color-pink-200);
+  color: var(--color-pink-950);
+}
+
+.dark ::selection {
+  background-color: rgb(243 114 163 / 0.35);
+  color: #FFFFFF;
+}
+
+/* Visible keyboard focus everywhere; components may refine it with ring utilities. */
+:where(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
