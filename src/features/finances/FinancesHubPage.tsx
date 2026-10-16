@@ -8,7 +8,7 @@
  */
 
 import { useMemo } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { TrendingUp, LayoutList, CreditCard, Receipt } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
@@ -19,7 +19,7 @@ interface HubCard {
   emoji: string;
   title: string;
   desc: string;
-  to: string;
+  to: '/income' | '/settings/budgets' | '/debts' | '/transactions';
   icon: React.ReactNode;
   gradient: string;
   border: string;
@@ -27,7 +27,6 @@ interface HubCard {
 }
 
 export function FinancesHubPage() {
-  const navigate = useNavigate();
   const { t } = useI18n();
 
   const cards: HubCard[] = useMemo(() => [
@@ -79,36 +78,38 @@ export function FinancesHubPage() {
           {t.finances.description}
         </p>
 
+        {/* Each card spans three rows of the parent grid (icon, title,
+            description) and adopts them via subgrid, so every title and
+            description in a row of cards starts at the same height. */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {cards.map(card => (
-          <button
+          <Link
             key={card.to}
-            onClick={() => navigate({ to: card.to })}
+            to={card.to}
             className={cn(
-              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]',
+              'row-span-3 grid grid-rows-subgrid gap-y-0',
+              'text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]',
               card.border,
             )}
           >
-            <div className="flex flex-col gap-3">
-              {/* Icon */}
-              <div className={cn(
-                'w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white shadow-sm shrink-0',
-                card.gradient,
-              )}>
-                {card.icon}
-              </div>
-
-              {/* Copy */}
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-[var(--text-primary)] mb-1">
-                  {card.title}
-                </h2>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  {card.desc}
-                </p>
-              </div>
+            {/* Icon */}
+            <div className={cn(
+              'w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white shadow-sm shrink-0',
+              card.gradient,
+            )}>
+              {card.icon}
             </div>
-          </button>
+
+            {/* Title */}
+            <h2 className="mt-3 text-sm font-bold text-[var(--text-primary)] min-w-0">
+              {card.title}
+            </h2>
+
+            {/* Description */}
+            <p className="mt-1 text-xs text-[var(--text-muted)] leading-relaxed min-w-0">
+              {card.desc}
+            </p>
+          </Link>
         ))}
         </div>
       </main>

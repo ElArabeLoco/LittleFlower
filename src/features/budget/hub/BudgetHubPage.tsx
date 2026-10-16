@@ -6,7 +6,7 @@
  *   - Vista Anual    → /anual
  */
 
-import { useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { CalendarDays, CalendarRange, ChevronRight } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
@@ -17,14 +17,13 @@ interface HubCard {
   emoji: string;
   title: string;
   desc: string;
-  to: string;
+  to: '/month' | '/anual';
   icon: React.ReactNode;
   gradient: string;
   border: string;
 }
 
 export function BudgetHubPage() {
-  const navigate = useNavigate();
   const { t } = useI18n();
 
   const CARDS: HubCard[] = [
@@ -58,40 +57,42 @@ export function BudgetHubPage() {
           {t.budgetHub.description}
         </p>
 
+        {/* Each card spans two rows of the parent grid and adopts them via
+            subgrid, so titles and descriptions share the same rows across
+            cards and stay aligned regardless of copy length. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CARDS.map(card => (
-          <button
+          <Link
             key={card.to}
-            onClick={() => navigate({ to: card.to })}
+            to={card.to}
             className={cn(
-              'w-full text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5',
+              'row-span-2 grid grid-rows-subgrid grid-cols-[auto_1fr] gap-x-4 gap-y-1',
+              'text-left bg-[var(--bg-surface)] rounded-2xl border shadow-sm p-5',
               'hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.99]',
               card.border,
             )}
           >
-            <div className="flex items-start gap-4">
-              {/* Icon */}
-              <div className={cn(
-                'w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white shadow-sm shrink-0',
-                card.gradient,
-              )}>
-                {card.icon}
-              </div>
-
-              {/* Copy */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-[var(--text-primary)]">
-                    {card.emoji} {card.title}
-                  </h2>
-                  <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
-                </div>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  {card.desc}
-                </p>
-              </div>
+            {/* Icon */}
+            <div className={cn(
+              'row-span-2 self-start w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white shadow-sm shrink-0',
+              card.gradient,
+            )}>
+              {card.icon}
             </div>
-          </button>
+
+            {/* Title row */}
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">
+                {card.emoji} {card.title}
+              </h2>
+              <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
+            </div>
+
+            {/* Description row */}
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed min-w-0">
+              {card.desc}
+            </p>
+          </Link>
         ))}
         </div>
       </main>
