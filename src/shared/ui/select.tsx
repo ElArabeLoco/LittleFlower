@@ -13,13 +13,20 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-10 w-full items-center justify-between rounded-md border border-[var(--border-medium)] bg-[var(--bg-surface)] text-[var(--text-primary)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 disabled:cursor-not-allowed disabled:opacity-50',
+      // Mirrors Input: same height, radius, field border, type size and focus treatment.
+      'flex h-10 w-full items-center justify-between gap-2 rounded-[10px] border border-[var(--border-field)] bg-[var(--bg-surface)] px-3 text-left text-[var(--text-primary)]',
+      '[--field-text:1rem] sm:[--field-text:0.875rem] text-[length:var(--field-text)]',
+      'transition-[border-color,box-shadow] hover:border-[var(--text-muted)]',
+      'focus:outline-hidden focus:border-[var(--color-primary)] focus:ring-[3px] focus:ring-[var(--focus-ring-soft)]',
+      'disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-[var(--text-muted)]',
       className,
     )}
     {...props}
   >
     {children}
-    <SelectPrimitive.Icon asChild><ChevronDown size={14} className="opacity-50" /></SelectPrimitive.Icon>
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
+    </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
@@ -27,15 +34,18 @@ SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = 'popper', ...props }, ref) => (
+>(({ className, children, position = 'popper', sideOffset = 4, ...props }, ref) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 max-h-60 min-w-[8rem] overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-lg',
+        'relative z-50 max-h-60 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[var(--shadow-float)]',
+        // At least as wide as its field; the trigger width is only exposed in popper mode.
+        'min-w-[max(8rem,var(--radix-select-trigger-width,8rem))]',
         className,
       )}
       position={position}
+      sideOffset={sideOffset}
       {...props}
     >
       <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
@@ -51,13 +61,16 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex w-full cursor-pointer select-none items-center rounded-md py-1.5 pl-8 pr-2 text-sm outline-none text-[var(--text-primary)] focus:bg-[var(--bg-hover)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-2 text-sm text-[var(--text-primary)]',
+      'focus:bg-[var(--bg-hover)] focus:outline-hidden data-[state=checked]:font-semibold data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className,
     )}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator><Check size={12} /></SelectPrimitive.ItemIndicator>
+    <span className="absolute left-2 flex size-4 items-center justify-center text-[var(--text-brand)]">
+      <SelectPrimitive.ItemIndicator>
+        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+      </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
   </SelectPrimitive.Item>

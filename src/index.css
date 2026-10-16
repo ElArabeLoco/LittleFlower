@@ -265,6 +265,56 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Motion — overlays
+
+   Radix marks dialog parts with data-state="open" | "closed" and waits for
+   the exit animation before unmounting, so every overlay has an in and an
+   out. Phones get a bottom sheet that slides; from `sm` the dialog is
+   centered with the `translate` property, so its keyframes animate only
+   `opacity` and `transform` and the centering is preserved. The reduced
+   motion rule below collapses all of these to an instant change.
+   --------------------------------------------------------------------------- */
+
+@theme {
+  --animate-overlay-in: overlay-in 180ms ease-out;
+  --animate-overlay-out: overlay-out 180ms ease-in;
+  --animate-sheet-in: sheet-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-sheet-out: sheet-out 220ms cubic-bezier(0.4, 0, 1, 1);
+  --animate-dialog-in: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-dialog-out: dialog-out 160ms ease-in;
+
+  @keyframes overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes overlay-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes sheet-out {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+
+  @keyframes dialog-in {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes dialog-out {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.98); }
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Semantic design tokens — light mode (default)
    Parallel dark palette via .dark class on <html>
    --------------------------------------------------------------------------- */
@@ -298,9 +348,11 @@
   --border-subtle: #EBE4E8;
   --border-medium: #DDD2D8;
   --border-strong: #C8B9C1;
+  --border-field: #9C8D96;            /* form field outline, 3.15:1 on white (WCAG 1.4.11) */
 
   /* Focus and floating layers */
-  --focus-ring: rgb(202 47 109 / 0.45);
+  --focus-ring: var(--color-pink-500); /* opaque focus indicator, 3.5:1 on white (WCAG 1.4.11) */
+  --focus-ring-soft: rgb(202 47 109 / 0.2); /* decorative halo; the field border carries the contrast */
   --shadow-float: 0 18px 40px -16px rgb(46 28 40 / 0.3), 0 2px 8px -2px rgb(46 28 40 / 0.1);
 
   /* Navigation */
@@ -343,7 +395,7 @@
 
   /* Brand — buttons keep petal-600 so white labels stay above 5:1 */
   --color-primary: var(--color-pink-600);
-  --color-primary-hover: var(--color-pink-500);
+  --color-primary-hover: var(--color-pink-700); /* darker on hover keeps white labels above 6:1 */
   --color-secondary: var(--color-violet-400);
   --color-now: var(--color-amber-400);
 
@@ -367,9 +419,11 @@
   --border-subtle: #362932;
   --border-medium: #473841;
   --border-strong: #5E4C58;
+  --border-field: #7A6973;            /* form field outline, 3.36:1 on surface (WCAG 1.4.11) */
 
   /* Focus and floating layers */
-  --focus-ring: rgb(247 160 191 / 0.55);
+  --focus-ring: #F7A0BF;              /* opaque focus indicator, 8.8:1 on surface */
+  --focus-ring-soft: rgb(247 160 191 / 0.25);
   --shadow-float: 0 18px 40px -12px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.04);
 
   /* Navigation */
@@ -457,10 +511,13 @@ body {
   color: #FFFFFF;
 }
 
-/* Visible keyboard focus everywhere; components may refine it with ring utilities. */
-:where(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+/* Visible keyboard focus everywhere. Layered as base so component ring
+   utilities (`outline-hidden` + `ring-*`) can replace it. */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
