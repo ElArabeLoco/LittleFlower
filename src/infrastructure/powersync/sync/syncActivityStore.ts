@@ -151,17 +151,22 @@ export function createSyncActivityStore({
 
     recordUploadFailure(changes, error) {
       const at = now();
-      const [newest, ...older] = state.events;
 
       // PowerSync retries the same transaction every few seconds: fold
-      // identical retries into one event instead of flooding the log.
-      if (
-        newest?.kind === 'upload-failed' &&
-        newest.resolvedAt === null &&
-        newest.error.message === error.message &&
-        sameRecordIds(newest.changes, changes)
-      ) {
-        setEvents([{ ...newest, attempts: newest.attempts + 1, lastAttemptAt: at, changes, error }, ...older]);
+      // identical retries into the latest matching unresolved row (wherever
+      // downloads or connection changes pushed it) and move it to the top.
+      const retried = state.events.find(
+        (event): event is SyncUploadFailedEvent =>
+          event.kind === 'upload-failed' &&
+          event.resolvedAt === null &&
+          event.error.message === error.message &&
+          sameRecordIds(event.changes, changes),
+      );
+      if (retried) {
+        setEvents([
+          { ...retried, attempts: retried.attempts + 1, lastAttemptAt: at, changes, error },
+          ...state.events.filter((event) => event !== retried),
+        ]);
         return;
       }
 

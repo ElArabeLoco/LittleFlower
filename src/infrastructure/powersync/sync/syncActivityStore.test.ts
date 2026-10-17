@@ -146,13 +146,58 @@ describe('createSyncActivityStore()', () => {
       expect(store.getSnapshot().events).toHaveLength(2);
     });
 
-    it('adds a new event when the newest event is not that failure', () => {
+    it('folds retries into one row even when other events land in between', () => {
+      const store = makeStore();
+      for (let attempt = 0; attempt < 6; attempt++) {
+        clock = 1_000 + attempt * 5_000;
+        store.recordUploadFailure([changeOf('e-1')], errorOf('rls'));
+        store.recordDownload([changeOf(`x-${attempt}`)]);
+        store.recordConnection(attempt % 2 === 0 ? 'connected' : 'disconnected');
+      }
+
+      const failures = store.getSnapshot().events.filter((e) => e.kind === 'upload-failed');
+      expect(failures).toEqual([
+        expect.objectContaining({ id: 'evt-1', at: 1_000, lastAttemptAt: 26_000, attempts: 6, resolvedAt: null }),
+      ]);
+    });
+
+    it('moves the folded row to the top', () => {
       const store = makeStore();
       store.recordUploadFailure([changeOf('e-1')], errorOf('rls'));
       store.recordDownload([changeOf('x-1')]);
+
       store.recordUploadFailure([changeOf('e-1')], errorOf('rls'));
 
-      expect(store.getSnapshot().events.map((e) => e.kind)).toEqual(['upload-failed', 'download', 'upload-failed']);
+      expect(store.getSnapshot().events.map((e) => (e.kind === 'upload-failed' ? `failed x${e.attempts}` : e.kind))).toEqual([
+        'failed x2',
+        'download',
+      ]);
+    });
+
+    it('folds into the latest unresolved row with the same records and message', () => {
+      const store = makeStore();
+      store.recordUploadFailure([changeOf('e-1')], errorOf('TypeError: Failed to fetch', 'offline'));
+      store.recordUploadFailure([changeOf('e-1')], errorOf('upstream connect error', 'server'));
+
+      store.recordUploadFailure([changeOf('e-1')], errorOf('TypeError: Failed to fetch', 'offline'));
+
+      expect(
+        store.getSnapshot().events.map((e) => (e.kind === 'upload-failed' ? `${e.error.kind} x${e.attempts}` : e.kind)),
+      ).toEqual(['offline x2', 'server x1']);
+    });
+
+    it('never folds into a resolved row', () => {
+      const store = makeStore();
+      store.recordUploadFailure([changeOf('e-1')], errorOf('rls'));
+      store.recordUpload([changeOf('e-1')]);
+
+      store.recordUploadFailure([changeOf('e-1')], errorOf('rls'));
+
+      expect(store.getSnapshot().events.map((e) => (e.kind === 'upload-failed' ? `failed x${e.attempts}` : e.kind))).toEqual([
+        'failed x1',
+        'upload',
+        'failed x1',
+      ]);
     });
   });
 
