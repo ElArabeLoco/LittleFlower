@@ -610,13 +610,6 @@ export const es = {
   // Sync
   // ---------------------------------------------------------------------------
   sync: {
-    offline: 'Sin conexión',
-    error: 'Error sync',
-    uploading: (n: number) => n > 0 ? `Subiendo (${n})` : 'Subiendo...',
-    pending: (n: number) => `${n} pendiente${n !== 1 ? 's' : ''}`,
-    synced: 'Sync',
-    syncErrorTitle: 'Error de sincronización:',
-    syncErrorBody: 'los cambios recientes no se están guardando en el servidor. Evita ingresar datos nuevos hasta que esto se resuelva. Si el problema persiste, recarga la página o verifica tu conexión.',
     title: 'Sincronización',
     /** Accessible name of the header status button, e.g. "Sincronización: todo al día". */
     statusLabel: (state: string) => `Sincronización: ${state}`,

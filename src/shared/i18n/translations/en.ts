@@ -611,13 +611,6 @@ export const en: Translations = {
   // Sync
   // ---------------------------------------------------------------------------
   sync: {
-    offline: 'Offline',
-    error: 'Sync error',
-    uploading: (n: number) => n > 0 ? `Uploading (${n})` : 'Uploading...',
-    pending: (n: number) => `${n} pending`,
-    synced: 'Sync',
-    syncErrorTitle: 'Sync error:',
-    syncErrorBody: 'recent changes are not being saved to the server. Avoid entering new data until this is resolved. If the problem persists, reload the page or check your connection.',
     title: 'Sync',
     statusLabel: (state: string) => `Sync: ${state}`,
     statusNames: {
