@@ -1,0 +1,253 @@
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describeCrudEntry, describeRow, type NameLookup } from './describeRecord';
+import { labelCache } from './labelCache';
+import type { SyncRecordChange } from './types';
+
+const NAMES: Record<string, Record<string, string>> = {
+  budgets: { 'b-1': 'Arriendo' },
+  incomes: { 'i-1': 'Salario Ana' },
+  debts: { 'd-1': 'Hipoteca' },
+};
+
+const lookup: NameLookup = (table, id) => (typeof id === 'string' ? NAMES[table]?.[id] ?? null : null);
+const noNames: NameLookup = () => null;
+
+function change(overrides: Partial<SyncRecordChange>): SyncRecordChange {
+  return {
+    table: 'budgets',
+    op: 'create',
+    id: 'x-1',
+    label: null,
+    amount: null,
+    currency: null,
+    month: null,
+    ...overrides,
+  };
+}
+
+describe('describeCrudEntry() — op mapping', () => {
+  it.each([
+    { op: 'PUT', opData: { name: 'Arriendo' }, expected: 'create' },
+    { op: 'PATCH', opData: { default_amount: 1 }, expected: 'update' },
+    { op: 'PATCH', opData: { deleted_at: '2026-03-01T10:00:00Z' }, expected: 'delete' },
+    { op: 'PATCH', opData: { deleted_at: null }, expected: 'update' },
+    { op: 'PATCH', opData: { deleted_at: '  ' }, expected: 'update' },
+    { op: 'DELETE', opData: undefined, expected: 'delete' },
+  ])('$op $opData → $expected', ({ op, opData, expected }) => {
+    expect(describeCrudEntry({ op, table: 'budgets', id: 'b-1', opData }, noNames).op).toBe(expected);
+  });
+});
+
+describe('describeCrudEntry() — tables', () => {
+  it('budgets: name, default amount in COP', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'budgets', id: 'b-1', opData: { name: ' Arriendo ', default_amount: 1_500_000, start_month: '2026-01' } },
+      noNames,
+    );
+
+    expect(result).toEqual(change({ id: 'b-1', label: 'Arriendo', amount: 1_500_000, currency: 'COP' }));
+  });
+
+  it('budget_months: related budget name, amount in COP and month', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'budget_months', id: 'bm-1', opData: { budget_id: 'b-1', amount: 250_000, month: '2026-03' } },
+      lookup,
+    );
+
+    expect(result).toEqual(
+      change({ table: 'budget_months', id: 'bm-1', label: 'Arriendo', amount: 250_000, currency: 'COP', month: '2026-03' }),
+    );
+  });
+
+  it('expenses: note first, signed amount in COP', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'expenses', id: 'e-1', opData: { budget_id: 'b-1', amount: -50_000, note: 'Mercado' } },
+      lookup,
+    );
+
+    expect(result).toEqual(change({ table: 'expenses', id: 'e-1', label: 'Mercado', amount: -50_000, currency: 'COP' }));
+  });
+
+  it('expenses: falls back to the budget name without a note', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'expenses', id: 'e-1', opData: { budget_id: 'b-1', amount: 80_000, note: null } },
+      lookup,
+    );
+
+    expect(result.label).toBe('Arriendo');
+  });
+
+  it('incomes: name, default amount and its currency', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'incomes', id: 'i-1', opData: { name: 'Salario Ana', default_amount: 5_000, currency: 'USD' } },
+      noNames,
+    );
+
+    expect(result).toEqual(change({ table: 'incomes', id: 'i-1', label: 'Salario Ana', amount: 5_000, currency: 'USD' }));
+  });
+
+  it('income_months: related income name first, real amount, currency and month', () => {
+    const result = describeCrudEntry(
+      {
+        op: 'PUT',
+        table: 'income_months',
+        id: 'im-1',
+        opData: { income_id: 'i-1', real_amount: 5_200, currency: 'USD', month: '2026-03', note: 'bono' },
+      },
+      lookup,
+    );
+
+    expect(result).toEqual(
+      change({ table: 'income_months', id: 'im-1', label: 'Salario Ana', amount: 5_200, currency: 'USD', month: '2026-03' }),
+    );
+  });
+
+  it('income_months: falls back to the note when the income name is unknown', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'income_months', id: 'im-1', opData: { income_id: 'i-404', real_amount: 1, note: 'bono' } },
+      lookup,
+    );
+
+    expect(result.label).toBe('bono');
+  });
+
+  it('exchange_rates: currency pair, rate, target currency and month', () => {
+    const result = describeCrudEntry(
+      {
+        op: 'PUT',
+        table: 'exchange_rates',
+        id: 'fx-1',
+        opData: { from_currency: 'USD', to_currency: 'COP', rate: 4_150.5, month: '2026-03' },
+      },
+      noNames,
+    );
+
+    expect(result).toEqual(
+      change({ table: 'exchange_rates', id: 'fx-1', label: 'USD/COP', amount: 4_150.5, currency: 'COP', month: '2026-03' }),
+    );
+  });
+
+  it('exchange_rates: no pair label when one side is missing', () => {
+    const result = describeCrudEntry(
+      { op: 'PATCH', table: 'exchange_rates', id: 'fx-1', opData: { rate: '4200.25' } },
+      noNames,
+    );
+
+    expect(result).toEqual(change({ table: 'exchange_rates', op: 'update', id: 'fx-1', amount: 4_200.25 }));
+  });
+
+  it('debts: name, initial amount and currency', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'debts', id: 'd-1', opData: { name: 'Hipoteca', initial_amount: 50_000_000, currency: 'COP' } },
+      noNames,
+    );
+
+    expect(result).toEqual(change({ table: 'debts', id: 'd-1', label: 'Hipoteca', amount: 50_000_000, currency: 'COP' }));
+  });
+
+  it('debt_transactions: note first, then the related debt name; amount in COP', () => {
+    const withNote = describeCrudEntry(
+      { op: 'PUT', table: 'debt_transactions', id: 'dt-1', opData: { debt_id: 'd-1', amount: 300_000, note: 'Abono' } },
+      lookup,
+    );
+    const withoutNote = describeCrudEntry(
+      { op: 'PUT', table: 'debt_transactions', id: 'dt-2', opData: { debt_id: 'd-1', amount: 300_000 } },
+      lookup,
+    );
+
+    expect(withNote).toEqual(
+      change({ table: 'debt_transactions', id: 'dt-1', label: 'Abono', amount: 300_000, currency: 'COP' }),
+    );
+    expect(withoutNote.label).toBe('Hipoteca');
+  });
+
+  it.each(['households', 'users'])('%s: name only', (table) => {
+    const result = describeCrudEntry({ op: 'PUT', table, id: 'h-1', opData: { name: 'Casa', join_code: '123456' } }, noNames);
+
+    expect(result).toEqual(change({ table, id: 'h-1', label: 'Casa' }));
+  });
+
+  it('unknown table: only table, op and id', () => {
+    const result = describeCrudEntry({ op: 'PUT', table: 'mystery', id: 'm-1', opData: { name: 'x', amount: 5 } }, lookup);
+
+    expect(result).toEqual(change({ table: 'mystery', id: 'm-1' }));
+  });
+});
+
+describe('describeCrudEntry() — partial data', () => {
+  it('partial PATCH describes only the columns it carries', () => {
+    const result = describeCrudEntry(
+      { op: 'PATCH', table: 'budget_months', id: 'bm-1', opData: { amount: '900000', last_edited_by: 'u-1' } },
+      lookup,
+    );
+
+    expect(result).toEqual(change({ table: 'budget_months', op: 'update', id: 'bm-1', amount: 900_000, currency: 'COP' }));
+  });
+
+  it('soft delete of a budget is labelled with its cached name', () => {
+    const result = describeCrudEntry(
+      { op: 'PATCH', table: 'budgets', id: 'b-1', opData: { deleted_at: '2026-03-01T10:00:00Z' } },
+      lookup,
+    );
+
+    expect(result).toMatchObject({ op: 'delete', label: 'Arriendo', amount: null });
+  });
+
+  it('DELETE without data is labelled with the cached name of its own row', () => {
+    expect(describeCrudEntry({ op: 'DELETE', table: 'debts', id: 'd-1' }, lookup)).toMatchObject({
+      op: 'delete',
+      label: 'Hipoteca',
+    });
+  });
+
+  it('asks the lookup with the related table and raw id', () => {
+    const spy = vi.fn<NameLookup>(() => null);
+
+    describeCrudEntry({ op: 'PUT', table: 'income_months', id: 'im-1', opData: { income_id: 'i-1' } }, spy);
+
+    expect(spy).toHaveBeenCalledWith('incomes', 'i-1');
+  });
+});
+
+describe('describeRow()', () => {
+  afterEach(() => {
+    labelCache.setNames('budgets', new Map());
+  });
+
+  it('uses the given op as-is', () => {
+    const result = describeRow('budgets', 'update', 'b-1', { name: 'Arriendo', deleted_at: '2026-03-01' }, noNames);
+
+    expect(result.op).toBe('update');
+  });
+
+  it('coerces numeric strings, trims text and turns empty values into null', () => {
+    const result = describeRow(
+      'incomes',
+      'create',
+      'i-1',
+      { name: '   ', default_amount: ' 1200 ', currency: ' USD ' },
+      noNames,
+    );
+
+    expect(result).toMatchObject({ label: null, amount: 1_200, currency: 'USD' });
+  });
+
+  it('ignores non-numeric amounts', () => {
+    expect(describeRow('expenses', 'create', 'e-1', { amount: 'abc' }, noNames).amount).toBeNull();
+    expect(describeRow('expenses', 'create', 'e-1', { amount: '' }, noNames).amount).toBeNull();
+  });
+
+  it('handles a missing row', () => {
+    expect(describeRow('expenses', 'delete', 'e-1', null, noNames)).toEqual(
+      change({ table: 'expenses', op: 'delete', id: 'e-1', currency: 'COP' }),
+    );
+  });
+
+  it('defaults to the label cache for related names', () => {
+    expect(describeRow('budget_months', 'update', 'bm-1', { budget_id: 'b-1' }).label).toBeNull();
+
+    labelCache.setNames('budgets', new Map([['b-1', 'Arriendo']]));
+
+    expect(describeRow('budget_months', 'update', 'bm-1', { budget_id: 'b-1' }).label).toBe('Arriendo');
+  });
+});
