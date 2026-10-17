@@ -135,10 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token: data.session.access_token,
       householdId,
     });
-    // Reconnect PowerSync with the refreshed token containing household_id
-    if (!db.connected) {
-      await db.connect(new SupabaseConnector());
-    }
+    // Always reconnect PowerSync, even when already connected: the sync rules
+    // read household_id from the JWT, and an open stream keeps using the token
+    // it was opened with. db.connect() tears down the current stream and
+    // reopens it with the refreshed token, so the new claims take effect.
+    // (Route navigations no longer reconnect, so nothing else picks them up.)
+    await db.connect(new SupabaseConnector());
   }
 
   return (

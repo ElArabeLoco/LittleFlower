@@ -135,7 +135,8 @@ export async function logout(): Promise<void> {
  * Calling this in route beforeLoad guarantees the JWT is fresh and contains
  * the latest user_metadata (including household_id).
  *
- * Also connects PowerSync in the background when a valid session is found.
+ * Also connects PowerSync in the background when a valid session is found and
+ * PowerSync is neither connected nor connecting.
  */
 export async function getCurrentSession(): Promise<AuthSession | null> {
   try {
@@ -145,10 +146,17 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
     const { user, access_token } = data.session;
     if (!user?.id) return null;
 
-    // Connect PowerSync in background — does NOT block the UI
-    db.connect(new SupabaseConnector()).catch((err) => {
-      console.warn('[Auth] PowerSync connect failed (will retry):', err);
-    });
+    // Connect PowerSync in background — does NOT block the UI.
+    // Only when idle: db.connect() always tears down the current sync stream
+    // before reconnecting, and this runs in every protected route's
+    // beforeLoad, so an unconditional connect would abort in-flight uploads
+    // and downloads on each navigation. Picking up new JWT claims (e.g.
+    // household_id after onboarding) is AuthContext.refreshSession()'s job.
+    if (!db.connected && !db.connecting) {
+      db.connect(new SupabaseConnector()).catch((err) => {
+        console.warn('[Auth] PowerSync connect failed (will retry):', err);
+      });
+    }
 
     return {
       userId: user.id,
