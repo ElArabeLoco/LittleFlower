@@ -56,7 +56,7 @@ export function BudgetCardList({
     <div className="space-y-2">
       {showDividers && pendingBudgets.length > 0 && (
         <div className="flex items-center gap-2 px-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <span className="text-xs font-medium text-[var(--text-muted)]">
             {pendingLabel}
           </span>
           <div className="flex-1 h-px bg-[var(--border-subtle)]" />
@@ -65,7 +65,7 @@ export function BudgetCardList({
       {pendingBudgets.map(renderCard)}
       {showDividers && executedBudgets.length > 0 && (
         <div className="flex items-center gap-2 px-1 pt-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <span className="text-xs font-medium text-[var(--text-muted)]">
             {executedLabel}
           </span>
           <div className="flex-1 h-px bg-[var(--border-subtle)]" />
@@ -125,14 +125,14 @@ export function GroupSection({
           {icon}
         </span>
         <span className={cn(
-          'flex-1 text-sm font-bold uppercase tracking-wide',
+          'flex-1 text-sm font-semibold',
           accent === 'violet' ? 'text-[var(--group-cc-text)]' : 'text-[var(--group-cash-text)]',
         )}>
           {label}
         </span>
         <span className={cn(
           'text-xs font-semibold tabular-nums shrink-0',
-          over ? 'text-red-500' : accent === 'violet' ? 'text-[var(--group-cc-text)]' : 'text-[var(--group-cash-text)]',
+          over ? 'text-red-700 dark:text-red-400' : accent === 'violet' ? 'text-[var(--group-cc-text)]' : 'text-[var(--group-cash-text)]',
         )}>
           {totalSpent > 0 ? `${pct}%` : <AbbreviatedAmount value={totalBudgeted} />}
         </span>
@@ -152,13 +152,13 @@ export function GroupSection({
           </div>
           <span className={cn(
             'text-xs font-medium tabular-nums shrink-0',
-            over ? 'text-red-500 dark:text-red-400' : 'text-violet-600 dark:text-violet-400',
+            over ? 'text-red-700 dark:text-red-400' : 'text-[var(--text-secondary)]',
           )}>
             <AbbreviatedAmount value={totalSpent} /> / <AbbreviatedAmount value={totalBudgeted} />
           </span>
           <span className={cn(
             'text-xs font-semibold tabular-nums shrink-0',
-            remaining < 0 ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400',
+            remaining < 0 ? 'text-[var(--text-negative)]' : 'text-[var(--text-positive)]',
           )}>
             {remaining >= 0 ? '+' : ''}<AbbreviatedAmount value={remaining} />
           </span>

@@ -48,8 +48,11 @@ export async function login(
       return { error: { code: 'INVALID_CREDENTIALS', message: '' } };
     }
 
-    // Connect PowerSync with the fresh session token
-    await db.connect(new SupabaseConnector());
+    // Connect PowerSync with the fresh session token, unless the auth
+    // listener already did on this SIGNED_IN (connect() restarts a stream).
+    if (!db.connected && !db.connecting) {
+      await db.connect(new SupabaseConnector());
+    }
 
     return {
       session: {
@@ -95,7 +98,10 @@ export async function register(
       return { pendingConfirmation: true };
     }
 
-    await db.connect(new SupabaseConnector());
+    // Same guard as login(): the auth listener reacts to this SIGNED_IN too.
+    if (!db.connected && !db.connecting) {
+      await db.connect(new SupabaseConnector());
+    }
 
     return {
       session: {
@@ -135,7 +141,8 @@ export async function logout(): Promise<void> {
  * Calling this in route beforeLoad guarantees the JWT is fresh and contains
  * the latest user_metadata (including household_id).
  *
- * Also connects PowerSync in the background when a valid session is found.
+ * Also connects PowerSync in the background when a valid session is found and
+ * PowerSync is neither connected nor connecting.
  */
 export async function getCurrentSession(): Promise<AuthSession | null> {
   try {
@@ -145,10 +152,17 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
     const { user, access_token } = data.session;
     if (!user?.id) return null;
 
-    // Connect PowerSync in background — does NOT block the UI
-    db.connect(new SupabaseConnector()).catch((err) => {
-      console.warn('[Auth] PowerSync connect failed (will retry):', err);
-    });
+    // Connect PowerSync in background — does NOT block the UI.
+    // Only when idle: db.connect() always tears down the current sync stream
+    // before reconnecting, and this runs in every protected route's
+    // beforeLoad, so an unconditional connect would abort in-flight uploads
+    // and downloads on each navigation. Picking up new JWT claims (e.g.
+    // household_id after onboarding) is AuthContext.refreshSession()'s job.
+    if (!db.connected && !db.connecting) {
+      db.connect(new SupabaseConnector()).catch((err) => {
+        console.warn('[Auth] PowerSync connect failed (will retry):', err);
+      });
+    }
 
     return {
       userId: user.id,

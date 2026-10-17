@@ -50,38 +50,40 @@ export function DashboardPage() {
   return (
       <DashboardDataProvider selectedMonth={selectedMonth}>
           <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
-              <AppHeader emoji="✨" title="Dashboard" maxWidth="max-w-7xl" />
+              <AppHeader
+                  title="Dashboard"
+                  maxWidth="max-w-7xl"
+                  // Month navigation: the header's last row, so it sticks with it.
+                  toolbar={
+                      <div className="py-2.5 flex items-center gap-3">
+                          <button
+                              onClick={goToPrevMonth}
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+                              aria-label="Mes anterior"
+                          >
+                              <ChevronLeft size={18} />
+                          </button>
 
-              {/* Month navigation bar */}
-              <div className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] sticky top-14 z-10">
-                  <div className="max-w-7xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
-                      <button
-                          onClick={goToPrevMonth}
-                          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
-                          aria-label="Mes anterior"
-                      >
-                          <ChevronLeft size={18} />
-                      </button>
+                          <div className="flex-1 text-center">
+                              <span className="text-base font-bold text-[var(--text-primary)]">
+                                  {fullMonth(selectedMonth)}
+                              </span>
+                              <span className="text-base font-bold text-[var(--text-muted)] ml-2">
+                                  {selectedMonth.slice(0, 4)}
+                              </span>
+                          </div>
 
-                      <div className="flex-1 text-center">
-                          <span className="text-base font-bold text-[var(--text-primary)]">
-                              {fullMonth(selectedMonth)}
-                          </span>
-                          <span className="text-base font-bold text-[var(--text-muted)] ml-2">
-                              {selectedMonth.slice(0, 4)}
-                          </span>
+                          <button
+                              onClick={goToNextMonth}
+                              disabled={isAtCurrentMonth}
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              aria-label="Mes siguiente"
+                          >
+                              <ChevronRight size={18} />
+                          </button>
                       </div>
-
-                      <button
-                          onClick={goToNextMonth}
-                          disabled={isAtCurrentMonth}
-                          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label="Mes siguiente"
-                      >
-                          <ChevronRight size={18} />
-                      </button>
-                  </div>
-              </div>
+                  }
+              />
 
               <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
                   <KpiStrip />

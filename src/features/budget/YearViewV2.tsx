@@ -5,7 +5,7 @@
 import React, {
   useState, useRef, useEffect, useMemo,
 } from 'react';
-import { ChevronRight, ChevronDown, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, LayoutList, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { cn } from '@/shared/ui/cn';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
@@ -291,7 +291,6 @@ export function YearViewV2() {
   return (
     <div className="h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
-        emoji="📅"
         title={t.yearView.title}
         subtitle={t.yearView.budgetYear(year)}
         maxWidth="max-w-full"
@@ -543,10 +542,14 @@ export function YearViewV2() {
 
             {budgets.length === 0 && (
               <tr>
-                <td colSpan={13} className="py-20 text-center text-gray-400">
-                  <p className="text-3xl mb-2">📋</p>
-                  <p className="text-sm">{t.yearView.noItems}</p>
-                  <p className="text-xs mt-1">{t.yearView.addFromSettings}</p>
+                <td colSpan={13} className="py-20 text-[var(--text-muted)]">
+                  {/* The row is as wide as the 12-month table; pin the message to the
+                      visible part of the scroller so it stays centered on phones. */}
+                  <div className="sticky left-0 flex w-[min(100%,100vw)] flex-col items-center px-4 text-center">
+                    <LayoutList size={32} strokeWidth={1.5} aria-hidden="true" className="mb-3" />
+                    <p className="text-sm">{t.yearView.noItems}</p>
+                    <p className="text-xs mt-1">{t.yearView.addFromSettings}</p>
+                  </div>
                 </td>
               </tr>
             )}

@@ -21,13 +21,17 @@
  * For a 2-person cooperative household this is acceptable for MVP.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, type PostgrestError } from '@supabase/supabase-js';
 import type {
   AbstractPowerSyncDatabase,
   PowerSyncBackendConnector,
   CrudEntry,
   PowerSyncCredentials,
 } from '@powersync/web';
+import { describeCrudEntry } from './sync/describeRecord';
+import { SyncUploadError, classifySupabaseError, classifySyncError } from './sync/syncErrors';
+import { syncActivity } from './sync/syncActivityStore';
+import type { SyncRecordChange } from './sync/types';
 
 // ---------------------------------------------------------------------------
 // Supabase client (singleton, shared with auth adapter)
@@ -80,10 +84,20 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
    * expenses is handled at the domain level as a soft-delete (deleted_at field)
    * or a reversal record (negative amount). PowerSync-level DELETEs should
    * never occur for the expenses table in normal operation.
+   *
+   * Activity log: every attempt is recorded in the sync activity store — an
+   * upload once the transaction completes, or a classified failure (folded
+   * across retries) before rethrowing. The store is the only place the UI can
+   * read the classification from: errors reach the sync worker without their
+   * custom properties.
    */
   async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
     const transaction = await database.getNextCrudTransaction();
     if (!transaction) return;
+
+    // Related budget/income/debt names come from the label cache (default
+    // lookup). Logging is best effort throughout: see safely().
+    const changes = transaction.crud.map((entry) => safely(() => describeCrudEntry(entry), () => bareChange(entry)));
 
     try {
       for (const entry of transaction.crud) {
@@ -92,9 +106,14 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       await transaction.complete();
     } catch (err) {
       // Do NOT call transaction.complete() on error — PowerSync will retry
-      console.error('[SupabaseConnector] uploadData failed, will retry:', err);
-      throw err;
+      const info = err instanceof SyncUploadError ? err.info : classifySyncError(err, navigator.onLine);
+      safely(() => syncActivity.recordUploadFailure(changes, info));
+      console.error(`[SupabaseConnector] uploadData failed (${info.kind}), will retry:`, err);
+      throw err instanceof SyncUploadError ? err : new SyncUploadError(info, { cause: err });
     }
+
+    // Outside the try: a logging problem must never look like an upload failure.
+    safely(() => syncActivity.recordUpload(changes));
   }
 
   // ---------------------------------------------------------------------------
@@ -109,21 +128,21 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       case 'PUT': {
         // INSERT or UPDATE — use upsert (on_conflict=id)
         const payload = { id, ...entry.opData };
-        const { error } = await supabase.from(table).upsert(payload, { onConflict: 'id' });
-        if (error) throw new Error(`Supabase upsert failed on ${table}: ${error.message}`);
+        const { error, status } = await supabase.from(table).upsert(payload, { onConflict: 'id' });
+        if (error) throw toUploadError(entry, error, status);
         break;
       }
 
       case 'PATCH': {
         // Partial update
-        const { error } = await supabase.from(table).update(entry.opData ?? {}).eq('id', id);
-        if (error) throw new Error(`Supabase update failed on ${table}: ${error.message}`);
+        const { error, status } = await supabase.from(table).update(entry.opData ?? {}).eq('id', id);
+        if (error) throw toUploadError(entry, error, status);
         break;
       }
 
       case 'DELETE': {
-        const { error } = await supabase.from(table).delete().eq('id', id);
-        if (error) throw new Error(`Supabase delete failed on ${table}: ${error.message}`);
+        const { error, status } = await supabase.from(table).delete().eq('id', id);
+        if (error) throw toUploadError(entry, error, status);
         break;
       }
 
@@ -131,4 +150,44 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
         console.warn(`[SupabaseConnector] Unknown op: ${(entry as CrudEntry).op}`);
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Private — classified upload errors
+// ---------------------------------------------------------------------------
+
+/**
+ * Classifies a failed Supabase write (offline / auth / rejected / server)
+ * using the PostgREST code and the HTTP status (0 = the request never left).
+ */
+function toUploadError(entry: CrudEntry, error: PostgrestError, status: number): SyncUploadError {
+  return new SyncUploadError(
+    classifySupabaseError(error, { status, table: entry.table, op: entry.op, recordId: entry.id }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Private — best-effort activity logging
+// ---------------------------------------------------------------------------
+
+/**
+ * Runs an activity-log step. Logging must never change an upload's outcome:
+ * a failure here is reported and replaced by `fallback`, never thrown into
+ * the upload (where it would fail a completed upload or hide the real error).
+ */
+function safely<T>(log: () => T, fallback: () => T): T;
+function safely(log: () => void): void;
+function safely<T>(log: () => T, fallback?: () => T): T | undefined {
+  try {
+    return log();
+  } catch (error) {
+    console.warn('[SupabaseConnector] Sync activity logging failed:', error);
+    return fallback?.();
+  }
+}
+
+/** Table, op and id only — used when a full description failed. */
+function bareChange(entry: CrudEntry): SyncRecordChange {
+  const op = entry.op === 'PUT' ? 'create' : entry.op === 'DELETE' ? 'delete' : 'update';
+  return { table: entry.table, op, id: entry.id, label: null, amount: null, currency: null, month: null };
 }

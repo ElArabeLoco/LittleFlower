@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { Global } from 'recharts';
 import { routeTree } from './routeTree.gen';
+// Self-hosted variable font — bundled and precached for offline use.
+import '@fontsource-variable/recursive/wght.css';
 import './index.css';
 
 // Recharts v3 enables its internal Redux DevTools integration by default, which

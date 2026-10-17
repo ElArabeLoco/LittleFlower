@@ -90,12 +90,12 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Logo size={48} className="mx-auto mb-2" />
           <CardTitle className="text-xl">{t.onboarding.title}</CardTitle>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[var(--text-secondary)]">
             {t.onboarding.greeting}{session?.email ? `, ${session.email.split('@')[0]}` : ''}{t.onboarding.subtitle}
           </p>
         </CardHeader>
@@ -165,7 +165,7 @@ export function OnboardingPage() {
                   required
                   autoFocus
                 />
-                <p className="text-xs text-gray-400 text-center">
+                <p className="text-xs text-[var(--text-muted)] text-center">
                   {t.onboarding.askForCode}
                 </p>
               </div>

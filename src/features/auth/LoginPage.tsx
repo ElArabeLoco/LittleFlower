@@ -53,16 +53,16 @@ export function LoginPage({ joinCode }: LoginPageProps) {
 
   if (pendingConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 pb-6 text-center space-y-4">
             <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
               <Mail className="w-8 h-8 text-green-600" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-gray-800">{t.auth.checkEmail}</h2>
-              <p className="text-sm text-gray-500">
-                {t.auth.confirmationSent} <strong className="text-gray-700">{email}</strong>{t.auth.clickToActivate}
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">{t.auth.checkEmail}</h2>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {t.auth.confirmationSent} <strong className="text-[var(--text-primary)]">{email}</strong>{t.auth.clickToActivate}
               </p>
             </div>
             <Button
@@ -84,12 +84,12 @@ export function LoginPage({ joinCode }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Logo size={48} className="mx-auto mb-2" />
           <CardTitle className="text-2xl">LittleFlower</CardTitle>
-          <p className="text-sm text-gray-500">{t.auth.subtitle}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t.auth.subtitle}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,7 +138,7 @@ export function LoginPage({ joinCode }: LoginPageProps) {
               {isLoading ? t.common.loading : mode === 'login' ? t.auth.signIn : t.auth.createAccount}
             </Button>
 
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-[var(--text-secondary)]">
               {mode === 'login' ? t.auth.noAccount : t.auth.hasAccount}{' '}
               <button
                 type="button"

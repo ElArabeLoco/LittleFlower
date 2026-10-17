@@ -68,7 +68,7 @@ export function BudgetCard({ budget, bm, spentAmount, month, householdId, userId
             <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight flex items-center gap-1.5">
               <span className="truncate"><HighlightedName name={budget.name} query={highlightText} /></span>
               {budget.payment_mode === 'both' && (
-                <span className="shrink-0 text-[9px] font-bold leading-none px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                <span className="shrink-0 rounded-full px-1.5 py-px text-[11px] font-semibold leading-tight bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
                   dual
                 </span>
               )}
@@ -83,8 +83,8 @@ export function BudgetCard({ budget, bm, spentAmount, month, householdId, userId
             className={cn(
               'shrink-0 transition-colors rounded-full p-0.5',
               isExecuted
-                ? 'text-green-500 hover:text-green-400 dark:text-green-400'
-                : 'text-[var(--text-muted)] hover:text-green-500',
+                ? 'text-[var(--text-positive)] hover:text-green-600 dark:hover:text-green-300'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-positive)]',
             )}
           >
             {isExecuted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
@@ -97,33 +97,33 @@ export function BudgetCard({ budget, bm, spentAmount, month, householdId, userId
           title={t.monthView.viewOrAddExpenses}
         >
           <div>
-            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">{t.monthView.budgetLabel}</p>
+            <p className="text-xs text-[var(--text-muted)] mb-0.5">{t.monthView.budgetLabel}</p>
             <p className="text-sm font-medium text-[var(--text-secondary)] tabular-nums">
               <AbbreviatedAmount value={amount} />
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">{t.monthView.spentLabel}</p>
+            <p className="text-xs text-[var(--text-muted)] mb-0.5">{t.monthView.spentLabel}</p>
             <p className={cn(
               'text-sm font-semibold tabular-nums',
               hasExpenses
                 ? overBudget
-                  ? 'text-red-500 dark:text-red-400'
-                  : 'text-violet-600 dark:text-violet-400'
+                  ? 'text-[var(--text-negative)]'
+                  : 'text-[var(--text-primary)]'
                 : 'text-[var(--text-muted)]',
             )}>
               {hasExpenses ? <AbbreviatedAmount value={spentAmount} /> : '—'}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--text-muted)] mb-0.5">{t.monthView.remainingLabel}</p>
+            <p className="text-xs text-[var(--text-muted)] mb-0.5">{t.monthView.remainingLabel}</p>
             <p className={cn(
               'text-sm font-semibold tabular-nums',
               !hasExpenses
                 ? 'text-[var(--text-muted)]'
                 : remaining < 0
-                  ? 'text-red-500 dark:text-red-400'
-                  : 'text-green-600 dark:text-green-400',
+                  ? 'text-[var(--text-negative)]'
+                  : 'text-[var(--text-positive)]',
             )}>
               {hasExpenses ? <AbbreviatedAmount value={remaining} /> : '—'}
             </p>

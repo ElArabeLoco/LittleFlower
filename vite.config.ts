@@ -39,8 +39,8 @@ export default defineConfig({
         name: 'LittleFlower',
         short_name: 'LittleFlower',
         description: 'Family finance tracker',
-        theme_color: '#f9a8d4',
-        background_color: '#fdf2f8',
+        theme_color: '#F9F5F7',
+        background_color: '#F9F5F7',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -54,6 +54,8 @@ export default defineConfig({
       workbox: {
         // Include WASM files so PowerSync SQLite works offline
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
+        // The font packages ship Cyrillic/Vietnamese subsets the UI never renders; skip precaching them
+        globIgnores: ['**/*-cyrillic-*.woff2', '**/*-vietnamese-*.woff2'],
         // PowerSync WASM files exceed the default 2 MiB limit — raise to 5 MiB
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // SPA: serve index.html for all navigation requests (offline support)

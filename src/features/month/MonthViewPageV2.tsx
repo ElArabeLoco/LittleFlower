@@ -3,7 +3,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, CreditCard, Banknote, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CreditCard, Banknote, LayoutList, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
@@ -143,7 +143,6 @@ export function MonthViewPageV2() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
       <AppHeader
-        emoji="🗓️"
         title={t.monthView.title}
         subtitle={formatMonthLabel(month)}
         maxWidth="max-w-5xl"
@@ -191,9 +190,7 @@ export function MonthViewPageV2() {
             totalBudgeted={totalBudgeted}
             totalSpent={totalSpent}
             totalRealSpent={totalRealSpent}
-            month={month}
             hasMissingTrm={hasMissingTrm}
-            formatMonthLabel={formatMonthLabel}
           />
 
           {(creditCardBudgets.length > 0 || cashBudgets.length > 0) && (
@@ -207,8 +204,8 @@ export function MonthViewPageV2() {
           )}
 
           {creditCardBudgets.length === 0 && cashBudgets.length === 0 && (
-            <div className="text-center py-16 text-[var(--text-muted)]">
-              <p className="text-4xl mb-3">📋</p>
+            <div className="flex flex-col items-center py-16 text-center text-[var(--text-muted)]">
+              <LayoutList size={32} strokeWidth={1.5} aria-hidden="true" className="mb-3" />
               <p className="text-sm font-medium text-[var(--text-secondary)]">{t.monthView.noBudgets}</p>
               <p className="text-xs mt-1">{t.monthView.addBudgetsHint}</p>
             </div>

@@ -214,7 +214,7 @@ export function ExpenseFormDialog({
       <DialogContent className="sm:max-w-2xl p-0 gap-0">
 
         {/* ── Header ── */}
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-[var(--border-subtle)] shrink-0">
+        <DialogHeader className="min-w-0 pl-5 pr-14 pt-5 pb-3 border-b border-[var(--border-subtle)] shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Receipt size={16} className="text-[var(--text-brand)] shrink-0" />
             <span className="truncate">{budgetName}</span>

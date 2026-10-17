@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // refresh, and SIGNED_OUT on logout. This covers all cases without a
   // separate getSession() call that could race with the listener.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, supabaseSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, supabaseSession) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (supabaseSession) {
           const householdId = supabaseSession.user.user_metadata?.['household_id'] ?? null;
@@ -74,11 +74,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             token: supabaseSession.access_token,
             householdId,
           });
-          // Connect PowerSync only when not already connected — avoids
-          // unnecessary connecting→connected transitions on every token refresh
-          // which would cause the SyncPill to flash "Sin conexión" momentarily.
-          if (!db.connected) {
-            await db.connect(new SupabaseConnector());
+          // Connect PowerSync only when it is idle: auth-js re-emits SIGNED_IN
+          // on tab refocus and TOKEN_REFRESHED on every refresh, and
+          // db.connect() always restarts an open stream. Fired, never awaited:
+          // this callback can run while auth-js holds its lock, and connecting
+          // fetches credentials through getSession(), which waits for it.
+          if (!db.connected && !db.connecting) {
+            void db.connect(new SupabaseConnector()).catch((err) => {
+              console.warn('[Auth] PowerSync connect failed (will retry):', err);
+            });
           }
         } else {
           // INITIAL_SESSION fired with no session → user is not logged in
@@ -135,10 +139,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token: data.session.access_token,
       householdId,
     });
-    // Reconnect PowerSync with the refreshed token containing household_id
-    if (!db.connected) {
-      await db.connect(new SupabaseConnector());
-    }
+    // Always reconnect PowerSync, even when already connected: the sync rules
+    // read household_id from the JWT, and an open stream keeps using the token
+    // it was opened with. db.connect() tears down the current stream and
+    // reopens it with the refreshed token, so the new claims take effect.
+    // (Route navigations no longer reconnect, so nothing else picks them up.)
+    // Fired, not awaited: the handshake can take many seconds, and callers
+    // (onboarding, join) only need the refreshed session to move on.
+    void db.connect(new SupabaseConnector()).catch((err) => {
+      console.warn('[Auth] PowerSync reconnect failed (will retry):', err);
+    });
   }
 
   return (

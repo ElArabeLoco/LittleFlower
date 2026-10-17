@@ -1,5 +1,4 @@
 import { cn } from '@/shared/ui/cn';
-import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { formatK } from './helpers';
 
 // ---------------------------------------------------------------------------
@@ -49,46 +48,6 @@ export function PieTooltip({
     <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg px-3 py-2 text-xs">
       <p className="font-semibold text-[var(--text-primary)]">{p.name}</p>
       <p style={{ color: p.payload.color }}>{formatK(p.value)}</p>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// KPI Card
-// ---------------------------------------------------------------------------
-
-interface KpiCardProps {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  trend?: 'up' | 'down' | 'neutral';
-  highlight?: 'positive' | 'negative' | 'warning' | 'default';
-  formatCOP: (v: number) => string;
-}
-
-export function KpiCard({ label, value, icon, highlight = 'default', formatCOP }: KpiCardProps) {
-  const colorMap = {
-    positive: 'text-green-600 dark:text-green-400',
-    negative: 'text-red-500 dark:text-red-400',
-    warning: 'text-amber-500 dark:text-amber-400',
-    default: 'text-[var(--text-primary)]',
-  };
-
-  const formatted = formatCOP(value);
-  const textSize =
-    formatted.length > 11 ? 'text-sm' :
-    formatted.length > 8  ? 'text-base' :
-                             'text-xl';
-
-  return (
-    <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] shadow-sm px-4 py-4 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{label}</span>
-        <span className="text-[var(--text-muted)]">{icon}</span>
-      </div>
-      <p className={cn('font-bold tabular-nums leading-tight', textSize, colorMap[highlight])}>
-        <AbbreviatedAmount value={value} />
-      </p>
     </div>
   );
 }

@@ -41,7 +41,6 @@ export function IncomePage() {
   return (
     <div className="min-h-screen bg-[var(--bg-app)]">
       <AppHeader
-        emoji="💰"
         title={t.income.title}
         subtitle={fmtMonth(month)}
         maxWidth="max-w-3xl"
