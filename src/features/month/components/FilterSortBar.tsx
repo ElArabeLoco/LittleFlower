@@ -97,12 +97,12 @@ export function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChang
         </span>
 
         {hasFilter ? (
-          <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full shrink-0">
+          <span className="text-[11px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full shrink-0">
             {t.monthView.matchCount(matchCount)}
           </span>
         ) : (
           <span className={cn(
-            'text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0',
+            'text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0',
             isDefault
               ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-500 dark:text-violet-400'
               : 'bg-violet-600 dark:bg-violet-500 text-white',
@@ -164,7 +164,7 @@ export function FilterSortBar({ sortKey, filterText, onSortChange, onFilterChang
             {!isDefault && (
               <button
                 onClick={() => onSortChange('pending-desc')}
-                className="flex items-center gap-1 ml-auto text-[10px] text-[var(--text-muted)] hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                className="flex items-center gap-1 ml-auto text-[11px] text-[var(--text-muted)] hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
               >
                 <RotateCcw size={11} />
                 <span>{t.monthView.sortReset}</span>

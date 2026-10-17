@@ -65,7 +65,7 @@ export function JoinPage() {
   }, [session, code, refreshSession, navigate, t]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-violet-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-8 pb-6 text-center space-y-4">
           <Logo size={48} className="mx-auto" />
@@ -73,7 +73,7 @@ export function JoinPage() {
           {status === 'joining' && (
             <>
               <Loader2 className="w-8 h-8 text-pink-500 animate-spin mx-auto" />
-              <p className="text-sm text-gray-500">{t.join.joiningHousehold}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{t.join.joiningHousehold}</p>
             </>
           )}
 
@@ -83,8 +83,8 @@ export function JoinPage() {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">{t.join.joinedSuccess}</h2>
-                <p className="text-sm text-gray-500">{t.join.redirecting}</p>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">{t.join.joinedSuccess}</h2>
+                <p className="text-sm text-[var(--text-secondary)]">{t.join.redirecting}</p>
               </div>
             </>
           )}
@@ -95,8 +95,8 @@ export function JoinPage() {
                 <AlertCircle className="w-8 h-8 text-amber-600" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">{t.join.alreadyInHousehold}</h2>
-                <p className="text-sm text-gray-500">{t.join.cannotJoinAnother}</p>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">{t.join.alreadyInHousehold}</h2>
+                <p className="text-sm text-[var(--text-secondary)]">{t.join.cannotJoinAnother}</p>
               </div>
               <Button onClick={() => navigate({ to: '/' })}>{t.join.goHome}</Button>
             </>
@@ -108,7 +108,7 @@ export function JoinPage() {
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">{t.join.couldNotJoin}</h2>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">{t.join.couldNotJoin}</h2>
                 <p className="text-sm text-red-600">{errorMsg}</p>
               </div>
               <Button variant="outline" onClick={() => navigate({ to: '/onboarding' })}>

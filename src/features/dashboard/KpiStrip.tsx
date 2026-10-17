@@ -1,13 +1,63 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Scale, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Scale, AlertCircle, type LucideIcon } from 'lucide-react';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
-import { KpiCard } from './shared';
+import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import { cn } from '@/shared/ui/cn';
 import { useMonthlyData } from './useMonthlyData';
 import { useDebtData } from './useDebtData';
 
-export function KpiStrip() {
+type KpiHighlight = 'positive' | 'negative' | 'default';
+
+const HIGHLIGHT_CLASS: Record<KpiHighlight, string> = {
+  positive: 'text-[var(--text-positive)]',
+  negative: 'text-[var(--text-negative)]',
+  default: 'text-[var(--text-primary)]',
+};
+
+interface KpiTileProps {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  highlight?: KpiHighlight;
+}
+
+/**
+ * Shantell Sans runs wide, so longer amounts step down. Each step keeps the
+ * widest amount of that length inside the narrowest tile (~125px of content
+ * on a 360px phone), e.g. "$27.4M" at 28px, "-$127.4M" at 22px and
+ * "$ 27.398.988" (full number format) at 16px.
+ */
+function amountSize(length: number) {
+  if (length <= 6) return 'text-[28px]';
+  if (length === 7) return 'text-2xl';
+  if (length === 8) return 'text-[22px]';
+  if (length <= 11) return 'text-lg';
+  if (length === 12) return 'text-base';
+  return 'text-sm';
+}
+
+/** One KPI: sentence-case label, muted icon, hand-written amount. */
+export function KpiTile({ label, value, icon: Icon, highlight = 'default' }: KpiTileProps) {
   const { formatCOP } = useNumberFormat();
+  const size = amountSize(formatCOP(value).length);
+
+  return (
+    // `justify-between` keeps amounts on one line across a row when a label wraps.
+    <div className="flex flex-col justify-between gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[13px] font-medium leading-snug text-[var(--text-secondary)]">{label}</span>
+        <Icon size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+      </div>
+      {/* Size before leading: tailwind-merge drops a `leading-*` that precedes a `text-*` size. */}
+      <p className={cn('font-hand font-bold tabular-nums tracking-[-0.01em]', size, 'leading-tight', HIGHLIGHT_CLASS[highlight])}>
+        <AbbreviatedAmount value={value} />
+      </p>
+    </div>
+  );
+}
+
+export function KpiStrip() {
   const { t } = useI18n();
   const { monthlyData, currentMonth } = useMonthlyData();
   const { dashDebts, dashDebtTxs, debtInitialCOP } = useDebtData();
@@ -39,50 +89,45 @@ export function KpiStrip() {
   const balanceHighlight: 'positive' | 'negative' | 'default' =
     currentData.balance > 0 ? 'positive' : currentData.balance < 0 ? 'negative' : 'default';
 
+  // Tiles stay at least ~150px wide: hand-written amounts do not fit a sixth of a tablet row.
   return (
-    <div className={`grid grid-cols-2 gap-3 ${hasDebts ? 'sm:grid-cols-6' : 'sm:grid-cols-5'}`}>
-      <KpiCard
+    <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${hasDebts ? 'xl:grid-cols-6' : 'lg:grid-cols-5'}`}>
+      <KpiTile
         label={t.dashboard.realBalance}
         value={currentData.balance}
-        icon={<Scale size={16} />}
+        icon={Scale}
         highlight={balanceHighlight}
-        formatCOP={formatCOP}
       />
-      <KpiCard
+      <KpiTile
         label={t.dashboard.available}
         value={currentData.available}
-        icon={<Wallet size={16} />}
+        icon={Wallet}
         highlight="default"
-        formatCOP={formatCOP}
       />
-      <KpiCard
+      <KpiTile
         label={t.dashboard.budgeted}
         value={currentData.budgeted}
-        icon={<TrendingUp size={16} />}
+        icon={TrendingUp}
         highlight="default"
-        formatCOP={formatCOP}
       />
-      <KpiCard
+      <KpiTile
         label={t.dashboard.spent}
         value={currentData.spent}
-        icon={<TrendingDown size={16} />}
+        icon={TrendingDown}
         highlight={currentData.spent > currentData.budgeted ? 'negative' : 'default'}
-        formatCOP={formatCOP}
       />
-      <KpiCard
+      <KpiTile
         label={t.dashboard.toSpend}
         value={currentData.pending ?? 0}
-        icon={<TrendingDown size={16} />}
+        icon={TrendingDown}
         highlight="default"
-        formatCOP={formatCOP}
       />
       {hasDebts && (
-        <KpiCard
+        <KpiTile
           label={t.dashboard.totalOwed}
           value={totalDebtBalance}
-          icon={<AlertCircle size={16} />}
+          icon={AlertCircle}
           highlight={totalDebtBalance > 0 ? 'negative' : 'positive'}
-          formatCOP={formatCOP}
         />
       )}
     </div>

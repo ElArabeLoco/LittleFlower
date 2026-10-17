@@ -73,7 +73,8 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 // Right padding keeps the title clear of the close button.
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col gap-1.5 pr-10', className)} {...props} />
+  // min-w-0 lets truncating titles shrink inside the content grid instead of widening it.
+  <div className={cn('flex min-w-0 flex-col gap-1.5 pr-10', className)} {...props} />
 );
 
 const DialogTitle = React.forwardRef<

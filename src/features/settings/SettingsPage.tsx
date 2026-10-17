@@ -29,7 +29,7 @@ import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1 mb-1.5">
+    <h2 className="text-sm font-semibold text-[var(--text-secondary)] px-1 mb-2">
       {children}
     </h2>
   );

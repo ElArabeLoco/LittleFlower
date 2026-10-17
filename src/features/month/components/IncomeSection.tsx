@@ -26,11 +26,11 @@ export function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingT
         onClick={() => setCollapsed(c => !c)}
       >
         <TrendingUp size={15} className="text-[var(--group-available-text)] shrink-0" />
-        <span className="flex-1 text-sm font-bold uppercase tracking-wide text-[var(--group-available-text)]">
+        <span className="flex-1 text-sm font-semibold text-[var(--group-available-text)]">
           {t.monthView.incomeLabel}
         </span>
         {hasMissingTrm && (
-          <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium shrink-0">
+          <span className="text-[11px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium shrink-0">
             {t.monthView.noTrm}
           </span>
         )}
@@ -66,25 +66,21 @@ export function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingT
                       {inc.name}
                     </p>
                     {isModified && (
-                      <span className="text-[10px] text-violet-400 font-medium shrink-0">{t.monthView.edited}</span>
+                      <span className="text-xs text-[var(--text-muted)] shrink-0">{t.monthView.edited}</span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    {inc.is_fixed === 1 ? t.monthView.fixed : t.monthView.variable}
+                  <p className="flex flex-wrap gap-x-2.5 text-xs text-[var(--text-muted)] mt-0.5">
+                    <span>{inc.is_fixed === 1 ? t.monthView.fixed : t.monthView.variable}</span>
                     {isUSD && (
-                      <>
-                        {' · '}
-                        {trm
-                          ? <span>TRM {formatNumber(trm)}</span>
-                          : <span className="text-amber-500">{t.monthView.noTrm}</span>
-                        }
-                      </>
+                      trm
+                        ? <span className="tabular-nums">TRM {formatNumber(trm)}</span>
+                        : <span className="text-[var(--text-now)]">{t.monthView.noTrm}</span>
                     )}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">
-                    {isUSD && <span className="text-xs text-violet-400 mr-1">USD</span>}
+                    {isUSD && <span className="text-xs font-medium text-[var(--text-muted)] mr-1">USD</span>}
                     {formatNumber(amount)}
                   </p>
                   {copEquiv !== null && (
