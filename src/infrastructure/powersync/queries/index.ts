@@ -5,3 +5,4 @@ export * from './useIncomeQueries';
 export * from './useExchangeRateQueries';
 export * from './useDebtQueries';
 export * from './useHouseholdQueries';
+export * from './useSyncQueries';
