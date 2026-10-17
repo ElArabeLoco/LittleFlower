@@ -4,6 +4,7 @@ import { db } from '@/infrastructure/powersync/client';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { AppSettingsProvider } from '@/features/settings/AppSettingsContext';
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nContext';
+import { useSyncActivityTracking } from '@/application/useSyncStatus';
 import { AlertCircle, AlertTriangle, CloudOff, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/shared/ui/cn';
@@ -117,6 +118,7 @@ function SyncErrorBanner() {
 function RootInner() {
   const { isLoading } = useAuth();
   const { t } = useI18n();
+  useSyncActivityTracking();
 
   if (isLoading) {
     return (
