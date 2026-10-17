@@ -16,8 +16,11 @@ import { Popover, PopoverTrigger } from '@/shared/ui/popover';
 import { healthVisual, visibleSyncState, type SyncIcon, type SyncTone } from './syncPresentation';
 import { HEALTH_ICONS, SLOW_SPIN } from './syncVisuals';
 
-const NEUTRAL_CHIP =
-  'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] data-[state=open]:bg-[var(--bg-hover)]';
+/** A glass capsule floating on the header bar. */
+const NEUTRAL_CHIP = cn(
+  'border-[var(--glass-border)] bg-[var(--glass-bg)] text-[var(--text-secondary)] shadow-[var(--glass-shadow)] backdrop-blur-md',
+  'hover:bg-[var(--glass-bg-hover)] data-[state=open]:bg-[var(--glass-bg-hover)]',
+);
 
 const CHIP_TONE: Record<SyncTone, string> = {
   muted: NEUTRAL_CHIP,
@@ -63,10 +66,10 @@ export function SyncStatusButton({ health, open, onOpenChange, children }: SyncS
           // "Sincronización: 3 por subir": the visible words, with what they are about.
           aria-label={t.sync.statusLabel(label.toLowerCase())}
           className={cn(
-            'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border pl-2.5 pr-3',
-            // A 32px chip with a 44px tall touch target.
-            'relative after:absolute after:inset-x-0 after:-inset-y-1.5',
-            'text-[13px] font-medium leading-none tabular-nums transition-colors',
+            'inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border pl-3 pr-4',
+            // A 40px capsule with a 44px tall touch target.
+            'relative after:absolute after:inset-x-0 after:-inset-y-0.5',
+            'text-sm font-medium leading-none tabular-nums transition-colors',
             CHIP_TONE[tone],
           )}
         >
@@ -75,7 +78,7 @@ export function SyncStatusButton({ health, open, onOpenChange, children }: SyncS
             className={cn('inline-flex', ICON_TONE[icon], icon === 'syncing' && SLOW_SPIN.className)}
             style={icon === 'syncing' ? SLOW_SPIN.style : undefined}
           >
-            <Icon size={16} strokeWidth={2} />
+            <Icon size={18} strokeWidth={2} />
           </span>
           {label}
         </button>

@@ -367,6 +367,14 @@
   --focus-ring-soft: rgb(202 47 109 / 0.2); /* decorative halo; the field border carries the contrast */
   --shadow-float: 0 18px 40px -16px rgb(46 28 40 / 0.3), 0 2px 8px -2px rgb(46 28 40 / 0.1);
 
+  /* Header glass: the bar frosts what scrolls under it; capsules float on it. */
+  --bg-bar: rgb(249 245 247 / 0.8);
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-bg-hover: rgb(255 255 255 / 0.95);
+  --glass-border: rgb(255 255 255 / 0.9);
+  --glass-shadow: 0 1px 2px rgb(46 28 40 / 0.05), 0 8px 20px rgb(46 28 40 / 0.08), inset 0 1px 0 #FFFFFF;
+  --flower-edge: #FFFFFF;
+
   /* Navigation */
   --nav-bg: #FFFFFF;
   --nav-border: #EBE4E8;
@@ -437,6 +445,13 @@
   --focus-ring: #F7A0BF;              /* opaque focus indicator, 8.8:1 on surface */
   --focus-ring-soft: rgb(247 160 191 / 0.25);
   --shadow-float: 0 18px 40px -12px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.04);
+
+  --bg-bar: rgb(24 16 21 / 0.78);
+  --glass-bg: rgb(255 255 255 / 0.08);
+  --glass-bg-hover: rgb(255 255 255 / 0.13);
+  --glass-border: rgb(255 255 255 / 0.14);
+  --glass-shadow: 0 8px 20px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  --flower-edge: var(--color-pink-200);
 
   /* Navigation */
   --nav-bg: #22181F;
