@@ -614,11 +614,12 @@ export const en: Translations = {
     title: 'Sync',
     statusLabel: (state: string) => `Sync: ${state}`,
     statusNames: {
-      synced: 'everything is up to date',
-      syncing: 'syncing',
-      offline: 'offline',
-      error: 'needs attention',
+      synced: 'Synced',
+      syncing: 'Syncing',
+      offline: 'Offline',
+      error: 'Not synced',
     },
+    statusPending: (n: number) => `${n} to upload`,
     headlines: {
       synced: 'Everything is up to date',
       syncing: 'Syncing…',

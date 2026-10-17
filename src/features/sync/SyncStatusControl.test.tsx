@@ -68,8 +68,20 @@ describe('SyncStatusControl', () => {
   it('shows the status button and announces a fresh alert', () => {
     renderControl(contextValue(rejected));
 
-    expect(screen.getByRole('button', { name: 'Sincronización: necesita atención' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sincronización: sin sincronizar' })).toHaveTextContent('Sin sincronizar');
     expect(screen.getByRole('alert')).toHaveTextContent('Un cambio no se pudo guardar en la nube');
+  });
+
+  it('says in words that everything is synced', () => {
+    renderControl(contextValue());
+
+    expect(screen.getByRole('button', { name: 'Sincronización: sincronizado' })).toHaveTextContent('Sincronizado');
+  });
+
+  it('says in words how many changes wait to upload', () => {
+    renderControl(contextValue({ state: 'pending', pendingCount: 3 }));
+
+    expect(screen.getByRole('button', { name: 'Sincronización: 3 por subir' })).toHaveTextContent('3 por subir');
   });
 
   it('shows an alert that is no longer fresh as a quiet labelled region', () => {

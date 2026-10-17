@@ -614,11 +614,12 @@ export const es = {
     /** Accessible name of the header status button, e.g. "Sincronización: todo al día". */
     statusLabel: (state: string) => `Sincronización: ${state}`,
     statusNames: {
-      synced: 'todo al día',
-      syncing: 'sincronizando',
-      offline: 'sin conexión',
-      error: 'necesita atención',
+      synced: 'Sincronizado',
+      syncing: 'Sincronizando',
+      offline: 'Sin conexión',
+      error: 'Sin sincronizar',
     },
+    statusPending: (n: number) => `${n} por subir`,
     headlines: {
       synced: 'Todo está al día',
       syncing: 'Sincronizando…',
