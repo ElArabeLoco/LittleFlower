@@ -2,7 +2,7 @@
  * Sync status hooks — the only way features reach the sync model.
  *
  *   useSyncStatus()          → health + session activity log + timeline
- *   useSyncActions()         → retry, clear the log, diagnostics text
+ *   useSyncActions(view)     → retry, clear the log, diagnostics text
  *   useSyncActivityTracking()→ tracks while signed in (root layout)
  *
  * The types the UI needs are re-exported here so features never import
@@ -144,25 +144,23 @@ export function useSyncStatus(): SyncStatusView {
 // useSyncActions
 // ---------------------------------------------------------------------------
 
-export function useSyncActions(): SyncActions {
-  const view = useSyncStatus();
+/**
+ * Sync actions for the status the caller already reads: pass the result of
+ * your useSyncStatus() call, so one subscription set serves both hooks.
+ */
+export function useSyncActions(view: Pick<SyncStatusView, 'health' | 'connection' | 'events'>): SyncActions {
+  const { health, connection, events } = view;
 
   const retry = useCallback(() => reconnectSync(), []);
   const clearLog = useCallback(() => syncActivity.clear(), []);
   const diagnosticsText = useCallback(
     () =>
       JSON.stringify(
-        {
-          generatedAt: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          health: view.health,
-          connection: view.connection,
-          events: view.events,
-        },
+        { generatedAt: new Date().toISOString(), userAgent: navigator.userAgent, health, connection, events },
         null,
         2,
       ),
-    [view],
+    [health, connection, events],
   );
 
   return useMemo(() => ({ retry, clearLog, diagnosticsText }), [retry, clearLog, diagnosticsText]);

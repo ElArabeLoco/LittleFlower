@@ -24,7 +24,7 @@ import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { reconnectSync, startSyncActivityTracking } from '@/infrastructure/powersync/sync';
 import { syncActivity } from '@/infrastructure/powersync/sync/syncActivityStore';
 import type { SyncErrorInfo, SyncRecordChange } from '@/infrastructure/powersync/sync/types';
-import { useSyncActions, useSyncActivityTracking, useSyncStatus } from './useSyncStatus';
+import { useSyncActions, useSyncActivityTracking, useSyncStatus, type SyncStatusView } from './useSyncStatus';
 
 interface StatusInput {
   connected?: boolean;
@@ -165,8 +165,29 @@ describe('useSyncStatus()', () => {
 });
 
 describe('useSyncActions()', () => {
+  /** A view as the caller's useSyncStatus() would return it. */
+  function viewWith(overrides: Partial<SyncStatusView> = {}): SyncStatusView {
+    return {
+      health: { state: 'synced', pendingCount: 0, error: null, alert: null, nextCheckAt: null },
+      events: [],
+      connection: syncActivity.getSnapshot().connection,
+      lastSyncedAt: null,
+      downloadFraction: null,
+      sessionStartedAt: 0,
+      ...overrides,
+    };
+  }
+
+  it('reads nothing itself: the caller passes the status it already has', () => {
+    renderHook(() => useSyncActions(viewWith()));
+
+    expect(useStatus).not.toHaveBeenCalled();
+    expect(usePendingUploadCount).not.toHaveBeenCalled();
+    expect(useOnlineStatus).not.toHaveBeenCalled();
+  });
+
   it('retries by reconnecting the sync stream', async () => {
-    const { result } = renderHook(() => useSyncActions());
+    const { result } = renderHook(() => useSyncActions(viewWith()));
 
     await act(() => result.current.retry());
 
@@ -175,17 +196,17 @@ describe('useSyncActions()', () => {
 
   it('clears the session log', () => {
     syncActivity.recordUpload([change]);
-    const { result } = renderHook(() => useSyncActions());
+    const { result } = renderHook(() => useSyncActions(viewWith()));
 
     act(() => result.current.clearLog());
 
     expect(syncActivity.getSnapshot().events).toEqual([]);
   });
 
-  it('builds a pretty JSON diagnostics report', () => {
+  it("builds a pretty JSON diagnostics report from the caller's status", () => {
     syncActivity.recordUploadFailure([change], rejected);
     vi.mocked(usePendingUploadCount).mockReturnValue(1);
-    const { result } = renderHook(() => useSyncActions());
+    const { result } = renderHook(() => useSyncActions(useSyncStatus()));
 
     const text = result.current.diagnosticsText();
     const report = JSON.parse(text);

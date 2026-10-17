@@ -20,7 +20,8 @@ import { SyncStatusContext, type SyncStatusContextValue } from './syncStatusCont
 
 export function SyncStatusProvider({ children }: { children: ReactNode }) {
   const status = useSyncStatus();
-  const { retry, clearLog, diagnosticsText } = useSyncActions();
+  // The actions read this same status: one set of sync subscriptions for the app.
+  const { retry, clearLog, diagnosticsText } = useSyncActions(status);
   const { session, logout } = useAuth();
   const navigate = useNavigate();
 
