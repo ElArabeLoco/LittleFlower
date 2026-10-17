@@ -221,6 +221,70 @@ describe('createSyncActivityStore()', () => {
     });
   });
 
+  describe('recordDownload() — initial sync', () => {
+    it("marks a fresh device's first sync as initial", () => {
+      const store = makeStore();
+      store.recordDownload([changeOf('x-1')], 1_234, { initial: true });
+
+      expect(store.getSnapshot().events[0]).toEqual({
+        id: 'evt-1',
+        kind: 'download',
+        at: 1_000,
+        changes: [changeOf('x-1')],
+        total: 1_234,
+        initial: true,
+      });
+    });
+
+    it('leaves other downloads unmarked', () => {
+      const store = makeStore();
+      store.recordDownload([changeOf('x-1')]);
+      store.recordDownload([changeOf('x-2')], 1, { initial: false });
+
+      expect(store.getSnapshot().events.map((event) => 'initial' in event)).toEqual([false, false]);
+    });
+  });
+
+  describe('reset()', () => {
+    it('starts a new, empty session', () => {
+      const store = makeStore();
+      store.recordUpload([changeOf('e-1')]);
+      store.recordConnection('connected');
+      store.updateConnection({ connectedAt: 1_000, lastSyncedAt: 1_500 });
+      clock = 9_000;
+
+      store.reset();
+
+      expect(store.getSnapshot()).toEqual({
+        sessionStartedAt: 9_000,
+        events: [],
+        connection: { connectedAt: null, disconnectedSince: null, downloadErrorSince: null, lastSyncedAt: null },
+      });
+    });
+
+    it('forgets uploaded ids and the last connection entry', () => {
+      const store = makeStore();
+      store.recordUpload([changeOf('e-1')]);
+      store.recordConnection('connected');
+
+      store.reset();
+      store.recordConnection('connected');
+
+      expect(store.recentlyUploadedIds(60_000)).toEqual(new Set());
+      expect(store.getSnapshot().events.map((e) => e.kind)).toEqual(['connection']);
+    });
+
+    it('notifies subscribers', () => {
+      const store = makeStore();
+      const listener = vi.fn();
+      store.subscribe(listener);
+
+      store.reset();
+
+      expect(listener).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('recordConnection()', () => {
     it('records state transitions and skips repeats of the same state and error', () => {
       const store = makeStore();

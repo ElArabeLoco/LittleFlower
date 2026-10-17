@@ -176,6 +176,25 @@ describe('summarizeEvent()', () => {
     expect(summarizeEvent(event, es).detail).toBe('Gasto 0, Gasto 1, Gasto 2');
   });
 
+  it("introduces a fresh device's first sync instead of listing received changes", () => {
+    const event: SyncActivityEvent = { id: 'd0', kind: 'download', at: AT, changes: changes(50), total: 1_234, initial: true };
+
+    expect(summarizeEvent(event, es)).toMatchObject({
+      icon: 'download',
+      tone: 'positive',
+      title: 'Primera sincronización de este dispositivo',
+      detail: '1234 registros descargados',
+      amount: null,
+      currency: null,
+    });
+    expect(summarizeEvent(event, es).items).toBeUndefined();
+    expect(summarizeEvent(event, en)).toMatchObject({
+      title: 'First sync on this device',
+      detail: '1234 records downloaded',
+    });
+    expect(summarizeEvent({ ...event, total: 1 }, en).detail).toBe('1 record downloaded');
+  });
+
   it('describes a single download like the change itself', () => {
     const event: SyncActivityEvent = {
       id: 'd3',

@@ -35,6 +35,9 @@ let stopTracking: (() => void) | null = null;
  * Starts the connection, download and cross-tab trackers for the app's db,
  * activity store and label cache. Idempotent: while tracking runs, every call
  * returns the same stop function.
+ *
+ * Stopping (sign-out, another user) also starts a clean session: the log,
+ * the timeline and the label names of this one never reach the next person.
  */
 export function startSyncActivityTracking(): () => void {
   if (stopTracking) return stopTracking;
@@ -49,6 +52,8 @@ export function startSyncActivityTracking(): () => void {
     if (stopTracking !== stop) return;
     stopTracking = null;
     for (const stopOne of stops) stopOne();
+    syncActivity.reset();
+    labelCache.clear();
   };
   stopTracking = stop;
   return stop;

@@ -50,6 +50,37 @@ export function describeCrudEntry(entry: CrudEntryLike, lookup?: NameLookup): Sy
   return describeRow(entry.table, toChangeOp(entry), entry.id, entry.opData, lookup);
 }
 
+/**
+ * Every column describeRow reads, plus `deleted_at` (soft deletes). Keeping
+ * only these is enough to describe a row later — even once it is gone.
+ */
+export const DESCRIBED_COLUMNS = [
+  'name',
+  'note',
+  'amount',
+  'default_amount',
+  'real_amount',
+  'initial_amount',
+  'rate',
+  'currency',
+  'from_currency',
+  'to_currency',
+  'month',
+  'budget_id',
+  'income_id',
+  'debt_id',
+  'deleted_at',
+] as const;
+
+/** The DESCRIBED_COLUMNS of a row (columns it does not have are left out). */
+export function describedFields(row: Row): Row {
+  const fields: Row = {};
+  for (const column of DESCRIBED_COLUMNS) {
+    if (column in row) fields[column] = row[column];
+  }
+  return fields;
+}
+
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------

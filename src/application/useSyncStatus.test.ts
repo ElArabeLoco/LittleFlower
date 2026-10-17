@@ -202,10 +202,25 @@ describe('useSyncActions()', () => {
 });
 
 describe('useSyncActivityTracking()', () => {
-  it('starts the trackers once', () => {
-    const { rerender } = renderHook(() => useSyncActivityTracking());
-    rerender();
+  it('tracks only while someone is signed in, and restarts clean for another user', () => {
+    const stop = vi.fn();
+    vi.mocked(startSyncActivityTracking).mockReturnValue(stop);
+    const { rerender, unmount } = renderHook(({ userId }) => useSyncActivityTracking(userId), {
+      initialProps: { userId: null as string | null },
+    });
+    expect(startSyncActivityTracking).not.toHaveBeenCalled();
 
+    rerender({ userId: 'user-1' });
+    rerender({ userId: 'user-1' });
     expect(startSyncActivityTracking).toHaveBeenCalledOnce();
+
+    rerender({ userId: 'user-2' });
+    expect(stop).toHaveBeenCalledOnce();
+    expect(startSyncActivityTracking).toHaveBeenCalledTimes(2);
+
+    rerender({ userId: null });
+    expect(stop).toHaveBeenCalledTimes(2);
+    unmount();
+    expect(startSyncActivityTracking).toHaveBeenCalledTimes(2);
   });
 });

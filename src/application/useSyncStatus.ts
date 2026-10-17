@@ -3,7 +3,7 @@
  *
  *   useSyncStatus()          → health + session activity log + timeline
  *   useSyncActions()         → retry, clear the log, diagnostics text
- *   useSyncActivityTracking()→ starts the trackers once (root layout)
+ *   useSyncActivityTracking()→ tracks while signed in (root layout)
  *
  * The types the UI needs are re-exported here so features never import
  * infrastructure.
@@ -172,9 +172,14 @@ export function useSyncActions(): SyncActions {
 // useSyncActivityTracking
 // ---------------------------------------------------------------------------
 
-/** Starts the sync activity trackers once for the app's lifetime (call from the root). */
-export function useSyncActivityTracking(): void {
+/**
+ * Tracks sync activity while someone is signed in — call from the root with
+ * the session's user id. Signing out or switching users stops tracking and
+ * clears the session log, so nothing of one person reaches the next.
+ */
+export function useSyncActivityTracking(userId: string | null): void {
   useEffect(() => {
-    startSyncActivityTracking();
-  }, []);
+    if (userId === null) return;
+    return startSyncActivityTracking();
+  }, [userId]);
 }

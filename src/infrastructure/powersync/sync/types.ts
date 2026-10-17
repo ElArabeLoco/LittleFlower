@@ -59,7 +59,15 @@ export type SyncActivityEvent =
       error: SyncErrorInfo;
       resolvedAt: number | null;
     }
-  | { id: string; kind: 'download'; at: number; changes: SyncRecordChange[]; total: number }
+  | {
+      id: string;
+      kind: 'download';
+      at: number;
+      changes: SyncRecordChange[];
+      total: number;
+      /** A fresh device's first sync: everything arrived at once, not from other devices. */
+      initial?: boolean;
+    }
   | {
       id: string;
       kind: 'connection';

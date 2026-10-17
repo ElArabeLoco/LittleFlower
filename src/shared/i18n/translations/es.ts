@@ -690,6 +690,8 @@ export const es = {
       kinds: { upload: 'Subida', 'upload-failed': 'Subida fallida', download: 'Bajada', connection: 'Conexión' },
       uploaded: (n: number) => (n === 1 ? '1 cambio subido' : `${n} cambios subidos`),
       received: (n: number) => (n === 1 ? '1 cambio recibido' : `${n} cambios recibidos`),
+      initialSync: 'Primera sincronización de este dispositivo',
+      initialSyncCount: (n: number) => (n === 1 ? '1 registro descargado' : `${n} registros descargados`),
       notUploaded: (n: number) => (n === 1 ? '1 cambio sin subir' : `${n} cambios sin subir`),
       failedAttempts: (n: number) => (n === 1 ? 'No se pudo subir' : `No se pudo subir tras ${n} intentos`),
       resolvedAt: (time: string) => `Se subió en un reintento a las ${time}`,

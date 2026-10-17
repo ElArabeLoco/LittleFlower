@@ -6,7 +6,8 @@
  * logs 'connection' events:
  *   - connected     — as soon as the stream connects;
  *   - disconnected  — only when the stream is still down after a grace period,
- *                     so reconnect blips never reach the log;
+ *                     so reconnect blips never reach the log, and never before
+ *                     the session's first connection;
  *   - error         — when a download/connection error appears or changes
  *                     kind / code (messages carry request ids, so they are
  *                     never compared).
@@ -57,6 +58,8 @@ export function startConnectionTracking({
 }: ConnectionTrackingOptions): () => void {
   /** Last seen `connected`; null until the first status. */
   let connected: boolean | null = null;
+  /** Nothing can be lost before the session's first connection: no 'disconnected' entry until then. */
+  let everConnected = false;
   /** kind|code of the download error currently shown; null when none. */
   let errorKey: string | null = null;
   let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -75,17 +78,21 @@ export function startConnectionTracking({
       connected = status.connected;
       cancelDisconnectEntry();
       if (connected) {
+        everConnected = true;
         patch.connectedAt = at;
         patch.disconnectedSince = null;
         store.recordConnection('connected');
       } else {
-        // Also covers the very first status when the app starts disconnected.
+        // The timeline also covers the very first status when the app starts
+        // disconnected; the log only reports losing a connection it had.
         patch.connectedAt = null;
         patch.disconnectedSince = at;
-        disconnectTimer = setTimeout(() => {
-          disconnectTimer = null;
-          if (connected === false) store.recordConnection('disconnected');
-        }, disconnectGraceMs);
+        if (everConnected) {
+          disconnectTimer = setTimeout(() => {
+            disconnectTimer = null;
+            if (connected === false) store.recordConnection('disconnected');
+          }, disconnectGraceMs);
+        }
       }
     }
 

@@ -15,6 +15,8 @@ export interface LabelCache {
   getName(table: LabelTable, id: unknown): string | null;
   /** Replaces every known name of `table`. */
   setNames(table: LabelTable, names: Map<string, string>): void;
+  /** Forgets every name (sign-out or another user). */
+  clear(): void;
 }
 
 export function createLabelCache(): LabelCache {
@@ -25,6 +27,9 @@ export function createLabelCache(): LabelCache {
     getName: (table, id) => (typeof id === 'string' ? names.get(table)?.get(id) ?? null : null),
     setNames: (table, tableNames) => {
       names.set(table, new Map(tableNames));
+    },
+    clear: () => {
+      names.clear();
     },
   };
 }

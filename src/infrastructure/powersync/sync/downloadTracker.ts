@@ -1,16 +1,18 @@
 /**
  * Download tracker — logs what came down from the server.
  *
- * PowerSync reports which tables changed, not which rows or who changed them.
- * The tracker keeps a snapshot of every tracked table, re-reads the tables
- * that changed and diffs them. Changes that are ours are skipped:
+ * PowerSync reports which tables changed, not which rows or why. The tracker
+ * keeps a compact snapshot of every tracked table and, once PowerSync has
+ * applied a downloaded checkpoint, re-reads the tables that changed and
+ * diffs them. Changes that are ours are skipped:
  *   - local writes still waiting in the upload queue (ps_crud), and
- *   - echoes of rows we uploaded recently (the server sends them back).
+ *   - writes uploaded since the previous run (the server echoes them back).
  * What remains came from the household partner (or another device) and is
- * recorded as ONE download event per run.
+ * recorded as ONE download event per run. On a fresh device the first
+ * checkpoint brings everything at once: that event is marked `initial`.
  *
- * Runs are serial: change events are only collected while a run is active,
- * then processed together in one more run. Failures never reach the app.
+ * Local writes alone never rescan a table: they only mark it dirty until the
+ * next checkpoint. Runs are serial, and failures never reach the app.
  */
 
 import type { SQLOnChangeOptions, WatchOnChangeHandler } from '@powersync/web';
@@ -19,11 +21,20 @@ import type { LabelCache, LabelTable } from './labelCache';
 import { diffSnapshots, snapshotFromRows, type RowDiff, type TableSnapshot } from './snapshotDiff';
 import type { SyncActivityStore } from './syncActivityStore';
 
+/** The slice of PowerSync's SyncStatus the tracker reads. */
+export interface DownloadTrackerStatus {
+  readonly hasSynced?: boolean;
+  readonly lastSyncedAt?: Date;
+  readonly dataFlowStatus: { readonly downloading?: boolean };
+}
+
 /** The slice of the PowerSync database the tracker needs. */
 export interface DownloadTrackerDb {
+  readonly currentStatus: DownloadTrackerStatus;
   waitForReady(): Promise<void>;
   getAll<T>(sql: string, parameters?: unknown[]): Promise<T[]>;
   onChange(handler: WatchOnChangeHandler, options?: SQLOnChangeOptions): () => void;
+  registerListener(listener: { statusChanged?: (status: DownloadTrackerStatus) => void }): () => void;
 }
 
 export interface DownloadTrackingOptions {
@@ -33,10 +44,16 @@ export interface DownloadTrackingOptions {
   /** Fixed allowlist derived from AppSchema — never user input. */
   tables: readonly string[];
   throttleMs?: number;
+  now?: () => number;
 }
 
-/** A downloaded row touched by one of our uploads this recently is its echo. */
+/** Uploads at least this recent count as echoes, even right after a run. */
 const ECHO_WINDOW_MS = 120_000;
+/**
+ * Table changes reported this soon after an applied checkpoint belong to it:
+ * the status arrives before our (throttled) change callback.
+ */
+const CHECKPOINT_SETTLE_MS = 2_000;
 /** Changes kept per download event; the event's `total` still counts all. */
 const MAX_CHANGES_PER_EVENT = 50;
 /** Table names are interpolated into SQL: only plain identifiers get there. */
@@ -58,6 +75,7 @@ export function startDownloadTracking({
   labelCache,
   tables,
   throttleMs = 150,
+  now = Date.now,
 }: DownloadTrackingOptions): () => void {
   const tracked = tables.filter((table) => {
     if (SAFE_TABLE_NAME.test(table)) return true;
@@ -71,12 +89,30 @@ export function startDownloadTracking({
   let running = false;
   let stopped = false;
 
+  /** Status values the next applied checkpoint is detected against. */
+  let lastSyncedAt: number | null = null;
+  let downloading = false;
+  /** When the latest / the first checkpoint of this session was applied. */
+  let checkpointAt: number | null = null;
+  let firstCheckpointAt: number | null = null;
+  /** When the previous run started: writes uploaded since then are echoes. */
+  let lastRunAt = 0;
+  /** Empty tables on a device that never synced: the first checkpoint brings everything. */
+  let freshDevice = false;
+  /** Whether the run that could be the initial one already happened. */
+  let initialDecided = false;
+
   async function takeBaseline(): Promise<void> {
     try {
       await db.waitForReady();
       for (const table of tracked) {
         snapshots.set(table, snapshotFromRows(await readTable(table)));
       }
+      const status = db.currentStatus;
+      lastSyncedAt = status.lastSyncedAt?.getTime() ?? null;
+      downloading = status.dataFlowStatus?.downloading === true;
+      freshDevice = status.hasSynced !== true && [...snapshots.values()].every((snapshot) => snapshot.size === 0);
+      lastRunAt = now();
       refreshLabels();
       ready = true;
       schedule();
@@ -85,22 +121,44 @@ export function startDownloadTracking({
     }
   }
 
+  /** A new lastSyncedAt, or a download that just finished, means a checkpoint was applied. */
+  function onStatus(status: DownloadTrackerStatus): void {
+    if (!ready) return; // The baseline starts from the status at that moment.
+    const syncedAt = status.lastSyncedAt?.getTime() ?? null;
+    const isDownloading = status.dataFlowStatus?.downloading === true;
+    const applied = (syncedAt !== null && syncedAt !== lastSyncedAt) || (downloading && !isDownloading);
+    if (syncedAt !== null) lastSyncedAt = syncedAt;
+    downloading = isDownloading;
+    if (!applied) return;
+
+    checkpointAt = now();
+    firstCheckpointAt ??= checkpointAt;
+    schedule();
+  }
+
+  function inCheckpointWindow(): boolean {
+    return checkpointAt !== null && now() - checkpointAt <= CHECKPOINT_SETTLE_MS;
+  }
+
+  /** Diffs dirty tables only around an applied checkpoint; local writes wait for the next one. */
   function schedule(): void {
-    if (!ready || running || stopped || dirty.size === 0) return;
+    if (!ready || running || stopped || dirty.size === 0 || !inCheckpointWindow()) return;
     running = true;
     void drain();
   }
 
   async function drain(): Promise<void> {
     try {
-      while (dirty.size > 0 && !stopped) {
+      while (dirty.size > 0 && !stopped && inCheckpointWindow()) {
         const batch = [...dirty];
         dirty.clear();
         try {
           await processRun(batch);
         } catch (error) {
-          // Snapshots were not advanced: the next run catches these changes up.
+          // Snapshots were not advanced: the tables stay dirty for the next checkpoint.
+          for (const table of batch) dirty.add(table);
           console.warn('[SyncActivity] Download tracking run failed:', error);
+          break;
         }
       }
     } finally {
@@ -109,15 +167,20 @@ export function startDownloadTracking({
   }
 
   async function processRun(batch: string[]): Promise<void> {
-    const excluded = await pendingUploadIds();
-    for (const id of store.recentlyUploadedIds(ECHO_WINDOW_MS)) excluded.add(id);
+    const runStartedAt = now();
 
-    // Read everything first so a failed read leaves every snapshot untouched.
+    // Tables first, then what is ours: a local write landing in between is
+    // then either missing from the tables read, or already pending / uploaded
+    // when ps_crud and the upload memory are read — never logged as received.
     const nextSnapshots = new Map<string, TableSnapshot>();
     for (const table of batch) {
       nextSnapshots.set(table, snapshotFromRows(await readTable(table)));
     }
+    const excluded = await pendingUploadIds();
+    const echoWindow = Math.max(ECHO_WINDOW_MS, runStartedAt - lastRunAt);
+    for (const id of store.recentlyUploadedIds(echoWindow)) excluded.add(id);
     if (stopped) return;
+    lastRunAt = runStartedAt;
 
     const diffs: { table: string; diff: RowDiff }[] = [];
     for (const [table, next] of nextSnapshots) {
@@ -131,10 +194,20 @@ export function startDownloadTracking({
     refreshLabels();
 
     const changes = diffs.map(({ table, diff }) =>
-      describeRow(table, diff.op, diff.id, diff.row, labelCache.getName),
+      describeRow(table, diff.op, diff.id, diff.fields, labelCache.getName),
     );
+
+    // Only the run right after the session's first checkpoint can be the
+    // fresh device's initial sync.
+    const initial =
+      !initialDecided &&
+      freshDevice &&
+      firstCheckpointAt !== null &&
+      runStartedAt - firstCheckpointAt <= CHECKPOINT_SETTLE_MS;
+    if (firstCheckpointAt !== null) initialDecided = true;
+
     if (changes.length > 0) {
-      store.recordDownload(changes.slice(0, MAX_CHANGES_PER_EVENT), changes.length);
+      store.recordDownload(changes.slice(0, MAX_CHANGES_PER_EVENT), changes.length, { initial });
     }
   }
 
@@ -163,8 +236,8 @@ export function startDownloadTracking({
       const snapshot = snapshots.get(table);
       if (!snapshot) continue;
       const names = new Map<string, string>();
-      for (const [id, { row }] of snapshot) {
-        const name = row['name'];
+      for (const [id, { fields }] of snapshot) {
+        const name = fields['name'];
         if (typeof name === 'string' && name.trim() !== '') names.set(id, name.trim());
       }
       labelCache.setNames(table, names);
@@ -186,11 +259,13 @@ export function startDownloadTracking({
     },
     { tables: tracked, throttleMs },
   );
+  const unregister = db.registerListener({ statusChanged: onStatus });
 
   void takeBaseline();
 
   return () => {
     stopped = true;
     unsubscribe();
+    unregister();
   };
 }

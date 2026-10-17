@@ -71,14 +71,20 @@ describe('startConnectionTracking()', () => {
     expect(connectionLog()).toEqual(['connected']);
   });
 
-  it('marks a first status that is not connected, and logs it only after 3 s', () => {
-    start(createFakeDb(status({ connecting: true })));
+  it('marks a first status that is not connected, but logs no loss before the first connection', () => {
+    const fake = createFakeDb(status({ connecting: true }));
+    start(fake);
 
     expect(store.getSnapshot().connection).toMatchObject({ connectedAt: null, disconnectedSince: 1_000 });
-    advance(2_999);
+    advance(10_000);
     expect(connectionLog()).toEqual([]);
+
+    fake.emit(status({ connected: true }));
+    fake.emit(status({ connecting: true }));
+    advance(2_999);
+    expect(connectionLog()).toEqual(['connected']);
     advance(1);
-    expect(connectionLog()).toEqual(['disconnected']);
+    expect(connectionLog()).toEqual(['disconnected', 'connected']);
   });
 
   it('updates the timeline immediately but ignores drops shorter than 3 s', () => {
@@ -192,13 +198,15 @@ describe('startConnectionTracking()', () => {
   });
 
   it('stops listening and cancels a pending disconnect', () => {
-    const fake = createFakeDb(status());
+    const fake = createFakeDb(status({ connected: true }));
     const stop = start(fake);
+    fake.emit(status({ connecting: true }));
+    advance(1_000);
 
     stop();
     advance(10_000);
 
     expect(fake.unregister).toHaveBeenCalledOnce();
-    expect(connectionLog()).toEqual([]);
+    expect(connectionLog()).toEqual(['connected']);
   });
 });

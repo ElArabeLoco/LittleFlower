@@ -166,6 +166,19 @@ export function summarizeEvent(event: SyncActivityEvent, t: Translations): SyncE
       };
 
     case 'download':
+      // A fresh device's first sync brings everything at once: say so,
+      // instead of implying other devices just changed all of it.
+      if (event.initial) {
+        return {
+          ...base,
+          icon: 'download',
+          tone: 'positive',
+          title: t.sync.activity.initialSync,
+          detail: t.sync.activity.initialSyncCount(event.total),
+          amount: null,
+          currency: null,
+        };
+      }
       return {
         ...base,
         icon: 'download',

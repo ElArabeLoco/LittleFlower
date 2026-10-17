@@ -60,6 +60,20 @@ describe('startSyncActivityTracking()', () => {
     expect(stop).not.toBe(first);
     expect(startDownloadTracking).toHaveBeenCalledTimes(2);
   });
+
+  it('leaves nothing of the session behind when it stops (sign-out, user change)', () => {
+    const first = startSyncActivityTracking();
+    syncActivity.recordUpload([
+      { table: 'budgets', op: 'create', id: 'b-1', label: 'Arriendo', amount: 1, currency: 'COP', month: null },
+    ]);
+    labelCache.setNames('budgets', new Map([['b-1', 'Arriendo']]));
+
+    first();
+
+    expect(syncActivity.getSnapshot().events).toEqual([]);
+    expect(syncActivity.recentlyUploadedIds(60_000)).toEqual(new Set());
+    expect(labelCache.getName('budgets', 'b-1')).toBeNull();
+  });
 });
 
 describe('TRACKED_TABLES', () => {

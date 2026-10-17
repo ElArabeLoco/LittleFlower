@@ -13,9 +13,11 @@ import { Logo } from '@/shared/ui/Logo';
 // ---------------------------------------------------------------------------
 
 function RootInner() {
-  const { isLoading } = useAuth();
+  const { isLoading, session } = useAuth();
   const { t } = useI18n();
-  useSyncActivityTracking();
+  // Sync activity belongs to the signed-in person: it starts with a session
+  // and starts over clean on sign-out or a user change.
+  useSyncActivityTracking(session?.userId ?? null);
 
   if (isLoading) {
     return (

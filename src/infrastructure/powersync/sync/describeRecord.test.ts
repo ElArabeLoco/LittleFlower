@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { describeCrudEntry, describeRow, type NameLookup } from './describeRecord';
+import { describeCrudEntry, describeRow, describedFields, type NameLookup } from './describeRecord';
 import { labelCache } from './labelCache';
 import type { SyncRecordChange } from './types';
 
@@ -249,5 +249,36 @@ describe('describeRow()', () => {
     labelCache.setNames('budgets', new Map([['b-1', 'Arriendo']]));
 
     expect(describeRow('budget_months', 'update', 'bm-1', { budget_id: 'b-1' }).label).toBe('Arriendo');
+  });
+});
+
+describe('describedFields()', () => {
+  /** Full rows, every column of the schema (values only matter where described). */
+  const FULL_ROWS: Record<string, Record<string, unknown>> = {
+    budgets: { id: 'b-1', household_id: 'h', name: 'Arriendo', description: 'x', category_id: 'c', start_month: '2026-01', end_month: null, default_amount: 1_500_000, payment_mode: 'cash', credit_card_id: null, created_by: 'u', created_at: 't', deleted_at: null, last_edited_by: 'u', last_edited_at: 't', debt_id: null },
+    budget_months: { id: 'bm-1', household_id: 'h', budget_id: 'b-1', month: '2026-03', amount: 250_000, is_executed: 0, notes: 'n', created_at: 't', updated_at: 't', last_edited_by: 'u', last_edited_at: 't' },
+    expenses: { id: 'e-1', household_id: 'h', budget_id: 'b-1', budget_month_id: 'bm-1', amount: -50_000, note: null, recorded_by: 'u', timestamp: 't', created_at: 't', linked_expense_id: 'e-0', deleted_at: null, paid_with_credit_card: 0 },
+    incomes: { id: 'i-1', household_id: 'h', name: 'Salario', person: 'u', is_fixed: 1, category: 'Salario', default_amount: 5_000, currency: 'USD', start_month: '2026-01', end_month: null, created_by: 'u', created_at: 't', deleted_at: null },
+    income_months: { id: 'im-1', household_id: 'h', income_id: 'i-1', month: '2026-03', real_amount: 5_200, currency: 'USD', note: 'bono', base_salary: 5_000, deductions: 0, extra_days: 0, updated_at: 't', last_edited_by: 'u', last_edited_at: 't' },
+    exchange_rates: { id: 'fx-1', household_id: 'h', from_currency: 'USD', to_currency: 'COP', month: '2026-03', rate: 4_150.5, source: 'manual', updated_at: 't', last_edited_by: 'u', last_edited_at: 't' },
+    debts: { id: 'd-1', household_id: 'h', name: 'Hipoteca', description: null, initial_amount: 50_000_000, currency: 'COP', disbursed_at: '2026-01-01', created_by: 'u', created_at: 't', deleted_at: null, updated_at: 't', last_edited_by: 'u', last_edited_at: 't' },
+    debt_transactions: { id: 'dt-1', household_id: 'h', debt_id: 'd-1', amount: 300_000, original_amount: null, original_currency: null, exchange_rate: null, type: 'debit', note: null, date: '2026-03-01', source: 'manual', expense_id: null, created_by: 'u', created_at: 't', deleted_at: null },
+    households: { id: 'h', name: 'Casa', join_code: '123456', created_at: 't' },
+    users: { id: 'u', household_id: 'h', name: 'Ana', email: 'a@x.co', color: '#fff', role: 'admin', created_at: 't' },
+  };
+
+  it.each(Object.entries(FULL_ROWS))('describes %s from the kept fields exactly like from the full row', (table, row) => {
+    const lookup: NameLookup = (related, id) => `${related}:${String(id)}`;
+
+    expect(describeRow(table, 'delete', 'x', describedFields(row), lookup)).toEqual(
+      describeRow(table, 'delete', 'x', row, lookup),
+    );
+  });
+
+  it('keeps deleted_at for soft deletes and drops everything else', () => {
+    expect(describedFields({ id: 'b-1', name: 'Arriendo', created_by: 'u', deleted_at: '2026-03-01' })).toEqual({
+      name: 'Arriendo',
+      deleted_at: '2026-03-01',
+    });
   });
 });

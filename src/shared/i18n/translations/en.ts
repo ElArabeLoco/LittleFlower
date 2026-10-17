@@ -689,6 +689,8 @@ export const en: Translations = {
       kinds: { upload: 'Upload', 'upload-failed': 'Failed upload', download: 'Download', connection: 'Connection' },
       uploaded: (n: number) => (n === 1 ? '1 change uploaded' : `${n} changes uploaded`),
       received: (n: number) => (n === 1 ? '1 change received' : `${n} changes received`),
+      initialSync: 'First sync on this device',
+      initialSyncCount: (n: number) => (n === 1 ? '1 record downloaded' : `${n} records downloaded`),
       notUploaded: (n: number) => (n === 1 ? '1 change not uploaded' : `${n} changes not uploaded`),
       failedAttempts: (n: number) => (n === 1 ? "Couldn't upload" : `Couldn't upload after ${n} attempts`),
       resolvedAt: (time: string) => `Uploaded on a retry at ${time}`,

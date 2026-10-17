@@ -36,7 +36,8 @@ export interface SyncActivityStore {
   subscribe(listener: () => void): () => void;
   recordUpload(changes: SyncRecordChange[]): void;
   recordUploadFailure(changes: SyncRecordChange[], error: SyncErrorInfo): void;
-  recordDownload(changes: SyncRecordChange[], total?: number): void;
+  /** `initial`: a fresh device's first sync (everything arrived at once). */
+  recordDownload(changes: SyncRecordChange[], total?: number, options?: { initial?: boolean }): void;
   recordConnection(state: SyncConnectionState, error?: SyncErrorInfo | null): void;
   updateConnection(patch: Partial<SyncConnectionTimeline>): void;
   /** Ids uploaded within the last `windowMs` (at most the last 10 minutes). */
@@ -51,6 +52,11 @@ export interface SyncActivityStore {
   onUpload(listener: (ids: string[]) => void): () => void;
   /** Empties the log; keeps the session start and the connection timeline. */
   clear(): void;
+  /**
+   * Starts a new, empty session (sign-out or another user): log, timeline,
+   * uploaded-id memory and connection dedupe all start over.
+   */
+  reset(): void;
 }
 
 /** How long uploaded ids are remembered to recognise their download echo. */
@@ -76,11 +82,7 @@ export function createSyncActivityStore({
   /** Dedupe key (see connectionKey) of the last recorded connection event. */
   let lastConnectionKey: string | null = null;
 
-  let state: SyncActivityState = {
-    sessionStartedAt: now(),
-    events: [],
-    connection: { connectedAt: null, disconnectedSince: null, downloadErrorSince: null, lastSyncedAt: null },
-  };
+  let state = emptySession(now());
 
   function commit(next: SyncActivityState): void {
     state = next;
@@ -176,9 +178,11 @@ export function createSyncActivityStore({
       ]);
     },
 
-    recordDownload(changes, total = changes.length) {
+    recordDownload(changes, total = changes.length, { initial = false } = {}) {
       if (changes.length === 0) return;
-      setEvents([{ id: nextId(), kind: 'download', at: now(), changes, total }, ...state.events]);
+      const event: Extract<SyncActivityEvent, { kind: 'download' }> = { id: nextId(), kind: 'download', at: now(), changes, total };
+      if (initial) event.initial = true;
+      setEvents([event, ...state.events]);
     },
 
     recordConnection(connectionState, error = null) {
@@ -216,6 +220,20 @@ export function createSyncActivityStore({
       if (state.events.length === 0) return;
       commit({ ...state, events: [] });
     },
+
+    reset() {
+      uploadedAt.clear();
+      lastConnectionKey = null;
+      commit(emptySession(now()));
+    },
+  };
+}
+
+function emptySession(sessionStartedAt: number): SyncActivityState {
+  return {
+    sessionStartedAt,
+    events: [],
+    connection: { connectedAt: null, disconnectedSince: null, downloadErrorSince: null, lastSyncedAt: null },
   };
 }
 
