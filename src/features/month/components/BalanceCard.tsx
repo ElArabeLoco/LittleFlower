@@ -29,8 +29,8 @@ export function BalanceCard({ available, totalBudgeted, totalSpent, totalRealSpe
   const realBalance = available - totalRealSpent;
   const pending = Math.max(0, totalBudgeted - totalSpent);
 
-  // Shantell Sans runs wide: full-format amounts step down so they stay on one
-  // line on a 360px phone ("+$ 28.633.556" at 28px, "+$27.4M" keeps 40px).
+  // Full-format amounts step down so they stay on one line on a 360px phone
+  // ("+$ 28.633.556" at 28px, "+$27.4M" keeps 40px).
   const heroLength = (balance > 0 ? 1 : 0) + formatCOP(balance).length;
   const realLength = (realBalance > 0 ? 1 : 0) + formatCOP(realBalance).length;
   const heroSize = heroLength <= 9 ? 'text-[40px]' : heroLength <= 12 ? 'text-[32px]' : 'text-[28px]';
@@ -49,7 +49,7 @@ export function BalanceCard({ available, totalBudgeted, totalSpent, totalRealSpe
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:items-end sm:gap-x-8">
         <div>
           <p className="text-[13px] font-medium text-[var(--text-secondary)]">{t.monthView.balanceReal}</p>
-          <p className={cn('mt-1.5 font-hand font-bold tracking-[-0.01em] tabular-nums', heroSize, 'leading-none', inkFor(balance))}>
+          <p className={cn('mt-1.5 font-bold tracking-[-0.01em] tabular-nums', heroSize, 'leading-none', inkFor(balance))}>
             {balance > 0 ? '+' : ''}<AbbreviatedAmount value={balance} />
           </p>
           <p className="mt-2 text-xs text-[var(--text-muted)]">{t.monthView.availableMinusBudgeted}</p>
@@ -57,7 +57,7 @@ export function BalanceCard({ available, totalBudgeted, totalSpent, totalRealSpe
 
         <div>
           <p className="text-[13px] font-medium text-[var(--text-secondary)]">{t.monthView.trueBalanceReal}</p>
-          <p className={cn('mt-1.5 font-hand font-bold tracking-[-0.01em] tabular-nums', realSize, 'leading-none', inkFor(realBalance))}>
+          <p className={cn('mt-1.5 font-bold tracking-[-0.01em] tabular-nums', realSize, 'leading-none', inkFor(realBalance))}>
             {realBalance > 0 ? '+' : ''}<AbbreviatedAmount value={realBalance} />
           </p>
           <p className="mt-2 text-xs text-[var(--text-muted)]">{t.monthView.availableMinusSpent}</p>

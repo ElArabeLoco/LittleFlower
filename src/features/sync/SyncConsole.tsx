@@ -1,7 +1,7 @@
 /**
  * SyncConsole — the popover opened from the header's sync button.
  *
- *   Sincronización                      ← hand-written title
+ *   Sincronización                      ← title
  *   (icon) Todo está al día             ← state headline
  *          Última sincronización: …     ← refreshed every 30 s while open
  *   [download progress]
@@ -97,7 +97,7 @@ function SyncConsoleBody({
     <>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="px-5 pb-4 pt-5">
-          <h2 id={titleId} className="font-hand text-xl font-[650] leading-tight tracking-[-0.01em] text-[var(--text-primary)]">
+          <h2 id={titleId} className="text-xl font-[650] leading-tight tracking-[-0.01em] text-[var(--text-primary)]">
             {t.sync.title}
           </h2>
 

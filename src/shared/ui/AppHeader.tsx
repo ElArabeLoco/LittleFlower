@@ -12,7 +12,7 @@
  *   └──────────────────────────────────────────────────────┘
  *
  * The header blends with the page background and is separated from the
- * content by a hairline. The title uses the hand-written voice. The sync
+ * content by a hairline. The sync
  * status button sits at the far right and opens the sync console; the alert
  * band can open the same console, so the open state lives here. Everything,
  * toolbar included, sticks together: a separate sticky bar would need to
@@ -83,7 +83,7 @@ export function AppHeaderView({
           {/* Size first: tailwind-merge drops a `leading-*` that precedes a `text-*` size. */}
           <h1
             className={cn(
-              'truncate font-hand font-[650] tracking-[-0.01em] text-[var(--text-primary)]',
+              'truncate font-[650] tracking-[-0.01em] text-[var(--text-primary)]',
               compact ? 'text-lg' : 'text-[22px] sm:text-2xl',
               'leading-tight',
             )}

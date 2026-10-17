@@ -23,10 +23,10 @@ interface KpiTileProps {
 }
 
 /**
- * Shantell Sans runs wide, so longer amounts step down. Each step keeps the
- * widest amount of that length inside the narrowest tile (~125px of content
- * on a 360px phone), e.g. "$27.4M" at 28px, "-$127.4M" at 22px and
- * "$ 27.398.988" (full number format) at 16px.
+ * Longer amounts step down. Each step keeps the widest amount of that length
+ * inside the narrowest tile (~125px of content on a 360px phone), e.g.
+ * "$27.4M" at 28px, "-$127.4M" at 22px and "$ 27.398.988" (full number
+ * format) at 16px.
  */
 function amountSize(length: number) {
   if (length <= 6) return 'text-[28px]';
@@ -37,7 +37,7 @@ function amountSize(length: number) {
   return 'text-sm';
 }
 
-/** One KPI: sentence-case label, muted icon, hand-written amount. */
+/** One KPI: sentence-case label, muted icon, large amount. */
 export function KpiTile({ label, value, icon: Icon, highlight = 'default' }: KpiTileProps) {
   const { formatCOP } = useNumberFormat();
   const size = amountSize(formatCOP(value).length);
@@ -50,7 +50,7 @@ export function KpiTile({ label, value, icon: Icon, highlight = 'default' }: Kpi
         <Icon size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
       </div>
       {/* Size before leading: tailwind-merge drops a `leading-*` that precedes a `text-*` size. */}
-      <p className={cn('font-hand font-bold tabular-nums tracking-[-0.01em]', size, 'leading-tight', HIGHLIGHT_CLASS[highlight])}>
+      <p className={cn('font-bold tabular-nums tracking-[-0.01em]', size, 'leading-tight', HIGHLIGHT_CLASS[highlight])}>
         <AbbreviatedAmount value={value} />
       </p>
     </div>
@@ -89,7 +89,7 @@ export function KpiStrip() {
   const balanceHighlight: 'positive' | 'negative' | 'default' =
     currentData.balance > 0 ? 'positive' : currentData.balance < 0 ? 'negative' : 'default';
 
-  // Tiles stay at least ~150px wide: hand-written amounts do not fit a sixth of a tablet row.
+  // Tiles stay at least ~150px wide: large amounts do not fit a sixth of a tablet row.
   return (
     <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${hasDebts ? 'xl:grid-cols-6' : 'lg:grid-cols-5'}`}>
       <KpiTile

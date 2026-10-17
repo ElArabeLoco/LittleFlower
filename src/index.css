@@ -13,10 +13,9 @@
 /* ---------------------------------------------------------------------------
    Theme — typography, shadows and the consolidated color palette
 
-   Typography: two self-hosted variable fonts, like notes written by hand on a
-   printed ledger. Recursive (`font-sans`) is the default UI voice. Shantell
-   Sans (`font-hand`) is the hand-written voice reserved for page titles and
-   hero amounts.
+   Typography: one self-hosted variable font, Recursive (`font-sans`), for the
+   whole UI. Titles and hero amounts stand out through weight and tracking,
+   not through a second family.
 
    Palette: Tailwind's families are consolidated into seven brand-tuned scales
    derived from the logo (carnation petals, golden center). Each scale keeps
@@ -28,7 +27,6 @@
 
 @theme static {
   --font-sans: "Recursive Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-hand: "Shantell Sans Variable", "Recursive Variable", ui-sans-serif, system-ui, sans-serif;
 
   /* Petal — brand, primary actions */
   --color-pink-50: #FDF2F7;

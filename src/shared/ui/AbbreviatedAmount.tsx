@@ -56,8 +56,8 @@ export function AbbreviatedAmount({
       <span
         className={cn(
           'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50',
-          // Reset the font: amounts may use the hand-written voice, the bubble stays in the UI voice.
-          'whitespace-nowrap rounded-lg px-2.5 py-1 font-sans text-[11px] font-medium tracking-normal shadow-lg',
+          // Reset tracking: hero amounts are set tight, the bubble keeps normal spacing.
+          'whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-medium tracking-normal shadow-lg',
           'bg-gray-900 text-gray-100 dark:bg-gray-800 dark:text-gray-100',
           'opacity-0 group-hover/amt:opacity-100 transition-opacity duration-150',
         )}

@@ -60,7 +60,7 @@ export function HubLinkCard({ to, title, description, icon: Icon, tone }: HubLin
       />
 
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <h2 className="font-hand text-xl font-[650] leading-tight tracking-[-0.01em] text-[var(--text-primary)]">
+        <h2 className="text-xl font-[650] leading-tight tracking-[-0.01em] text-[var(--text-primary)]">
           {title}
         </h2>
         <ChevronRight
