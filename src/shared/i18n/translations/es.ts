@@ -480,7 +480,7 @@ export const es = {
   // ---------------------------------------------------------------------------
   finances: {
     title: 'Finanzas',
-    subtitle: 'Ingresos · Presupuestos · Deudas',
+    subtitle: 'La configuración de tu hogar',
     description: 'Configura y gestiona el lado financiero del hogar: de dónde viene la plata y cómo la organizas.',
     incomeTitle: 'Ingresos',
     incomeDesc: 'Gestiona las fuentes de ingreso del hogar. Soporta salarios en COP y USD con conversión TRM automática.',

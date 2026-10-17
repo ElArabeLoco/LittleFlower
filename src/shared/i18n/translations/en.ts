@@ -481,7 +481,7 @@ export const en: Translations = {
   // ---------------------------------------------------------------------------
   finances: {
     title: 'Finances',
-    subtitle: 'Income · Budgets · Debts',
+    subtitle: 'Your household setup',
     description: 'Set up and manage the financial side of your household: where the money comes from and how you organize it.',
     incomeTitle: 'Income',
     incomeDesc: 'Manage your household income sources. Supports COP and USD salaries with automatic TRM conversion.',
