@@ -48,8 +48,11 @@ export async function login(
       return { error: { code: 'INVALID_CREDENTIALS', message: '' } };
     }
 
-    // Connect PowerSync with the fresh session token
-    await db.connect(new SupabaseConnector());
+    // Connect PowerSync with the fresh session token, unless the auth
+    // listener already did on this SIGNED_IN (connect() restarts a stream).
+    if (!db.connected && !db.connecting) {
+      await db.connect(new SupabaseConnector());
+    }
 
     return {
       session: {
@@ -95,7 +98,10 @@ export async function register(
       return { pendingConfirmation: true };
     }
 
-    await db.connect(new SupabaseConnector());
+    // Same guard as login(): the auth listener reacts to this SIGNED_IN too.
+    if (!db.connected && !db.connecting) {
+      await db.connect(new SupabaseConnector());
+    }
 
     return {
       session: {

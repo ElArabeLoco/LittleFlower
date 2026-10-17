@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 
 vi.mock('../powersync/SupabaseConnector', () => ({
-  supabase: { auth: { getSession: vi.fn() } },
+  supabase: { auth: { getSession: vi.fn(), signInWithPassword: vi.fn(), signUp: vi.fn() } },
   SupabaseConnector: vi.fn(),
 }));
 
@@ -12,10 +12,88 @@ vi.mock('../powersync/client', () => ({
 
 import { supabase, SupabaseConnector } from '../powersync/SupabaseConnector';
 import { db } from '../powersync/client';
-import { getCurrentSession } from './SupabaseAuthAdapter';
+import { getCurrentSession, login, register } from './SupabaseAuthAdapter';
 
 const mockGetSession = supabase.auth.getSession as Mock;
+const mockSignIn = supabase.auth.signInWithPassword as Mock;
+const mockSignUp = supabase.auth.signUp as Mock;
 const mockDb = db as unknown as { connected: boolean; connecting: boolean; connect: Mock };
+
+/** signInWithPassword / signUp response with a session. */
+function authResponse() {
+  return {
+    data: {
+      session: { access_token: 'jwt-token' },
+      user: { id: 'user-1', email: 'ana@example.com', user_metadata: { household_id: 'hh-1' } },
+    },
+    error: null,
+  };
+}
+
+const BUSY_STATES = [
+  { state: 'connected', flags: { connected: true } },
+  { state: 'connecting', flags: { connecting: true } },
+];
+
+describe('login()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDb.connected = false;
+    mockDb.connecting = false;
+    mockDb.connect.mockResolvedValue(undefined);
+    mockSignIn.mockResolvedValue(authResponse());
+  });
+
+  it('connects PowerSync when it is idle', async () => {
+    const result = await login('ana@example.com', 'secret');
+
+    expect(mockDb.connect).toHaveBeenCalledOnce();
+    expect(result).toEqual({
+      session: { userId: 'user-1', email: 'ana@example.com', token: 'jwt-token', householdId: 'hh-1' },
+    });
+  });
+
+  it.each(BUSY_STATES)('does not connect again while PowerSync is $state (the auth listener did)', async ({ flags }) => {
+    Object.assign(mockDb, flags);
+
+    const result = await login('ana@example.com', 'secret');
+
+    expect(mockDb.connect).not.toHaveBeenCalled();
+    expect(result).toHaveProperty('session');
+  });
+});
+
+describe('register()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDb.connected = false;
+    mockDb.connecting = false;
+    mockDb.connect.mockResolvedValue(undefined);
+    mockSignUp.mockResolvedValue(authResponse());
+  });
+
+  it('connects PowerSync when it is idle', async () => {
+    await register('ana@example.com', 'secret', 'Ana');
+
+    expect(mockDb.connect).toHaveBeenCalledOnce();
+  });
+
+  it.each(BUSY_STATES)('does not connect again while PowerSync is $state (the auth listener did)', async ({ flags }) => {
+    Object.assign(mockDb, flags);
+
+    const result = await register('ana@example.com', 'secret', 'Ana');
+
+    expect(mockDb.connect).not.toHaveBeenCalled();
+    expect(result).toHaveProperty('session');
+  });
+
+  it('does not connect while the email still needs confirming', async () => {
+    mockSignUp.mockResolvedValue({ data: { session: null, user: { id: 'user-1' } }, error: null });
+
+    await expect(register('ana@example.com', 'secret', 'Ana')).resolves.toEqual({ pendingConfirmation: true });
+    expect(mockDb.connect).not.toHaveBeenCalled();
+  });
+});
 
 function sessionResponse(householdId: string | null = 'hh-1') {
   return {
