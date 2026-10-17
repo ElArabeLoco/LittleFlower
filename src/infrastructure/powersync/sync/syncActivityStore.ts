@@ -1,0 +1,210 @@
+/**
+ * Sync activity store — the session log of what went up and what came down.
+ *
+ * A tiny external store (useSyncExternalStore contract): every change
+ * produces a new immutable SyncActivityState and getSnapshot() returns the
+ * same object until the next change. Lives in memory only; a reload starts a
+ * new session.
+ *
+ * Writers:
+ *   - SupabaseConnector.uploadData → recordUpload / recordUploadFailure
+ *   - download tracker            → recordDownload
+ *   - connection tracker          → recordConnection / updateConnection
+ */
+
+import type {
+  SyncActivityEvent,
+  SyncActivityState,
+  SyncConnectionTimeline,
+  SyncErrorInfo,
+  SyncRecordChange,
+} from './types';
+
+export type SyncUploadFailedEvent = Extract<SyncActivityEvent, { kind: 'upload-failed' }>;
+export type SyncConnectionState = Extract<SyncActivityEvent, { kind: 'connection' }>['state'];
+
+export interface SyncActivityStoreOptions {
+  now?: () => number;
+  /** Ring buffer size — only the newest events are kept. */
+  maxEvents?: number;
+  idFactory?: () => string;
+}
+
+export interface SyncActivityStore {
+  getSnapshot(): SyncActivityState;
+  subscribe(listener: () => void): () => void;
+  recordUpload(changes: SyncRecordChange[]): void;
+  recordUploadFailure(changes: SyncRecordChange[], error: SyncErrorInfo): void;
+  recordDownload(changes: SyncRecordChange[], total?: number): void;
+  recordConnection(state: SyncConnectionState, error?: SyncErrorInfo | null): void;
+  updateConnection(patch: Partial<SyncConnectionTimeline>): void;
+  /** Ids uploaded within the last `windowMs` (at most the last 10 minutes). */
+  recentlyUploadedIds(windowMs: number): Set<string>;
+  /** Empties the log; keeps the session start and the connection timeline. */
+  clear(): void;
+}
+
+/** How long uploaded ids are remembered to recognise their download echo. */
+const UPLOADED_ID_RETENTION_MS = 10 * 60_000;
+
+const TIMELINE_KEYS = ['connectedAt', 'disconnectedSince', 'downloadErrorSince', 'lastSyncedAt'] as const;
+
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
+export function createSyncActivityStore({
+  now = Date.now,
+  maxEvents = 200,
+  idFactory,
+}: SyncActivityStoreOptions = {}): SyncActivityStore {
+  let sequence = 0;
+  const nextId = idFactory ?? (() => `sync-${++sequence}`);
+  const listeners = new Set<() => void>();
+  /** Record id → last successful upload time. */
+  const uploadedAt = new Map<string, number>();
+  /** `${state}|${error message}` of the last recorded connection event. */
+  let lastConnectionKey: string | null = null;
+
+  let state: SyncActivityState = {
+    sessionStartedAt: now(),
+    events: [],
+    connection: { connectedAt: null, disconnectedSince: null, downloadErrorSince: null, lastSyncedAt: null },
+  };
+
+  function commit(next: SyncActivityState): void {
+    state = next;
+    for (const listener of [...listeners]) listener();
+  }
+
+  function setEvents(events: SyncActivityEvent[]): void {
+    commit({ ...state, events: events.length > maxEvents ? events.slice(0, maxEvents) : events });
+  }
+
+  function pruneUploadedIds(at: number): void {
+    for (const [id, uploaded] of uploadedAt) {
+      if (at - uploaded > UPLOADED_ID_RETENTION_MS) uploadedAt.delete(id);
+    }
+  }
+
+  return {
+    getSnapshot: () => state,
+
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+
+    recordUpload(changes) {
+      const at = now();
+      const ids = new Set(changes.map((change) => change.id));
+      for (const id of ids) uploadedAt.set(id, at);
+      pruneUploadedIds(at);
+
+      // The queue only moves forward once the failing transaction succeeds,
+      // so an upload touching a failed record means that failure is over.
+      const events = state.events.map((event) =>
+        event.kind === 'upload-failed' &&
+        event.resolvedAt === null &&
+        event.changes.some((change) => ids.has(change.id))
+          ? { ...event, resolvedAt: at }
+          : event,
+      );
+      setEvents([{ id: nextId(), kind: 'upload', at, changes }, ...events]);
+    },
+
+    recordUploadFailure(changes, error) {
+      const at = now();
+      const [newest, ...older] = state.events;
+
+      // PowerSync retries the same transaction every few seconds: fold
+      // identical retries into one event instead of flooding the log.
+      if (
+        newest?.kind === 'upload-failed' &&
+        newest.resolvedAt === null &&
+        newest.error.message === error.message &&
+        sameRecordIds(newest.changes, changes)
+      ) {
+        setEvents([{ ...newest, attempts: newest.attempts + 1, lastAttemptAt: at, changes, error }, ...older]);
+        return;
+      }
+
+      setEvents([
+        { id: nextId(), kind: 'upload-failed', at, lastAttemptAt: at, attempts: 1, changes, error, resolvedAt: null },
+        ...state.events,
+      ]);
+    },
+
+    recordDownload(changes, total = changes.length) {
+      if (changes.length === 0) return;
+      setEvents([{ id: nextId(), kind: 'download', at: now(), changes, total }, ...state.events]);
+    },
+
+    recordConnection(connectionState, error = null) {
+      // Dedupe against the last connection event, not the newest event:
+      // uploads and downloads in between do not make a repeat meaningful.
+      const key = `${connectionState}|${error?.message ?? ''}`;
+      if (key === lastConnectionKey) return;
+      lastConnectionKey = key;
+      setEvents([{ id: nextId(), kind: 'connection', at: now(), state: connectionState, error }, ...state.events]);
+    },
+
+    updateConnection(patch) {
+      const next: SyncConnectionTimeline = { ...state.connection };
+      let changed = false;
+      for (const key of TIMELINE_KEYS) {
+        const value = patch[key];
+        if (value === undefined || value === next[key]) continue;
+        next[key] = value;
+        changed = true;
+      }
+      if (changed) commit({ ...state, connection: next });
+    },
+
+    recentlyUploadedIds(windowMs) {
+      const at = now();
+      pruneUploadedIds(at);
+      const ids = new Set<string>();
+      for (const [id, uploaded] of uploadedAt) {
+        if (at - uploaded <= windowMs) ids.add(id);
+      }
+      return ids;
+    },
+
+    clear() {
+      if (state.events.length === 0) return;
+      commit({ ...state, events: [] });
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Selectors
+// ---------------------------------------------------------------------------
+
+/** Newest upload failure that no later upload has resolved, or null. */
+export function selectUnresolvedUploadFailure(state: SyncActivityState): SyncUploadFailedEvent | null {
+  return (
+    state.events.find(
+      (event): event is SyncUploadFailedEvent => event.kind === 'upload-failed' && event.resolvedAt === null,
+    ) ?? null
+  );
+}
+
+// ---------------------------------------------------------------------------
+// App-wide instance
+// ---------------------------------------------------------------------------
+
+export const syncActivity: SyncActivityStore = createSyncActivityStore();
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
+
+function sameRecordIds(a: SyncRecordChange[], b: SyncRecordChange[]): boolean {
+  const left = new Set(a.map((change) => change.id));
+  const right = new Set(b.map((change) => change.id));
+  return left.size === right.size && [...left].every((id) => right.has(id));
+}
