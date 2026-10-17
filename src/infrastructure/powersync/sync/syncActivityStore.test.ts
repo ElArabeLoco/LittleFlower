@@ -253,6 +253,38 @@ describe('createSyncActivityStore()', () => {
     });
   });
 
+  describe('failing listeners', () => {
+    it('a throwing subscriber neither stops the others nor the write', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const store = makeStore();
+      const after = vi.fn();
+      store.subscribe(() => {
+        throw new Error('subscriber failed');
+      });
+      store.subscribe(after);
+
+      expect(() => store.recordUpload([changeOf('e-1')])).not.toThrow();
+      expect(after).toHaveBeenCalledOnce();
+      expect(store.getSnapshot().events).toHaveLength(1);
+      warn.mockRestore();
+    });
+
+    it('a throwing upload listener neither stops the others nor the write', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const store = makeStore();
+      const after = vi.fn();
+      store.onUpload(() => {
+        throw new Error('listener failed');
+      });
+      store.onUpload(after);
+
+      expect(() => store.recordUpload([changeOf('e-1')])).not.toThrow();
+      expect(after).toHaveBeenCalledWith(['e-1']);
+      expect(store.recentlyUploadedIds(60_000)).toEqual(new Set(['e-1']));
+      warn.mockRestore();
+    });
+  });
+
   describe('onUpload()', () => {
     it('reports the unique ids of each recorded upload until unsubscribed', () => {
       const store = makeStore();

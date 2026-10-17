@@ -84,7 +84,7 @@ export function createSyncActivityStore({
 
   function commit(next: SyncActivityState): void {
     state = next;
-    for (const listener of [...listeners]) listener();
+    for (const listener of [...listeners]) notifySafely(listener);
   }
 
   function setEvents(events: SyncActivityEvent[]): void {
@@ -134,7 +134,7 @@ export function createSyncActivityStore({
       setEvents([{ id: nextId(), kind: 'upload', at, changes }, ...events]);
 
       const uploadedIds = [...ids];
-      for (const listener of [...uploadListeners]) listener(uploadedIds);
+      for (const listener of [...uploadListeners]) notifySafely(listener, uploadedIds);
     },
 
     rememberUploadedIds(ids) {
@@ -236,6 +236,19 @@ export const syncActivity: SyncActivityStore = createSyncActivityStore();
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Listeners are outside code. One that throws must neither stop the others
+ * nor reach the writer: the connector records uploads, and a logging
+ * problem must never change an upload's outcome.
+ */
+function notifySafely<A extends unknown[]>(listener: (...args: A) => void, ...args: A): void {
+  try {
+    listener(...args);
+  } catch (error) {
+    console.warn('[SyncActivity] A listener failed:', error);
+  }
+}
 
 /**
  * Errors are compared by kind and code, never by message: sync service

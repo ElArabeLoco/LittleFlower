@@ -41,7 +41,12 @@ export function startUploadIdSharing({ store, channel }: UploadIdSharingOptions)
 
   const stopBroadcasting = store.onUpload((ids) => {
     const message: UploadedIdsMessage = { type: 'uploaded-ids', ids };
-    channel.postMessage(message);
+    try {
+      channel.postMessage(message);
+    } catch (error) {
+      // A closed or broken channel only costs the other tabs their echo hints.
+      console.warn('[SyncActivity] Could not share uploaded ids with other tabs:', error);
+    }
   });
 
   const onMessage = (event: MessageEvent) => {

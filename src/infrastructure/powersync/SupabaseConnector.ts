@@ -31,6 +31,7 @@ import type {
 import { describeCrudEntry } from './sync/describeRecord';
 import { SyncUploadError, classifySupabaseError, classifySyncError } from './sync/syncErrors';
 import { syncActivity } from './sync/syncActivityStore';
+import type { SyncRecordChange } from './sync/types';
 
 // ---------------------------------------------------------------------------
 // Supabase client (singleton, shared with auth adapter)
@@ -94,8 +95,9 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const transaction = await database.getNextCrudTransaction();
     if (!transaction) return;
 
-    // Related budget/income/debt names come from the label cache (default lookup).
-    const changes = transaction.crud.map((entry) => describeCrudEntry(entry));
+    // Related budget/income/debt names come from the label cache (default
+    // lookup). Logging is best effort throughout: see safely().
+    const changes = transaction.crud.map((entry) => safely(() => describeCrudEntry(entry), () => bareChange(entry)));
 
     try {
       for (const entry of transaction.crud) {
@@ -105,13 +107,13 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     } catch (err) {
       // Do NOT call transaction.complete() on error — PowerSync will retry
       const info = err instanceof SyncUploadError ? err.info : classifySyncError(err, navigator.onLine);
-      syncActivity.recordUploadFailure(changes, info);
+      safely(() => syncActivity.recordUploadFailure(changes, info));
       console.error(`[SupabaseConnector] uploadData failed (${info.kind}), will retry:`, err);
       throw err instanceof SyncUploadError ? err : new SyncUploadError(info, { cause: err });
     }
 
     // Outside the try: a logging problem must never look like an upload failure.
-    syncActivity.recordUpload(changes);
+    safely(() => syncActivity.recordUpload(changes));
   }
 
   // ---------------------------------------------------------------------------
@@ -162,4 +164,30 @@ function toUploadError(entry: CrudEntry, error: PostgrestError, status: number):
   return new SyncUploadError(
     classifySupabaseError(error, { status, table: entry.table, op: entry.op, recordId: entry.id }),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Private — best-effort activity logging
+// ---------------------------------------------------------------------------
+
+/**
+ * Runs an activity-log step. Logging must never change an upload's outcome:
+ * a failure here is reported and replaced by `fallback`, never thrown into
+ * the upload (where it would fail a completed upload or hide the real error).
+ */
+function safely<T>(log: () => T, fallback: () => T): T;
+function safely(log: () => void): void;
+function safely<T>(log: () => T, fallback?: () => T): T | undefined {
+  try {
+    return log();
+  } catch (error) {
+    console.warn('[SupabaseConnector] Sync activity logging failed:', error);
+    return fallback?.();
+  }
+}
+
+/** Table, op and id only — used when a full description failed. */
+function bareChange(entry: CrudEntry): SyncRecordChange {
+  const op = entry.op === 'PUT' ? 'create' : entry.op === 'DELETE' ? 'delete' : 'update';
+  return { table: entry.table, op, id: entry.id, label: null, amount: null, currency: null, month: null };
 }

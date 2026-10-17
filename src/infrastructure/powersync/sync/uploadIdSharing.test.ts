@@ -119,6 +119,32 @@ describe('startUploadIdSharing()', () => {
     expect(tabA.recentlyUploadedIds(60_000)).toEqual(new Set(['e-1']));
   });
 
+  it('a failing postMessage never reaches the upload that triggered it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let onUpload: ((ids: string[]) => void) | undefined;
+    const store = {
+      onUpload: (listener: (ids: string[]) => void) => {
+        onUpload = listener;
+        return () => {};
+      },
+      rememberUploadedIds: vi.fn(),
+    };
+    const channel: UploadIdChannel = {
+      postMessage: () => {
+        throw new DOMException('Channel is closed', 'InvalidStateError');
+      },
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      close: () => {},
+    };
+
+    startUploadIdSharing({ store, channel });
+
+    expect(() => onUpload?.(['e-1'])).not.toThrow();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('does nothing without a channel', () => {
     const store = createSyncActivityStore();
 

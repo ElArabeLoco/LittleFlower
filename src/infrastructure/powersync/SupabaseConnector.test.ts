@@ -4,7 +4,7 @@
  * Exercised with a fake Supabase client and a fake CRUD transaction.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Mock } from 'vitest';
 import type { AbstractPowerSyncDatabase, CrudEntry } from '@powersync/web';
 
@@ -30,6 +30,7 @@ vi.mock('@supabase/supabase-js', () => ({ createClient: () => supabaseMock.clien
 import { SupabaseConnector } from './SupabaseConnector';
 import { SyncUploadError } from './sync/syncErrors';
 import { syncActivity, selectUnresolvedUploadFailure } from './sync/syncActivityStore';
+import { labelCache } from './sync/labelCache';
 
 const OK: Response = { error: null, status: 201 };
 
@@ -172,5 +173,69 @@ describe('SupabaseConnector.uploadData()', () => {
 
     expect(selectUnresolvedUploadFailure(syncActivity.getSnapshot())).toBeNull();
     expect(syncActivity.getSnapshot().events.map((e) => e.kind)).toEqual(['upload', 'upload-failed']);
+  });
+});
+
+describe('SupabaseConnector.uploadData() — logging never changes the outcome', () => {
+  let connector: SupabaseConnector;
+  const cleanups: (() => void)[] = [];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    syncActivity.clear();
+    connector = new SupabaseConnector();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+    vi.restoreAllMocks();
+  });
+
+  it('a throwing upload listener does not make a completed upload reject', async () => {
+    cleanups.push(
+      syncActivity.onUpload(() => {
+        throw new Error('listener failed');
+      }),
+    );
+    supabaseMock.respond.mockResolvedValue(OK);
+    const { database, complete } = fakeDatabase([BUDGET_PUT]);
+
+    await expect(connector.uploadData(database)).resolves.toBeUndefined();
+    expect(complete).toHaveBeenCalledOnce();
+  });
+
+  it('a throwing store subscriber does not replace the classified error', async () => {
+    cleanups.push(
+      syncActivity.subscribe(() => {
+        throw new Error('subscriber failed');
+      }),
+    );
+    supabaseMock.respond.mockResolvedValue({
+      error: { code: '42501', message: 'new row violates row-level security policy', details: '', hint: '' },
+      status: 403,
+    });
+
+    const error = await uploadFailure(connector.uploadData(fakeDatabase([EXPENSE_PUT]).database));
+
+    expect(error).toBeInstanceOf(SyncUploadError);
+    expect(error.info).toMatchObject({ kind: 'rejected', code: '42501', recordId: 'e-1' });
+  });
+
+  it('a failing record description still uploads and logs the record id', async () => {
+    vi.spyOn(labelCache, 'getName').mockImplementation(() => {
+      throw new Error('label cache failed');
+    });
+    supabaseMock.respond.mockResolvedValue(OK);
+    const { database, complete } = fakeDatabase([entry('PUT', 'expenses', 'e-9', { amount: 12_000 })]);
+
+    await connector.uploadData(database);
+
+    expect(complete).toHaveBeenCalledOnce();
+    expect(syncActivity.getSnapshot().events[0]).toMatchObject({
+      kind: 'upload',
+      changes: [{ table: 'expenses', op: 'create', id: 'e-9', label: null }],
+    });
   });
 });
