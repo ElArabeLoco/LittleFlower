@@ -209,6 +209,63 @@ describe('createSyncActivityStore()', () => {
 
       expect(store.getSnapshot().events.map((e) => e.kind)).toEqual(['download', 'connection']);
     });
+
+    it('dedupes consecutive errors by kind and code, not by message', () => {
+      const store = makeStore();
+      store.recordConnection('error', { ...errorOf('HTTP Bad Gateway (request 1)', 'server'), code: 'PSYNC_S2001' });
+      store.recordConnection('error', { ...errorOf('HTTP Bad Gateway (request 2)', 'server'), code: 'PSYNC_S2001' });
+      store.recordConnection('error', { ...errorOf('HTTP Bad Gateway (request 3)', 'server'), code: 'PSYNC_S2002' });
+
+      const messages = store.getSnapshot().events.map((e) => (e.kind === 'connection' ? e.error?.message : null));
+      expect(messages).toEqual(['HTTP Bad Gateway (request 3)', 'HTTP Bad Gateway (request 1)']);
+    });
+  });
+
+  describe('rememberUploadedIds()', () => {
+    it('adds ids uploaded elsewhere to the recent-upload memory without logging an upload', () => {
+      const store = makeStore();
+      const before = store.getSnapshot();
+
+      store.rememberUploadedIds(['e-1', 'e-2']);
+
+      expect(store.recentlyUploadedIds(60_000)).toEqual(new Set(['e-1', 'e-2']));
+      expect(store.getSnapshot()).toBe(before);
+    });
+
+    it('resolves unresolved failures of those records', () => {
+      const store = makeStore();
+      store.recordUploadFailure([changeOf('e-1')], errorOf('rls'));
+      clock = 4_000;
+
+      store.rememberUploadedIds(['e-1']);
+
+      expect(store.getSnapshot().events).toEqual([expect.objectContaining({ kind: 'upload-failed', resolvedAt: 4_000 })]);
+    });
+
+    it('does not notify upload listeners (no cross-tab echo)', () => {
+      const store = makeStore();
+      const listener = vi.fn();
+      store.onUpload(listener);
+
+      store.rememberUploadedIds(['e-1']);
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onUpload()', () => {
+    it('reports the unique ids of each recorded upload until unsubscribed', () => {
+      const store = makeStore();
+      const listener = vi.fn();
+      const unsubscribe = store.onUpload(listener);
+
+      store.recordUpload([changeOf('e-1'), changeOf('e-1'), changeOf('e-2')]);
+      unsubscribe();
+      store.recordUpload([changeOf('e-3')]);
+
+      expect(listener).toHaveBeenCalledOnce();
+      expect(listener).toHaveBeenCalledWith(['e-1', 'e-2']);
+    });
   });
 
   describe('updateConnection()', () => {

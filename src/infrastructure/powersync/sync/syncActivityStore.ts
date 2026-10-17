@@ -10,6 +10,7 @@
  *   - SupabaseConnector.uploadData → recordUpload / recordUploadFailure
  *   - download tracker            → recordDownload
  *   - connection tracker          → recordConnection / updateConnection
+ *   - upload id sharing (tabs)    → rememberUploadedIds (reads onUpload)
  */
 
 import type {
@@ -40,6 +41,14 @@ export interface SyncActivityStore {
   updateConnection(patch: Partial<SyncConnectionTimeline>): void;
   /** Ids uploaded within the last `windowMs` (at most the last 10 minutes). */
   recentlyUploadedIds(windowMs: number): Set<string>;
+  /**
+   * Remembers ids uploaded by another tab: they count as recent uploads and
+   * resolve matching failures, but log no upload and notify no onUpload
+   * listener (so tabs never echo each other).
+   */
+  rememberUploadedIds(ids: Iterable<string>): void;
+  /** Called with the unique record ids of every upload recorded here. */
+  onUpload(listener: (ids: string[]) => void): () => void;
   /** Empties the log; keeps the session start and the connection timeline. */
   clear(): void;
 }
@@ -61,9 +70,10 @@ export function createSyncActivityStore({
   let sequence = 0;
   const nextId = idFactory ?? (() => `sync-${++sequence}`);
   const listeners = new Set<() => void>();
+  const uploadListeners = new Set<(ids: string[]) => void>();
   /** Record id → last successful upload time. */
   const uploadedAt = new Map<string, number>();
-  /** `${state}|${error message}` of the last recorded connection event. */
+  /** Dedupe key (see connectionKey) of the last recorded connection event. */
   let lastConnectionKey: string | null = null;
 
   let state: SyncActivityState = {
@@ -87,6 +97,26 @@ export function createSyncActivityStore({
     }
   }
 
+  /**
+   * Remembers `ids` as uploaded at `at` and returns the events with every
+   * unresolved failure touching them marked resolved (same array if none).
+   * The queue only moves forward once the failing transaction succeeds, so
+   * an upload touching a failed record means that failure is over.
+   */
+  function markUploaded(ids: ReadonlySet<string>, at: number): SyncActivityEvent[] {
+    for (const id of ids) uploadedAt.set(id, at);
+    pruneUploadedIds(at);
+
+    let resolved = false;
+    const events = state.events.map((event) => {
+      if (event.kind !== 'upload-failed' || event.resolvedAt !== null) return event;
+      if (!event.changes.some((change) => ids.has(change.id))) return event;
+      resolved = true;
+      return { ...event, resolvedAt: at };
+    });
+    return resolved ? events : state.events;
+  }
+
   return {
     getSnapshot: () => state,
 
@@ -100,19 +130,23 @@ export function createSyncActivityStore({
     recordUpload(changes) {
       const at = now();
       const ids = new Set(changes.map((change) => change.id));
-      for (const id of ids) uploadedAt.set(id, at);
-      pruneUploadedIds(at);
-
-      // The queue only moves forward once the failing transaction succeeds,
-      // so an upload touching a failed record means that failure is over.
-      const events = state.events.map((event) =>
-        event.kind === 'upload-failed' &&
-        event.resolvedAt === null &&
-        event.changes.some((change) => ids.has(change.id))
-          ? { ...event, resolvedAt: at }
-          : event,
-      );
+      const events = markUploaded(ids, at);
       setEvents([{ id: nextId(), kind: 'upload', at, changes }, ...events]);
+
+      const uploadedIds = [...ids];
+      for (const listener of [...uploadListeners]) listener(uploadedIds);
+    },
+
+    rememberUploadedIds(ids) {
+      const events = markUploaded(new Set(ids), now());
+      if (events !== state.events) setEvents(events);
+    },
+
+    onUpload(listener) {
+      uploadListeners.add(listener);
+      return () => {
+        uploadListeners.delete(listener);
+      };
     },
 
     recordUploadFailure(changes, error) {
@@ -145,7 +179,7 @@ export function createSyncActivityStore({
     recordConnection(connectionState, error = null) {
       // Dedupe against the last connection event, not the newest event:
       // uploads and downloads in between do not make a repeat meaningful.
-      const key = `${connectionState}|${error?.message ?? ''}`;
+      const key = connectionKey(connectionState, error);
       if (key === lastConnectionKey) return;
       lastConnectionKey = key;
       setEvents([{ id: nextId(), kind: 'connection', at: now(), state: connectionState, error }, ...state.events]);
@@ -202,6 +236,14 @@ export const syncActivity: SyncActivityStore = createSyncActivityStore();
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Errors are compared by kind and code, never by message: sync service
+ * messages carry request ids, so the same failure reads differently each time.
+ */
+function connectionKey(state: SyncConnectionState, error: SyncErrorInfo | null): string {
+  return error ? `${state}|${error.kind}|${error.code ?? ''}` : state;
+}
 
 function sameRecordIds(a: SyncRecordChange[], b: SyncRecordChange[]): boolean {
   const left = new Set(a.map((change) => change.id));
