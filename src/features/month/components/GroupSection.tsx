@@ -132,7 +132,7 @@ export function GroupSection({
         </span>
         <span className={cn(
           'text-xs font-semibold tabular-nums shrink-0',
-          over ? 'text-[var(--text-negative)]' : accent === 'violet' ? 'text-[var(--group-cc-text)]' : 'text-[var(--group-cash-text)]',
+          over ? 'text-red-700 dark:text-red-400' : accent === 'violet' ? 'text-[var(--group-cc-text)]' : 'text-[var(--group-cash-text)]',
         )}>
           {totalSpent > 0 ? `${pct}%` : <AbbreviatedAmount value={totalBudgeted} />}
         </span>
@@ -152,7 +152,7 @@ export function GroupSection({
           </div>
           <span className={cn(
             'text-xs font-medium tabular-nums shrink-0',
-            over ? 'text-[var(--text-negative)]' : 'text-[var(--text-secondary)]',
+            over ? 'text-red-700 dark:text-red-400' : 'text-[var(--text-secondary)]',
           )}>
             <AbbreviatedAmount value={totalSpent} /> / <AbbreviatedAmount value={totalBudgeted} />
           </span>

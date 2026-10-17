@@ -68,7 +68,7 @@ export function BudgetCard({ budget, bm, spentAmount, month, householdId, userId
             <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight flex items-center gap-1.5">
               <span className="truncate"><HighlightedName name={budget.name} query={highlightText} /></span>
               {budget.payment_mode === 'both' && (
-                <span className="shrink-0 rounded-full px-1.5 py-px text-[11px] font-semibold leading-tight bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                <span className="shrink-0 rounded-full px-1.5 py-px text-[11px] font-semibold leading-tight bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
                   dual
                 </span>
               )}

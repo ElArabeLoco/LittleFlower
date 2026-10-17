@@ -30,7 +30,7 @@ export function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingT
           {t.monthView.incomeLabel}
         </span>
         {hasMissingTrm && (
-          <span className="text-[11px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium shrink-0">
+          <span className="text-[11px] bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium shrink-0">
             {t.monthView.noTrm}
           </span>
         )}
@@ -71,10 +71,12 @@ export function IncomeSection({ incomes, imMap, trm, totalAvailable, hasMissingT
                   </div>
                   <p className="flex flex-wrap gap-x-2.5 text-xs text-[var(--text-muted)] mt-0.5">
                     <span>{inc.is_fixed === 1 ? t.monthView.fixed : t.monthView.variable}</span>
+                    {/* Separator for screen readers and copy-paste; the visual gap separates on screen. */}
+                    {isUSD && <span className="sr-only">, </span>}
                     {isUSD && (
                       trm
                         ? <span className="tabular-nums">TRM {formatNumber(trm)}</span>
-                        : <span className="text-[var(--text-now)]">{t.monthView.noTrm}</span>
+                        : <span className="text-amber-800 dark:text-amber-300">{t.monthView.noTrm}</span>
                     )}
                   </p>
                 </div>
