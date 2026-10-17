@@ -7,12 +7,16 @@
  *   │  subtitle (optional)                                  │
  *   ├──────────────────────────────────────────────────────┤
  *   │  (!) sync alert band, only while sync needs a word    │
+ *   ├──────────────────────────────────────────────────────┤
+ *   │  toolbar (optional), e.g. the dashboard month switcher │
  *   └──────────────────────────────────────────────────────┘
  *
  * The header blends with the page background and is separated from the
  * content by a hairline. The title uses the hand-written voice. The sync
  * status button sits at the far right and opens the sync console; the alert
- * band can open the same console, so the open state lives here.
+ * band can open the same console, so the open state lives here. Everything,
+ * toolbar included, sticks together: a separate sticky bar would need to
+ * know the header's height, which the alert band changes.
  *
  * Usage:
  *   <AppHeader
@@ -23,7 +27,7 @@
  */
 
 import { useState } from 'react';
-import { SyncStatusControl, type SyncStatusSlots } from '@/features/sync';
+import { SyncStatusControl, type SyncStatusSlots } from '@/features/sync/SyncStatusControl';
 import { cn } from './cn';
 
 const DEFAULT_MAX_WIDTH = 'max-w-2xl';
@@ -39,6 +43,8 @@ interface AppHeaderProps {
   maxWidth?: string;
   /** Use compact height (h-12 instead of min-h-16) for data-dense pages. */
   compact?: boolean;
+  /** Optional last row, under the sync alert: a full-width surface bar (e.g. a period switcher). */
+  toolbar?: React.ReactNode;
 }
 
 export function AppHeader(props: AppHeaderProps) {
@@ -67,6 +73,7 @@ export function AppHeaderView({
   actions,
   maxWidth = DEFAULT_MAX_WIDTH,
   compact = false,
+  toolbar,
   sync,
 }: AppHeaderViewProps) {
   return (
@@ -96,6 +103,12 @@ export function AppHeaderView({
       </div>
 
       {sync?.alert}
+
+      {toolbar && (
+        <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+          <div className={cn('mx-auto w-full px-4', maxWidth)}>{toolbar}</div>
+        </div>
+      )}
     </header>
   );
 }

@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { AppSettingsProvider } from '@/features/settings/AppSettingsContext';
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nContext';
 import { useSyncActivityTracking } from '@/application/useSyncStatus';
+import { SyncStatusProvider } from '@/features/sync/SyncStatusProvider';
 import { Logo } from '@/shared/ui/Logo';
 
 // ---------------------------------------------------------------------------
@@ -27,8 +28,13 @@ function RootInner() {
     );
   }
 
-  // The sync status lives in each page's AppHeader (features/sync).
-  return <Outlet />;
+  // One sync state for the whole app, kept across navigation; each page's
+  // AppHeader shows it (features/sync).
+  return (
+    <SyncStatusProvider>
+      <Outlet />
+    </SyncStatusProvider>
+  );
 }
 
 export const Route = createRootRoute({

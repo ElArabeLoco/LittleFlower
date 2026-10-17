@@ -1,22 +1,22 @@
 /**
- * SyncStatusControl — the one container of the sync UI.
+ * SyncStatusControl — the sync UI's slots for the page header.
  *
- * Reads the sync model once (useSyncStatus / useSyncActions) and hands two
+ * Reads the app-wide sync state from SyncStatusProvider and hands two
  * ready-made slots to its render function: the status button with its
- * console, and the alert band. Two slots, one instance: the header places
- * them in different rows without subscribing to sync twice.
+ * console, and the alert band. Two slots from one source: the header places
+ * them in different rows.
  *
- * Renders nothing into the slots without a session: before login and after
- * logout the sync state says "offline" by design, which is not news.
+ * Renders nothing into the slots without a provider (previews, tests) or
+ * without a session: before login and after logout the sync state says
+ * "offline" by design, which is not news.
  */
 
-import { useCallback, type ReactNode } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { useSyncActions, useSyncStatus } from '@/application/useSyncStatus';
-import { useAuth } from '@/features/auth/AuthContext';
+import type { ReactNode } from 'react';
 import { SyncAlert } from './SyncAlert';
 import { SyncConsole } from './SyncConsole';
 import { SyncStatusButton } from './SyncStatusButton';
+import { isAlertFresh } from './syncPresentation';
+import { useSyncStatusContext } from './syncStatusContext';
 
 export interface SyncStatusSlots {
   button: ReactNode;
@@ -34,32 +34,15 @@ interface SyncStatusControlProps {
 
 const NO_SLOTS: SyncStatusSlots = { button: null, alert: null };
 
-export function SyncStatusControl({ children, ...props }: SyncStatusControlProps) {
-  const { session } = useAuth();
-  if (!session) return children(NO_SLOTS);
-  return <ConnectedSyncStatus {...props}>{children}</ConnectedSyncStatus>;
-}
+export function SyncStatusControl({ open, onOpenChange, maxWidth, children }: SyncStatusControlProps) {
+  const sync = useSyncStatusContext();
+  if (!sync?.signedIn) return children(NO_SLOTS);
 
-function ConnectedSyncStatus({ open, onOpenChange, maxWidth, children }: SyncStatusControlProps) {
-  const { health, events, lastSyncedAt, downloadFraction } = useSyncStatus();
-  const { retry, clearLog, diagnosticsText } = useSyncActions();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
-  // Household data (labels, notes, amounts): the clipboard only, never the network.
-  const copyDiagnostics = useCallback(async () => {
-    await navigator.clipboard.writeText(diagnosticsText());
-  }, [diagnosticsText]);
-
-  // Logging out keeps the local database and its upload queue; the queue
-  // uploads once the person signs in again.
-  const signIn = useCallback(async () => {
+  const { health, events, lastSyncedAt, downloadFraction } = sync.status;
+  const signIn = async () => {
     onOpenChange(false);
-    await logout();
-    await navigate({ to: '/login' });
-  }, [logout, navigate, onOpenChange]);
-
-  const openConsole = useCallback(() => onOpenChange(true), [onOpenChange]);
+    await sync.signIn();
+  };
 
   return children({
     button: (
@@ -69,9 +52,9 @@ function ConnectedSyncStatus({ open, onOpenChange, maxWidth, children }: SyncSta
           events={events}
           lastSyncedAt={lastSyncedAt}
           downloadFraction={downloadFraction}
-          onRetry={retry}
-          onClearLog={clearLog}
-          onCopyDiagnostics={copyDiagnostics}
+          onRetry={sync.retry}
+          onClearLog={sync.clearLog}
+          onCopyDiagnostics={sync.copyDiagnostics}
           onSignIn={signIn}
         />
       </SyncStatusButton>
@@ -79,9 +62,11 @@ function ConnectedSyncStatus({ open, onOpenChange, maxWidth, children }: SyncSta
     alert: (
       <SyncAlert
         alert={health.alert}
+        // A header mounting after the first moments shows a known alert quietly.
+        announce={isAlertFresh(sync.alertSince, Date.now())}
         maxWidth={maxWidth}
-        onViewDetails={openConsole}
-        onRetry={retry}
+        onViewDetails={() => onOpenChange(true)}
+        onRetry={sync.retry}
         onSignIn={signIn}
       />
     ),

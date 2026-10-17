@@ -8,12 +8,16 @@ import type {
   SyncRecordChange,
 } from '@/application/useSyncStatus';
 import {
+  ALERT_ANNOUNCE_WINDOW_MS,
+  NO_ALERT,
   describeChangeText,
   formatClockTime,
   healthVisual,
+  isAlertFresh,
   matchesFilter,
   relativeTime,
   summarizeEvent,
+  trackAlert,
   visibleSyncState,
 } from './syncPresentation';
 
@@ -334,5 +338,47 @@ describe('formatClockTime()', () => {
   it('formats local 24-hour time with leading zeros', () => {
     expect(formatClockTime(new Date(2026, 0, 2, 9, 5).getTime())).toBe('09:05');
     expect(formatClockTime(RETRIED_AT)).toBe('14:35');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Alert announcements
+// ---------------------------------------------------------------------------
+
+describe('trackAlert()', () => {
+  const connection = { kind: 'connection', severity: 'warning' } as const;
+  const rejected = { kind: 'upload-rejected', severity: 'error' } as const;
+
+  it('starts the clock when an alert appears', () => {
+    expect(trackAlert(NO_ALERT, connection, 1_000)).toEqual({ key: 'connection:warning', since: 1_000 });
+  });
+
+  it('keeps the first time while the same alert continues', () => {
+    const tracked = trackAlert(NO_ALERT, connection, 1_000);
+    expect(trackAlert(tracked, connection, 9_000)).toBe(tracked);
+  });
+
+  it('restarts the clock for a different alert, by kind or by severity', () => {
+    const tracked = trackAlert(NO_ALERT, connection, 1_000);
+    expect(trackAlert(tracked, rejected, 5_000)).toEqual({ key: 'upload-rejected:error', since: 5_000 });
+    expect(trackAlert(tracked, { kind: 'connection', severity: 'error' }, 6_000).since).toBe(6_000);
+  });
+
+  it('forgets the alert once it clears', () => {
+    const tracked = trackAlert(NO_ALERT, connection, 1_000);
+    expect(trackAlert(tracked, null, 2_000)).toBe(NO_ALERT);
+    expect(trackAlert(NO_ALERT, null, 2_000)).toBe(NO_ALERT);
+  });
+});
+
+describe('isAlertFresh()', () => {
+  it('announces only in the first moments after the alert appeared', () => {
+    expect(isAlertFresh(1_000, 1_000)).toBe(true);
+    expect(isAlertFresh(1_000, 1_000 + ALERT_ANNOUNCE_WINDOW_MS - 1)).toBe(true);
+    expect(isAlertFresh(1_000, 1_000 + ALERT_ANNOUNCE_WINDOW_MS)).toBe(false);
+  });
+
+  it('never announces without an alert', () => {
+    expect(isAlertFresh(null, 1_000)).toBe(false);
   });
 });

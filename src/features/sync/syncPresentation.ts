@@ -12,11 +12,13 @@
  *   matchesFilter()      → activity filter (all / uploads / downloads / errors)
  *   relativeTime()       → "hace 2 minutos"
  *   formatClockTime()    → "14:35"
+ *   trackAlert() / isAlertFresh() → announce each distinct alert once
  */
 
 import type { Translations } from '@/shared/i18n/translations/es';
 import type {
   SyncActivityEvent,
+  SyncAlert,
   SyncAlertSeverity,
   SyncHealth,
   SyncHealthState,
@@ -286,4 +288,47 @@ export function relativeTime(ms: number, now: number, locale: string): string {
 export function formatClockTime(ms: number): string {
   const date = new Date(ms);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+// ---------------------------------------------------------------------------
+// Alert announcements
+// ---------------------------------------------------------------------------
+
+/**
+ * How long after an alert first appears a newly mounted alert band still
+ * announces it. The header remounts on every navigation; past this window
+ * the band shows quietly instead of interrupting again.
+ */
+export const ALERT_ANNOUNCE_WINDOW_MS = 2_000;
+
+type AlertIdentity = Pick<SyncAlert, 'kind' | 'severity'>;
+
+export interface AlertTracking {
+  /** 'kind:severity' of the current alert, or null without one. */
+  key: string | null;
+  /** When that alert first appeared (epoch ms), or null without one. */
+  since: number | null;
+}
+
+export const NO_ALERT: AlertTracking = { key: null, since: null };
+
+/** Same key, same alert: a change of kind or severity is a new alert. */
+export function alertKey(alert: AlertIdentity): string {
+  return `${alert.kind}:${alert.severity}`;
+}
+
+/**
+ * Follows the current alert from one render to the next: the same alert
+ * keeps its first time, a different one starts a new clock, none clears it.
+ * Returns `prev` itself when nothing changed, so callers compare by identity.
+ */
+export function trackAlert(prev: AlertTracking, alert: AlertIdentity | null, now: number): AlertTracking {
+  const key = alert ? alertKey(alert) : null;
+  if (key === prev.key) return prev;
+  return key === null ? NO_ALERT : { key, since: now };
+}
+
+/** Whether an alert band mounting at `now` should announce its alert. */
+export function isAlertFresh(since: number | null, now: number): boolean {
+  return since !== null && now - since < ALERT_ANNOUNCE_WINDOW_MS;
 }
