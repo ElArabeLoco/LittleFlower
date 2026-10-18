@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.13.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.3...littleflower-v0.13.0) (2026-10-17)
+
+
+### Features
+
+* UI revamp, sync console and large-title headers ([#69](https://github.com/ElArabeLoco/LittleFlower/issues/69)) ([69c30af](https://github.com/ElArabeLoco/LittleFlower/commit/69c30afff8aa47a50e96f4855bb059a1abccf5cd))
+
 ## [0.12.3](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.2...littleflower-v0.12.3) (2026-07-01)
 
 
