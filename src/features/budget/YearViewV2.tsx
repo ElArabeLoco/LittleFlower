@@ -5,16 +5,21 @@
 import React, {
   useState, useRef, useEffect, useMemo,
 } from 'react';
-import { ChevronRight, ChevronDown, LayoutList, X } from 'lucide-react';
+import { LayoutList, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { cn } from '@/shared/ui/cn';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCategoryName } from '@/domain/budget/categories';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
-import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useYearViewData, type BudgetRow } from '@/application/useYearViewData';
+import {
+  groupIdOf, sumKnown, budgetRowValues, summarizeSelection, moveSelection, selectionBounds, isSingleCell,
+  plannedAmount, hasStarted, type YearLens, type CellSelection,
+} from '@/application/yearViewLens';
+import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import { useAppSettings } from '@/features/settings/AppSettingsContext';
 import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { getCurrentMonth } from '@/shared/helpers';
 import type { PaymentMode } from '@/domain/budget/Budget';
@@ -24,6 +29,7 @@ import { YearViewForwardConfirmDialog } from '@/features/budget/YearViewForwardC
 import type { BudgetCellHandle } from '@/features/budget/components/BudgetCell';
 import { BudgetTableSection } from '@/features/budget/components/BudgetTableSection';
 import { YearViewHeader } from '@/features/budget/components/YearViewHeader';
+import { YearViewStatusBar, type StatusCell, type StatusRange } from '@/features/budget/components/YearViewStatusBar';
 import type { CellContextData, ContextMenuPos, CtxMenuState, ForwardConfirmState } from '@/features/budget/components/yearViewTypes';
 
 export type YearSortKey =
@@ -72,19 +78,16 @@ interface ExpenseModalState {
 
 export function YearViewV2() {
   const { session }   = useAuth();
-  const { t }         = useI18n();
-  const { formatCOP: fmt } = useNumberFormat();
+  const { t, locale } = useI18n();
   const [year, setYear]               = useState(getCurrentYear);
   const [yearFilter, setYearFilter]   = useState('');
   const [yearSortKey, setYearSortKey] = useState<YearSortKey>(YEAR_DEFAULT_SORT);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const [nameColCollapsed, setNameColCollapsed] = useState(false);
-  useEffect(() => {
-    if (window.innerWidth < 640) setNameColCollapsed(true);
-  }, []);
-
-  const [ccCollapsed,   setCcCollapsed]   = useState(false);
-  const [cashCollapsed, setCashCollapsed] = useState(false);
+  const [lens, setLens] = useState<YearLens>('plan');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { numberFormat } = useAppSettings();
+  const [sel, setSel] = useState<CellSelection | null>(null);
+  const dragging = useRef(false);
 
   const months       = useMemo(() => yearMonths(year), [year]);
   const currentMonth = useMemo(getCurrentMonth, []);
@@ -100,28 +103,70 @@ export function YearViewV2() {
   } = useBudgetMutations(householdId, userId);
 
   const {
-    budgets, creditCardBudgets, cashBudgets, bmMap, expenseMap,
-    availableMap, ccMetricsMap, cashMetricsMap, cashExpenseByMonth,
+    budgets, bmMap, expenseMap,
+    availableMap, cashMetricsMap, cashExpenseByMonth,
   } = useYearViewData(year, months);
 
-  const displayCCBudgets = useMemo(() => {
+  // Sheet groups: dual budgets get their own group instead of repeating in card and cash.
+  const groups = useMemo(() => {
     const q = yearFilter.toLowerCase().trim();
-    const filtered = q ? creditCardBudgets.filter(b => b.name.toLowerCase().includes(q)) : creditCardBudgets;
-    return sortYearBudgets(filtered, yearSortKey);
-  }, [creditCardBudgets, yearFilter, yearSortKey]);
+    const filtered = q ? budgets.filter(b => b.name.toLowerCase().includes(q)) : budgets;
+    const sorted = sortYearBudgets(filtered, yearSortKey);
+    const defs = [
+      { id: 'cc' as const,   label: t.yearView.creditCardGroup },
+      { id: 'dual' as const, label: t.yearView.dualGroup },
+      { id: 'cash' as const, label: t.yearView.cashGroup },
+    ];
+    let startIdx = 0;
+    return defs
+      .map(d => ({ ...d, budgets: sorted.filter(b => groupIdOf(b) === d.id) }))
+      .filter(g => g.budgets.length > 0)
+      .map(g => {
+        const out = { ...g, startIdx };
+        if (!collapsed[g.id]) startIdx += g.budgets.length;
+        return out;
+      });
+  }, [budgets, yearFilter, yearSortKey, collapsed, t]);
 
-  const displayCashBudgets = useMemo(() => {
-    const q = yearFilter.toLowerCase().trim();
-    const filtered = q ? cashBudgets.filter(b => b.name.toLowerCase().includes(q)) : cashBudgets;
-    return sortYearBudgets(filtered, yearSortKey);
-  }, [cashBudgets, yearFilter, yearSortKey]);
-
-  const yearMatchCount = displayCCBudgets.length + displayCashBudgets.length;
+  const yearMatchCount = groups.reduce((n, g) => n + g.budgets.length, 0);
 
   const allVisibleBudgets = useMemo(
-    () => [...displayCCBudgets, ...displayCashBudgets],
-    [displayCCBudgets, displayCashBudgets],
+    () => groups.filter(g => !collapsed[g.id]).flatMap(g => g.budgets),
+    [groups, collapsed],
   );
+
+  // Footer rows (always visible at the bottom of the sheet)
+  const currentIdx = months.indexOf(currentMonth);
+  const footerRows = useMemo(() => {
+    type Tone = 'neutral' | 'balance';
+    const known = (m: string) => months.indexOf(m) <= currentIdx;
+    const income = months.map(m => availableMap.get(m) ?? 0);
+    const cashPlanned = months.map(m => cashMetricsMap.get(m)?.budgeted ?? 0);
+    const cashSpent = months.map(m => (known(m) ? (cashExpenseByMonth.get(m) ?? 0) : null));
+    const idealBalance = months.map((_, i) => income[i] - cashPlanned[i]);
+    const realBalance = months.map((m, i) => (known(m) ? income[i] - (cashSpent[i] ?? 0) : null));
+    const row = (label: string, values: Array<number | null>, tone: Tone) => ({ label, values, tone });
+    if (lens === 'spent') {
+      return [
+        row(t.yearView.incomeRow, income, 'neutral'),
+        row(t.yearView.cashSpentRow, cashSpent, 'neutral'),
+        row(t.yearView.trueRealBalanceRow, realBalance, 'balance'),
+      ];
+    }
+    if (lens === 'diff') {
+      return [
+        row(t.yearView.incomeRow, income, 'neutral'),
+        row(t.yearView.realBalanceRow, idealBalance, 'balance'),
+        row(t.yearView.trueRealBalanceRow, realBalance, 'balance'),
+      ];
+    }
+    return [
+      row(t.yearView.incomeRow, income, 'neutral'),
+      row(t.yearView.cashExpensesRow, cashPlanned, 'neutral'),
+      row(t.yearView.realBalanceRow, idealBalance, 'balance'),
+      row(t.yearView.trueRealBalanceRow, realBalance, 'balance'),
+    ];
+  }, [lens, months, currentIdx, availableMap, cashMetricsMap, cashExpenseByMonth, t]);
 
   const cellHandleRefs = useRef<Map<string, React.RefObject<BudgetCellHandle | null>>>(new Map());
   const activeEditRef  = useRef<React.RefObject<BudgetCellHandle | null> | null>(null);
@@ -136,12 +181,151 @@ export function YearViewV2() {
     return cellHandleRefs.current.get(key)!;
   }
 
-  function openCellForEdit(globalIdx: number, mIdx: number) {
+  function openCellForEdit(globalIdx: number, mIdx: number, initial?: string) {
     activeEditRef.current?.current?.cancelEdit();
     const ref = getCellRef(globalIdx, mIdx);
     activeEditRef.current = ref;
-    setTimeout(() => ref.current?.startEdit(), 0);
+    setSel({ ar: globalIdx, ac: mIdx, fr: globalIdx, fc: mIdx });
+    setTimeout(() => ref.current?.startEdit(initial), 0);
   }
+
+  // --- Selection: values per visible cell, used for sums and the status bar ----
+  const valueMatrix = useMemo(
+    () => allVisibleBudgets.map(b => budgetRowValues(lens, b, months, currentMonth, bmMap, expenseMap)),
+    [allVisibleBudgets, lens, months, currentMonth, bmMap, expenseMap],
+  );
+
+  // Selection is cleared whenever the visible grid changes shape.
+  useEffect(() => { setSel(null); }, [lens, year, yearFilter, yearSortKey, collapsed]);
+
+  const activeSel = sel && sel.fr < allVisibleBudgets.length && sel.ar < allVisibleBudgets.length ? sel : null;
+
+  const statusCell: StatusCell | null = useMemo(() => {
+    if (!activeSel || !isSingleCell(activeSel)) return null;
+    const budget = allVisibleBudgets[activeSel.fr];
+    const month = months[activeSel.fc];
+    const bm = bmMap.get(`${budget.id}|${month}`);
+    return {
+      budgetName: budget.name,
+      monthLabel: new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2000, activeSel.fc, 1)),
+      started: hasStarted(budget, month),
+      planned: plannedAmount(budget, bm),
+      spent: bm ? (expenseMap.get(bm.id) ?? 0) : 0,
+      executed: bm?.is_executed === 1,
+      when: month < currentMonth ? 'past' : month === currentMonth ? 'current' : 'future',
+    };
+  }, [activeSel, allVisibleBudgets, months, bmMap, expenseMap, currentMonth, locale]);
+
+  const statusRange: StatusRange | null = useMemo(
+    () => (activeSel && !isSingleCell(activeSel) ? summarizeSelection(valueMatrix, activeSel) : null),
+    [activeSel, valueMatrix],
+  );
+
+  function revealCell(r: number, c: number) {
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-r="${r}"][data-c="${c}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+  }
+
+  function cellFromEvent(e: React.MouseEvent) {
+    const el = (e.target as HTMLElement).closest('[data-r][data-c]');
+    if (!el) return null;
+    return { r: Number(el.getAttribute('data-r')), c: Number(el.getAttribute('data-c')) };
+  }
+
+  function onGridMouseDown(e: React.MouseEvent) {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('input, button, select')) return;
+    const rows = allVisibleBudgets.length;
+    const colEl = target.closest('[data-col]');
+    if (colEl && rows > 0) {
+      const c = Number(colEl.getAttribute('data-col'));
+      setSel({ ar: 0, ac: c, fr: rows - 1, fc: c });
+      return;
+    }
+    const p = cellFromEvent(e);
+    if (!p) return;
+    if (p.c === -1) {
+      setSel({ ar: p.r, ac: 0, fr: p.r, fc: months.length - 1 });
+      return;
+    }
+    if (e.shiftKey && activeSel) {
+      e.preventDefault();
+      setSel({ ...activeSel, fr: p.r, fc: p.c });
+      return;
+    }
+    setSel({ ar: p.r, ac: p.c, fr: p.r, fc: p.c });
+    dragging.current = true;
+  }
+
+  function onGridMouseOver(e: React.MouseEvent) {
+    if (!dragging.current) return;
+    const p = cellFromEvent(e);
+    if (!p || p.c < 0) return;
+    setSel(cur => (cur && (cur.fr !== p.r || cur.fc !== p.c) ? { ...cur, fr: p.r, fc: p.c } : cur));
+  }
+
+  useEffect(() => {
+    const stop = () => { dragging.current = false; };
+    window.addEventListener('mouseup', stop);
+    return () => window.removeEventListener('mouseup', stop);
+  }, []);
+
+  function openExpensesFor(globalIdx: number, mIdx: number) {
+    const budget = allVisibleBudgets[globalIdx];
+    if (!budget || !hasStarted(budget, months[mIdx])) return;
+    const bm = bmMap.get(`${budget.id}|${months[mIdx]}`);
+    expenseModalKeyRef.current += 1;
+    setExpenseModal({
+      budgetId: budget.id, budgetName: budget.name,
+      budgetMonthId: bm?.id ?? null, budgetMonthAmount: plannedAmount(budget, bm),
+      month: months[mIdx], debtId: budget.debt_id ?? null, paymentMode: budget.payment_mode,
+      openKey: expenseModalKeyRef.current,
+    });
+  }
+
+  // Keyboard: arrows move (Shift extends), Enter/F2 edits, a digit starts typing, Esc clears.
+  // Kept in a ref so the single window listener always sees fresh state.
+  const keyHandler = useRef<(e: KeyboardEvent) => void>(() => {});
+  keyHandler.current = (e: KeyboardEvent) => {
+    if (expenseModal || ctxMenu || forwardConfirm) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"]')) return;
+    const rows = allVisibleBudgets.length;
+    if (rows === 0) return;
+
+    const arrows: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1],
+    };
+    if (arrows[e.key]) {
+      e.preventDefault();
+      const next = activeSel
+        ? moveSelection(activeSel, arrows[e.key][0], arrows[e.key][1], e.shiftKey, rows, months.length)
+        : (() => { const c = Math.max(0, currentIdx); return { ar: 0, ac: c, fr: 0, fc: c }; })();
+      setSel(next);
+      revealCell(next.fr, next.fc);
+      return;
+    }
+    if (!activeSel) return;
+    if (e.key === 'Escape') { setSel(null); return; }
+    if (e.key === 'Enter' || e.key === 'F2') {
+      e.preventDefault();
+      if (lens === 'plan') openCellForEdit(activeSel.fr, activeSel.fc);
+      else openExpensesFor(activeSel.fr, activeSel.fc);
+      return;
+    }
+    if (lens === 'plan' && /^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      openCellForEdit(activeSel.fr, activeSel.fc, e.key);
+    }
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => keyHandler.current(e);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   async function handleCellSave(
     budgetId: string,
@@ -302,10 +486,12 @@ export function YearViewV2() {
         budgets={budgets}
         yearFilter={yearFilter}
         yearSortKey={yearSortKey}
+        lens={lens}
         matchCount={yearMatchCount}
         onYearChange={setYear}
         onFilterChange={setYearFilter}
         onSortChange={setYearSortKey}
+        onLensChange={setLens}
       />
 
       {mutationError && (
@@ -323,226 +509,88 @@ export function YearViewV2() {
         </div>
       )}
 
-      <div className="flex-1 overflow-auto">
-        <table className="border-separate border-spacing-0 text-sm bg-[var(--bg-surface)] min-w-max w-full">
-          <thead className="bg-[var(--bg-surface)] shadow-sm">
-            <tr className="border-b-2 border-[var(--border-medium)]">
-              <th className={cn(
-                'sticky top-0 left-0 z-30 bg-[var(--bg-surface)] px-2 py-2 border-r border-[var(--border-cell)] transition-all duration-200',
-                nameColCollapsed ? 'w-9' : 'w-40',
-              )}>
-                <button
-                  onClick={() => setNameColCollapsed(v => !v)}
-                  className="flex items-center gap-1 w-full text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                  title={nameColCollapsed ? 'Expandir nombres' : 'Colapsar nombres'}
-                >
-                  {!nameColCollapsed && <span className="flex-1 text-left">{t.yearView.itemHeader}</span>}
-                  <ChevronRight size={12} className={cn('shrink-0 transition-transform duration-200', !nameColCollapsed && 'rotate-180')} />
-                </button>
+      <div
+        className="flex-1 overflow-auto bg-[var(--bg-surface)]"
+        style={{
+          '--yv-col': numberFormat === 'full' ? '6.75rem' : '4.75rem',
+          '--yv-foot': `${footerRows.length * 36 + 8}px`,
+        } as React.CSSProperties}
+        onMouseDown={onGridMouseDown}
+        onMouseOver={onGridMouseOver}
+      >
+        <table className="border-separate border-spacing-0 text-sm min-w-max w-full select-none">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                className="sticky top-0 left-0 z-30 h-9 w-[8.5rem] min-w-[8.5rem] sm:w-60 sm:min-w-60 border-b border-r border-[var(--border-medium)] bg-[var(--bg-surface-2)] px-3 text-left text-xs font-semibold text-[var(--text-secondary)]"
+              >
+                {t.yearView.itemHeader}
               </th>
               {months.map((month, i) => (
                 <th
                   key={month}
+                  scope="col"
+                  data-col={i}
                   className={cn(
-                    'sticky top-0 z-10 px-2 py-2 text-center text-xs font-semibold w-20 border-r border-[var(--border-cell)]',
-                    month === currentMonth
-                      ? 'text-[var(--text-brand)] bg-[var(--group-available-bg)]'
-                      : 'text-[var(--text-secondary)] bg-[var(--bg-surface)]',
+                    'sticky top-0 z-20 h-9 min-w-[var(--yv-col)] cursor-pointer border-b border-r border-[var(--border-medium)] bg-[var(--bg-surface-2)] px-2.5 text-right text-xs font-semibold whitespace-nowrap',
+                    activeSel && i >= selectionBounds(activeSel).c1 && i <= selectionBounds(activeSel).c2
+                      ? 'text-[var(--text-brand)]'
+                      : month === currentMonth
+                        ? 'text-[var(--text-now)]'
+                        : 'text-[var(--text-secondary)]',
                   )}
                 >
-                  {t.months.short[String(i + 1).padStart(2, '0')]}
                   {month === currentMonth && (
-                    <span className="block w-1.5 h-1.5 rounded-full bg-[var(--text-brand)] mx-auto mt-0.5" />
+                    <span className="mr-1.5 rounded-full bg-[var(--color-now)]/15 px-1.5 py-px text-[10px] font-semibold">
+                      {t.yearView.currentBadge}
+                    </span>
                   )}
+                  {t.months.short[String(i + 1).padStart(2, '0')]}
                 </th>
               ))}
+              <th
+                scope="col"
+                className="sticky top-0 z-20 h-9 min-w-[var(--yv-col)] border-b border-l border-[var(--border-medium)] bg-[var(--bg-surface-2)] px-2.5 text-right text-xs font-semibold whitespace-nowrap text-[var(--text-secondary)]"
+              >
+                {lens === 'plan' ? t.yearView.totalYear : t.yearView.totalToDate}
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {displayCCBudgets.length > 0 && (
-              <>
-                <tr className="bg-[var(--group-cc-bg)] border-t border-[var(--group-cc-border)]">
-                  <td className={cn(
-                    'sticky left-0 z-10 bg-[var(--group-cc-bg)] py-1.5 text-xs font-bold text-[var(--group-cc-text)] uppercase tracking-wide transition-all duration-200',
-                    nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
-                  )}>
-                    <button
-                      onClick={() => setCcCollapsed(v => !v)}
-                      className="flex items-center gap-1.5 w-full text-left hover:opacity-70 transition-opacity"
-                    >
-                      {nameColCollapsed ? (
-                        <span>💳</span>
-                      ) : (
-                        <>
-                          <span>{`💳 ${t.yearView.creditCardGroup}`}</span>
-                          <ChevronDown size={12} className={cn('shrink-0 transition-transform duration-200 ml-auto', ccCollapsed && '-rotate-90')} />
-                        </>
-                      )}
-                    </button>
-                  </td>
-                  <td colSpan={months.length} className="bg-[var(--group-cc-bg)]" />
-                </tr>
-                {!ccCollapsed && (
-                  <BudgetTableSection
-                    budgets={displayCCBudgets}
-                    metricsMap={ccMetricsMap}
-                    startIdx={0}
-                    months={months}
-                    currentMonth={currentMonth}
-                    bmMap={bmMap}
-                    expenseMap={expenseMap}
-                    nameColCollapsed={nameColCollapsed}
-                    getCellRef={getCellRef}
-                    onCellTabNext={onCellTabNext}
-                    onCellTabPrev={onCellTabPrev}
-                    onCellEnterDown={onCellEnterDown}
-                    onCellContextMenu={handleCellContextMenu}
-                    onCellForwardRequest={handleCellForwardRequest}
-                    onCellSave={handleCellSave}
-                    onOpenExpenses={(params) => {
-                      expenseModalKeyRef.current += 1;
-                      setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
-                    }}
-                  />
-                )}
-              </>
-            )}
-
-            {displayCashBudgets.length > 0 && (
-              <>
-                <tr className="bg-[var(--group-cash-bg)] border-t border-[var(--group-cash-border)]">
-                  <td className={cn(
-                    'sticky left-0 z-10 bg-[var(--group-cash-bg)] py-1.5 text-xs font-bold text-[var(--group-cash-text)] uppercase tracking-wide transition-all duration-200',
-                    nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
-                  )}>
-                    <button
-                      onClick={() => setCashCollapsed(v => !v)}
-                      className="flex items-center gap-1.5 w-full text-left hover:opacity-70 transition-opacity"
-                    >
-                      {nameColCollapsed ? (
-                        <span>💵</span>
-                      ) : (
-                        <>
-                          <span>{`💵 ${t.yearView.cashGroup}`}</span>
-                          <ChevronDown size={12} className={cn('shrink-0 transition-transform duration-200 ml-auto', cashCollapsed && '-rotate-90')} />
-                        </>
-                      )}
-                    </button>
-                  </td>
-                  <td colSpan={months.length} className="bg-[var(--group-cash-bg)]" />
-                </tr>
-                {!cashCollapsed && (
-                  <BudgetTableSection
-                    budgets={displayCashBudgets}
-                    metricsMap={cashMetricsMap}
-                    startIdx={displayCCBudgets.length}
-                    months={months}
-                    currentMonth={currentMonth}
-                    bmMap={bmMap}
-                    expenseMap={expenseMap}
-                    nameColCollapsed={nameColCollapsed}
-                    getCellRef={getCellRef}
-                    onCellTabNext={onCellTabNext}
-                    onCellTabPrev={onCellTabPrev}
-                    onCellEnterDown={onCellEnterDown}
-                    onCellContextMenu={handleCellContextMenu}
-                    onCellForwardRequest={handleCellForwardRequest}
-                    onCellSave={handleCellSave}
-                    onOpenExpenses={(params) => {
-                      expenseModalKeyRef.current += 1;
-                      setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
-                    }}
-                  />
-                )}
-              </>
-            )}
-
-            <tr className="bg-[var(--group-available-bg)] border-t-2 border-[var(--border-medium)]">
-              <td className={cn(
-                'sticky left-0 z-10 bg-[var(--group-available-sticky)] py-1.5 text-xs font-bold text-[var(--group-available-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
-                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
-              )}>
-                {nameColCollapsed ? '💰' : `💰 ${t.yearView.availableRow}`}
-              </td>
-              {months.map(month => (
-                <td key={month} className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-right text-xs tabular-nums font-bold text-[var(--group-available-text)]">
-                  {fmt(availableMap.get(month) ?? 0)}
-                </td>
-              ))}
-            </tr>
-
-            <tr className="bg-[var(--group-total-bg)] border-b border-[var(--border-subtle)]">
-              <td className={cn(
-                'sticky left-0 z-10 bg-[var(--group-total-sticky)] py-1.5 text-xs font-bold text-[var(--group-total-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
-                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
-              )}>
-                {nameColCollapsed ? '📋' : `📋 ${t.yearView.totalBudgetedRow}`}
-              </td>
-              {months.map(month => (
-                <td key={month} className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-right text-xs tabular-nums font-semibold text-[var(--group-total-text)]">
-                  {fmt(cashMetricsMap.get(month)?.budgeted ?? 0)}
-                </td>
-              ))}
-            </tr>
-
-            <tr className="bg-[var(--group-balance-bg)]">
-              <td className={cn(
-                'sticky left-0 z-10 bg-[var(--group-balance-bg)] py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
-                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
-              )}>
-                {nameColCollapsed ? '⚖️' : `⚖️ ${t.yearView.realBalanceRow}`}
-              </td>
-              {months.map(month => {
-                const available    = availableMap.get(month) ?? 0;
-                const cashBudgeted = cashMetricsMap.get(month)?.budgeted ?? 0;
-                const balance      = available - cashBudgeted;
-                return (
-                  <td
-                    key={month}
-                    className={cn(
-                      'border-r border-[var(--border-subtle)] px-2 py-2 text-right text-xs tabular-nums font-bold',
-                      balance > 0 ? 'text-green-600 dark:text-green-400'
-                        : balance < 0 ? 'text-red-600 dark:text-red-400'
-                        : 'text-[var(--text-muted)]',
-                    )}
-                  >
-                    {balance > 0 && '+'}{fmt(balance)}
-                  </td>
-                );
-              })}
-            </tr>
-
-            <tr className="bg-[var(--group-balance-bg)] border-b-2 border-[var(--border-subtle)]">
-              <td className={cn(
-                'sticky left-0 z-10 bg-[var(--group-balance-bg)] py-1.5 text-xs font-bold text-[var(--group-balance-text)] whitespace-nowrap border-r border-[var(--border-medium)] transition-all duration-200',
-                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3',
-              )}>
-                {nameColCollapsed ? '💸' : `💸 ${t.yearView.trueRealBalanceRow}`}
-              </td>
-              {months.map(month => {
-                const available   = availableMap.get(month) ?? 0;
-                const cashSpent   = cashExpenseByMonth.get(month) ?? 0;
-                const realBalance = available - cashSpent;
-                return (
-                  <td
-                    key={month}
-                    className={cn(
-                      'border-r border-[var(--border-subtle)] px-2 py-2 text-right text-xs tabular-nums font-bold',
-                      realBalance > 0 ? 'text-green-600 dark:text-green-400'
-                        : realBalance < 0 ? 'text-red-600 dark:text-red-400'
-                        : 'text-[var(--text-muted)]',
-                    )}
-                  >
-                    {realBalance > 0 && '+'}{fmt(realBalance)}
-                  </td>
-                );
-              })}
-            </tr>
+            {groups.map(g => (
+              <BudgetTableSection
+                key={g.id}
+                groupId={g.id}
+                label={g.label}
+                collapsed={!!collapsed[g.id]}
+                onToggle={() => setCollapsed(c => ({ ...c, [g.id]: !c[g.id] }))}
+                lens={lens}
+                selection={activeSel}
+                budgets={g.budgets}
+                startIdx={g.startIdx}
+                months={months}
+                currentMonth={currentMonth}
+                bmMap={bmMap}
+                expenseMap={expenseMap}
+                getCellRef={getCellRef}
+                onCellTabNext={onCellTabNext}
+                onCellTabPrev={onCellTabPrev}
+                onCellEnterDown={onCellEnterDown}
+                onCellContextMenu={handleCellContextMenu}
+                onCellForwardRequest={handleCellForwardRequest}
+                onCellSave={handleCellSave}
+                onOpenExpenses={(params) => {
+                  expenseModalKeyRef.current += 1;
+                  setExpenseModal({ ...params, openKey: expenseModalKeyRef.current });
+                }}
+              />
+            ))}
 
             {budgets.length === 0 && (
               <tr>
-                <td colSpan={13} className="py-20 text-[var(--text-muted)]">
+                <td colSpan={14} className="py-20 text-[var(--text-muted)]">
                   {/* The row is as wide as the 12-month table; pin the message to the
                       visible part of the scroller so it stays centered on phones. */}
                   <div className="sticky left-0 flex w-[min(100%,100vw)] flex-col items-center px-4 text-center">
@@ -554,8 +602,51 @@ export function YearViewV2() {
               </tr>
             )}
           </tbody>
+
+          <tfoot>
+            {footerRows.map((fr, i) => {
+              const bottom = (footerRows.length - 1 - i) * 36;
+              const base = 'sticky h-9 border-[var(--border-subtle)] bg-[var(--bg-surface-2)] text-[13px] tabular-nums';
+              const total = sumKnown(fr.values);
+              return (
+                <tr key={fr.label}>
+                  <th
+                    scope="row"
+                    style={{ bottom }}
+                    className={cn(
+                      base, 'left-0 z-30 w-[8.5rem] min-w-[8.5rem] sm:w-60 sm:min-w-60 border-r border-[var(--border-medium)] px-3 text-left font-semibold whitespace-nowrap',
+                      i === 0 ? 'border-t-2 border-t-[var(--border-strong)]' : 'border-t',
+                    )}
+                  >
+                    {fr.label}
+                  </th>
+                  {[...fr.values, total].map((v, c) => (
+                    <td
+                      key={c}
+                      style={{ bottom }}
+                      className={cn(
+                        base, 'z-20 min-w-[var(--yv-col)] border-r px-2.5 text-right',
+                        c === 12 && 'border-l border-l-[var(--border-medium)]',
+                        i === 0 ? 'border-t-2 border-t-[var(--border-strong)]' : 'border-t',
+                        fr.tone === 'balance' ? 'font-bold' : 'font-medium',
+                        v !== null && v !== 0 && fr.tone === 'balance'
+                          ? (v > 0 ? 'text-[var(--text-positive)]' : 'text-[var(--text-negative)]')
+                          : 'text-[var(--text-primary)]',
+                      )}
+                    >
+                      {v === null ? null : v === 0
+                        ? <span className="text-[var(--text-muted)]">–</span>
+                        : <>{fr.tone === 'balance' && v > 0 && '+'}<AbbreviatedAmount value={v} /></>}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tfoot>
         </table>
       </div>
+
+      <YearViewStatusBar lens={lens} cell={statusCell} range={statusRange} />
 
       {expenseModal && (
         <ExpenseFormDialog
