@@ -3,11 +3,14 @@ import React, {
 } from 'react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { cn } from '@/shared/ui/cn';
+import type { YearLens } from '@/application/yearViewLens';
 import type { ContextMenuPos, CellContextData } from './yearViewTypes';
 
 export interface BudgetCellHandle {
-  startEdit(): void;
+  /** `initial` replaces the draft (typing a digit on a selected cell). */
+  startEdit(initial?: string): void;
   cancelEdit(): void;
 }
 
@@ -18,6 +21,16 @@ interface BudgetCellProps {
   month: string;
   amount: number;
   spentAmount: number;
+  /** What this cell displays (null = unknown yet, e.g. spent in a future month). */
+  lens: YearLens;
+  value: number | null;
+  /** Only the Budget lens edits amounts. */
+  editable: boolean;
+  /** Position in the sheet + selection state (range highlight / focused cell). */
+  rowIdx: number;
+  colIdx: number;
+  selected: boolean;
+  active: boolean;
   isExecuted: boolean;
   isCurrent: boolean;
   isFuture: boolean;
@@ -35,28 +48,36 @@ interface BudgetCellProps {
 
 export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
   function BudgetCell({
-    budgetId, budgetName, budgetMonthId, month, amount, spentAmount,
+    budgetId, budgetName, budgetMonthId, month, amount, spentAmount, lens, value, editable, rowIdx, colIdx, selected, active,
     isExecuted, isCurrent, isFuture, hasStarted, debtId, paymentMode,
     onTabNext, onTabPrev, onEnterDown, onOpenExpenses, onContextMenu, onForwardRequest, onSave,
   }, ref) {
     const { t } = useI18n();
+    const { formatCOP } = useNumberFormat();
     const [editing,   setEditing]   = useState(false);
     const [draft,     setDraft]     = useState('');
     const [saveError, setSaveError] = useState<string | null>(null);
     const inputRef                  = useRef<HTMLInputElement>(null);
     const longPressTimer            = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const typedInitial              = useRef(false);
     const touchOrigin               = useRef<{ x: number; y: number } | null>(null);
 
     useImperativeHandle(ref, () => ({
-      startEdit() {
-        if (!hasStarted || isExecuted) return;
-        setDraft(String(amount));
+      startEdit(initial?: string) {
+        if (!hasStarted || isExecuted || !editable) return;
+        typedInitial.current = initial !== undefined;
+        setDraft(initial ?? String(amount));
         setEditing(true);
       },
       cancelEdit() { setEditing(false); },
-    }), [hasStarted, isExecuted, amount]);
+    }), [hasStarted, isExecuted, editable, amount]);
 
-    useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
+    useEffect(() => {
+      const el = inputRef.current;
+      if (!editing || !el) return;
+      if (typedInitial.current) el.setSelectionRange(el.value.length, el.value.length);
+      else el.select();
+    }, [editing]);
 
     const isPast = !isCurrent && !isFuture && hasStarted;
     const canForward = !isPast;
@@ -128,9 +149,7 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
 
     if (!hasStarted) {
       return (
-        <td className="border-r border-[var(--border-cell)] px-2 py-1.5 text-center text-[var(--text-muted)] text-xs w-20">
-          —
-        </td>
+        <td data-r={rowIdx} data-c={colIdx} className="h-8 border-b border-r border-[var(--border-subtle)] min-w-[var(--yv-col)]" />
       );
     }
 
@@ -147,7 +166,9 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
 
       return (
         <td
-          className="border-r border-[var(--border-cell)] px-1 py-1 w-20 relative overflow-visible"
+          data-r={rowIdx}
+          data-c={colIdx}
+          className="h-8 border-b border-r border-[var(--border-subtle)] px-1 min-w-[var(--yv-col)] relative overflow-visible"
           style={{ zIndex: 40 }}
         >
           <input
@@ -158,7 +179,7 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
             onChange={e => setDraft(e.target.value)}
             onBlur={() => setEditing(false)}
             onKeyDown={handleKeyDown}
-            className="w-full text-right text-xs px-1 py-0.5 border border-violet-400 rounded focus:outline-none bg-violet-50 dark:bg-[var(--bg-surface-2)] dark:text-[var(--text-primary)] dark:border-violet-700"
+            className="w-full text-right text-[13px] tabular-nums px-1.5 py-0.5 rounded border-2 border-[var(--focus-ring)] focus:outline-none bg-[var(--bg-surface)] text-[var(--text-primary)]"
           />
           <div className="absolute top-full right-0 mt-1 z-50 bg-white dark:bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-xl shadow-lg min-w-[210px] overflow-hidden">
             <button
@@ -211,66 +232,81 @@ export const BudgetCell = React.forwardRef<BudgetCellHandle, BudgetCellProps>(
       );
     }
 
-    const hasExpenses = spentAmount > 0;
-    const overBudget  = hasExpenses && spentAmount > amount;
-    const pct         = amount > 0 ? Math.min(100, Math.round((spentAmount / amount) * 100)) : 0;
+    const over = spentAmount > 0 && spentAmount > amount;
+    const pct  = amount > 0 ? Math.min(1, spentAmount / amount) : (spentAmount > 0 ? 1 : 0);
+    const paidTint = lens === 'plan' && isExecuted;
+
+    let text = '';
+    let tone = 'text-[var(--text-primary)]';
+    if (value !== null) {
+      text = value === 0 ? '–' : '';
+      if (lens === 'diff') {
+        tone = value > 0 ? 'text-[var(--text-positive)]' : value < 0 ? 'text-[var(--text-negative)] font-semibold' : 'text-[var(--text-muted)]';
+      } else if (over) {
+        tone = 'text-[var(--text-negative)] font-semibold';
+      } else if (lens === 'plan' && isExecuted) {
+        tone = 'text-green-800 dark:text-green-300';
+      } else if (value === 0 || (lens === 'plan' && isFuture)) {
+        tone = 'text-[var(--text-muted)]';
+      }
+    }
+
+    const title = `${t.yearView.budgetedRow}: ${formatCOP(amount)} · ${t.yearView.executedRow}: ${formatCOP(spentAmount)}`
+      + (isExecuted ? ` · ${t.yearView.legendPaid}` : '');
 
     return (
       <td
         className={cn(
-          'border-r border-[var(--border-cell)] px-2 py-1 text-right text-xs tabular-nums select-none w-20 transition-colors group/cell relative',
-          isExecuted ? 'bg-green-50/60 dark:bg-green-950/30' : '',
-          isCurrent && !isExecuted && 'bg-pink-50/30 dark:bg-pink-950/15',
-          isCurrent && 'shadow-[inset_0_0_0_1px_var(--border-medium)]',
-          'hover:bg-[var(--row-hover)]',
+          'relative h-8 min-w-[var(--yv-col)] scroll-mt-9 scroll-mb-[var(--yv-foot)] scroll-ml-[8.5rem] sm:scroll-ml-60 border-b border-r border-[var(--border-subtle)] px-2.5 text-right text-[13px] tabular-nums select-none cursor-cell',
+          selected
+            ? 'bg-[var(--color-primary)]/10'
+            : paidTint
+              ? 'bg-green-50 dark:bg-green-950/30'
+              : isCurrent && 'bg-[var(--color-now)]/[0.07]',
+          !selected && 'hover:bg-[var(--row-hover)]',
+          active && 'z-[1] outline outline-2 -outline-offset-2 outline-[var(--focus-ring)]',
         )}
+        data-r={rowIdx}
+        data-c={colIdx}
+        title={title}
+        onDoubleClick={() => {
+          if (!editable) {
+            if (value !== null) onOpenExpenses();
+            return;
+          }
+          if (isExecuted) return;
+          typedInitial.current = false;
+          setDraft(String(amount));
+          setEditing(true);
+        }}
         onContextMenu={handleNativeContextMenu}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ touchAction: 'manipulation' }}
       >
-        <div
-          className={cn(
-            'font-medium leading-tight cursor-pointer',
-            isExecuted
-              ? 'text-green-700 dark:text-green-400'
-              : isFuture ? 'text-[var(--text-muted)]' : 'text-[var(--text-primary)]',
-            isCurrent && !isExecuted && 'font-semibold',
-          )}
-          onDoubleClick={() => {
-            if (isExecuted) return;
-            setDraft(String(amount));
-            setEditing(true);
-          }}
-          title={isExecuted ? t.yearView.executedHint : t.yearView.editHint}
-        >
-          <AbbreviatedAmount value={amount} />
-          {isExecuted && <span className="ml-1 text-green-600">✓</span>}
-        </div>
-
-        {hasExpenses && (
-          <div
+        {lens === 'spent' && value !== null && value > 0 && (
+          <span
+            aria-hidden="true"
             className={cn(
-              'leading-tight text-[10px] tabular-nums cursor-pointer flex items-center justify-end gap-0.5',
-              overBudget
-                ? 'text-red-500 dark:text-red-400 font-semibold'
-                : 'text-violet-600 dark:text-violet-400',
+              'absolute inset-y-1 left-0.5 rounded-sm',
+              over ? 'bg-red-500/25' : 'bg-green-500/20',
             )}
-            onClick={onOpenExpenses}
-            title={t.yearView.viewExpenses}
-          >
-            <AbbreviatedAmount value={spentAmount} />{overBudget && ' ⚠'}
-          </div>
+            style={{ width: `calc((100% - 4px) * ${pct})` }}
+          />
         )}
 
-        {hasExpenses && (
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--border-subtle)]">
-            <div
-              className={cn('h-full transition-all', overBudget ? 'bg-red-400' : 'bg-violet-400')}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+        {value !== null && (
+          <span className={cn('relative', tone)}>
+            {value === 0
+              ? text
+              : (
+                <>
+                  {lens === 'diff' && value > 0 && '+'}
+                  <AbbreviatedAmount value={value} />
+                </>
+              )}
+          </span>
         )}
 
         {saveError && (

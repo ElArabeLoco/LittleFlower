@@ -1,19 +1,37 @@
+import { ChevronDown } from 'lucide-react';
 import { getCategoryEmoji } from '@/domain/budget/categories';
 import { cn } from '@/shared/ui/cn';
+import { useI18n } from '@/shared/i18n/I18nContext';
+import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
+import {
+  budgetRowValues, sumColumns, sumKnown, plannedAmount, hasStarted, selectionBounds,
+  type YearLens, type YearGroupId, type CellSelection,
+} from '@/application/yearViewLens';
 import type { BudgetRow } from '@/application/useYearViewData';
 import type { BudgetMonthRow } from '@/infrastructure/powersync/queries/types';
 import { BudgetCell, type BudgetCellHandle } from './BudgetCell';
-import { TotalsRow, type MonthMetrics } from './TotalsRow';
+
+const NAME_COL = 'w-[8.5rem] min-w-[8.5rem] sm:w-60 sm:min-w-60 max-w-[8.5rem] sm:max-w-60';
+
+const GROUP_DOT: Record<YearGroupId, string> = {
+  cc: 'bg-violet-500',
+  dual: 'bg-gradient-to-r from-violet-500 from-50% to-green-500 to-50%',
+  cash: 'bg-green-500',
+};
 
 interface BudgetTableSectionProps {
+  groupId: YearGroupId;
+  label: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  lens: YearLens;
+  selection: CellSelection | null;
   budgets: BudgetRow[];
-  metricsMap: Map<string, MonthMetrics>;
   startIdx: number;
   months: string[];
   currentMonth: string;
   bmMap: Map<string, BudgetMonthRow>;
   expenseMap: Map<string, number>;
-  nameColCollapsed: boolean;
   getCellRef: (globalBudgetIdx: number, monthIdx: number) => React.RefObject<BudgetCellHandle | null>;
   onCellTabNext: (globalBudgetIdx: number, monthIdx: number) => void;
   onCellTabPrev: (globalBudgetIdx: number, monthIdx: number) => void;
@@ -27,53 +45,91 @@ interface BudgetTableSectionProps {
   }) => void;
 }
 
+/** Signed total cell shared by group subtotals and the per-row total column. */
+function TotalValue({ value, lens }: { value: number | null; lens: YearLens }) {
+  if (value === null) return null;
+  if (value === 0) return <span className="text-[var(--text-muted)]">–</span>;
+  return (
+    <span className={cn(lens === 'diff' && (value > 0 ? 'text-[var(--text-positive)]' : 'text-[var(--text-negative)]'))}>
+      {lens === 'diff' && value > 0 && '+'}
+      <AbbreviatedAmount value={value} />
+    </span>
+  );
+}
+
 export function BudgetTableSection({
-  budgets, metricsMap, startIdx, months, currentMonth,
-  bmMap, expenseMap, nameColCollapsed, getCellRef,
+  groupId, label, collapsed, onToggle, lens, selection,
+  budgets, startIdx, months, currentMonth, bmMap, expenseMap, getCellRef,
   onCellTabNext, onCellTabPrev, onCellEnterDown,
   onCellContextMenu, onCellForwardRequest, onCellSave, onOpenExpenses,
 }: BudgetTableSectionProps) {
+  const { t } = useI18n();
+  const rowValues = budgets.map(b => budgetRowValues(lens, b, months, currentMonth, bmMap, expenseMap));
+  const subtotals = sumColumns(rowValues, months.length);
+  const bounds = selection ? selectionBounds(selection) : null;
+
   return (
     <>
-      {budgets.map((budget, bIdx) => {
-        const globalIdx = startIdx + bIdx;
-        return (
-          <tr
-            key={budget.id}
+      <tr className="bg-[var(--bg-surface-2)]">
+        <th
+          scope="row"
+          className={cn(
+            'sticky left-0 z-10 h-8 border-b border-r border-[var(--border-medium)] bg-[var(--bg-surface-2)] p-0 text-left text-[13px] font-semibold text-[var(--text-primary)]',
+            NAME_COL,
+          )}
+        >
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={!collapsed}
+            title={t.yearView.toggleGroup}
+            className="flex h-8 w-full items-center gap-2 px-3 text-left hover:bg-[var(--bg-hover)] transition-colors"
+          >
+            <ChevronDown size={13} aria-hidden="true" className={cn('shrink-0 text-[var(--text-muted)] transition-transform', collapsed && '-rotate-90')} />
+            <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-sm', GROUP_DOT[groupId])} />
+            <span className="truncate">{label}</span>
+            <span className="ml-auto shrink-0 text-xs font-normal text-[var(--text-muted)]">{budgets.length}</span>
+          </button>
+        </th>
+        {subtotals.map((v, i) => (
+          <td
+            key={months[i]}
             className={cn(
-              'border-b border-[var(--border-cell)] hover:bg-[var(--row-hover)] transition-colors group',
-              bIdx % 2 === 0 ? 'bg-[var(--row-zebra-1)]' : 'bg-[var(--row-zebra-2)]',
+              'h-8 min-w-[var(--yv-col)] border-b border-r border-[var(--border-medium)] px-2.5 text-right text-[13px] font-semibold tabular-nums',
+              months[i] === currentMonth && 'bg-[var(--color-now)]/[0.07]',
             )}
           >
-            <td
+            <TotalValue value={v} lens={lens} />
+          </td>
+        ))}
+        <td className="h-8 min-w-[var(--yv-col)] border-b border-l border-[var(--border-medium)] px-2.5 text-right text-[13px] font-semibold tabular-nums">
+          <TotalValue value={sumKnown(subtotals)} lens={lens} />
+        </td>
+      </tr>
+
+      {!collapsed && budgets.map((budget, bIdx) => {
+        const globalIdx = startIdx + bIdx;
+        const rowSelected = !!bounds && globalIdx >= bounds.r1 && globalIdx <= bounds.r2;
+        return (
+          <tr key={budget.id} className="group bg-[var(--bg-surface)]">
+            <th
+              scope="row"
+              data-r={globalIdx}
+              data-c={-1}
               className={cn(
-                'sticky left-0 z-10 py-1.5 text-xs text-[var(--text-primary)] whitespace-nowrap font-medium border-r border-l border-[var(--border-cell)] group-hover:bg-[var(--row-hover-solid)] transition-all duration-200',
-                bIdx % 2 === 0 ? 'bg-[var(--row-zebra-1-solid)]' : 'bg-[var(--row-zebra-2-solid)]',
-                nameColCollapsed ? 'px-1 w-9 text-center' : 'px-3 max-w-[160px] truncate',
+                'sticky left-0 z-10 h-8 cursor-pointer border-b border-r border-[var(--border-medium)] bg-[var(--bg-surface)] group-hover:bg-[var(--row-hover-solid)] pl-7 pr-3 text-left text-[13px] font-normal text-[var(--text-primary)] whitespace-nowrap transition-colors',
+                NAME_COL,
               )}
               title={budget.name}
             >
-              {nameColCollapsed
-                ? <span>{getCategoryEmoji(budget.category_id)}</span>
-                : (
-                  <span className="flex items-center gap-1.5 min-w-0">
-                    <span className="shrink-0">{getCategoryEmoji(budget.category_id)}</span>
-                    <span className="truncate">{budget.name}</span>
-                    {budget.payment_mode === 'both' && (
-                      <span className="shrink-0 text-[9px] font-bold leading-none px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
-                        dual
-                      </span>
-                    )}
-                  </span>
-                )
-              }
-            </td>
+              <span className="flex items-center gap-1.5 min-w-0">
+                <span aria-hidden="true" className="shrink-0">{getCategoryEmoji(budget.category_id)}</span>
+                <span className="truncate">{budget.name}</span>
+              </span>
+            </th>
             {months.map((month, mIdx) => {
-              const bm         = bmMap.get(`${budget.id}|${month}`);
+              const bm = bmMap.get(`${budget.id}|${month}`);
               const spentAmount = bm ? (expenseMap.get(bm.id) ?? 0) : 0;
-              const hasStarted  =
-                month >= budget.start_month &&
-                (budget.end_month == null || month <= budget.end_month);
               return (
                 <BudgetCell
                   key={month}
@@ -82,12 +138,19 @@ export function BudgetTableSection({
                   budgetName={budget.name}
                   budgetMonthId={bm?.id ?? null}
                   month={month}
-                  amount={bm?.amount ?? budget.default_amount}
+                  amount={plannedAmount(budget, bm)}
                   spentAmount={spentAmount}
+                  lens={lens}
+                  value={rowValues[bIdx][mIdx]}
+                  editable={lens === 'plan'}
+                  rowIdx={globalIdx}
+                  colIdx={mIdx}
+                  selected={!!bounds && rowSelected && mIdx >= bounds.c1 && mIdx <= bounds.c2}
+                  active={!!selection && selection.fr === globalIdx && selection.fc === mIdx}
                   isExecuted={bm?.is_executed === 1}
                   isCurrent={month === currentMonth}
                   isFuture={month > currentMonth}
-                  hasStarted={hasStarted}
+                  hasStarted={hasStarted(budget, month)}
                   debtId={budget.debt_id ?? null}
                   paymentMode={budget.payment_mode}
                   onTabNext={() => onCellTabNext(globalIdx, mIdx)}
@@ -102,7 +165,7 @@ export function BudgetTableSection({
                     budgetId: budget.id,
                     budgetName: budget.name,
                     budgetMonthId: bm?.id ?? null,
-                    budgetMonthAmount: bm?.amount ?? budget.default_amount,
+                    budgetMonthAmount: plannedAmount(budget, bm),
                     month,
                     debtId: budget.debt_id ?? null,
                     paymentMode: budget.payment_mode,
@@ -110,10 +173,12 @@ export function BudgetTableSection({
                 />
               );
             })}
+            <td className="h-8 min-w-[var(--yv-col)] border-b border-l border-[var(--border-medium)] px-2.5 text-right text-[13px] font-semibold tabular-nums">
+              <TotalValue value={sumKnown(rowValues[bIdx])} lens={lens} />
+            </td>
           </tr>
         );
       })}
-      <TotalsRow months={months} metricsMap={metricsMap} nameColCollapsed={nameColCollapsed} />
     </>
   );
 }
