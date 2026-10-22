@@ -13,7 +13,7 @@ import { supabase } from '@/infrastructure/powersync/SupabaseConnector';
 import { useAuth } from './AuthContext';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { Logo } from '@/shared/ui/Logo';
+import { FlowerMark } from '@/shared/ui/FlowerMark';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 
@@ -68,7 +68,7 @@ export function JoinPage() {
     <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-8 pb-6 text-center space-y-4">
-          <Logo size={48} className="mx-auto" />
+          <FlowerMark className="mx-auto size-12" />
 
           {status === 'joining' && (
             <>

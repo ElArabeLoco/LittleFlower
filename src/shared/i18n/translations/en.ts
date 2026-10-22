@@ -548,7 +548,7 @@ export const en: Translations = {
     householdTitle: 'Household',
     householdNameLabel: 'Household name',
     joinCodeLabel: 'Join code',
-    shareText: (joinCode: string) => `Join our household on LittleFlower. Your code: ${joinCode}`,
+    shareText: (joinCode: string) => `Join our household on Florecita. Your code: ${joinCode}`,
     linkCopied: 'Link copied!',
     inviteFamily: 'Invite a family member',
     defaultHousehold: 'My household',

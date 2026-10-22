@@ -6,7 +6,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
-import { Logo } from '@/shared/ui/Logo';
+import { FlowerMark } from '@/shared/ui/FlowerMark';
 import { Mail } from 'lucide-react';
 
 interface LoginPageProps {
@@ -87,8 +87,8 @@ export function LoginPage({ joinCode }: LoginPageProps) {
     <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Logo size={48} className="mx-auto mb-2" />
-          <CardTitle className="text-2xl">LittleFlower</CardTitle>
+          <FlowerMark className="mx-auto mb-2 size-12" />
+          <CardTitle className="text-2xl">Florecita</CardTitle>
           <p className="text-sm text-[var(--text-secondary)]">{t.auth.subtitle}</p>
         </CardHeader>
         <CardContent>

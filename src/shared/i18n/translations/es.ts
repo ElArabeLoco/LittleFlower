@@ -547,7 +547,7 @@ export const es = {
     householdTitle: 'Hogar',
     householdNameLabel: 'Nombre del hogar',
     joinCodeLabel: 'Código de unión',
-    shareText: (joinCode: string) => `Únete a nuestro hogar en LittleFlower. Tu código: ${joinCode}`,
+    shareText: (joinCode: string) => `Únete a nuestro hogar en Florecita. Tu código: ${joinCode}`,
     linkCopied: '¡Enlace copiado!',
     inviteFamily: 'Invitar a un familiar',
     defaultHousehold: 'Mi hogar',

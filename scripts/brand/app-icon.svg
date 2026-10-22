@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Florecita app icon source (PWA, maskable, apple-touch). Full-bleed night
+       ground; the flower stays inside the maskable safe zone (inner 80% circle). -->
+  <defs>
+    <radialGradient id="petal" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="54">
+      <stop offset="0" stop-color="#951B48"/>
+      <stop offset="0.32" stop-color="#E8538C"/>
+      <stop offset="1" stop-color="#FECFE0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#22181F"/>
+  <g transform="translate(256 262) scale(2.9)">
+    <g fill="url(#petal)" stroke="#22181F" stroke-width="1.4" stroke-linejoin="round">
+      <path d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+      <path transform="rotate(72)" d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+      <path transform="rotate(144)" d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+      <path transform="rotate(216)" d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+      <path transform="rotate(288)" d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+    </g>
+    <g stroke="#9A8FF4" stroke-width="1.1" stroke-linecap="round">
+      <path d="M0-4V-13.5"/>
+      <path transform="rotate(72)" d="M0-4V-13.5"/>
+      <path transform="rotate(144)" d="M0-4V-13.5"/>
+      <path transform="rotate(216)" d="M0-4V-13.5"/>
+      <path transform="rotate(288)" d="M0-4V-13.5"/>
+    </g>
+    <g fill="#BEB7FF">
+      <circle cy="-14.5" r="1.9"/>
+      <circle transform="rotate(72)" cy="-14.5" r="1.9"/>
+      <circle transform="rotate(144)" cy="-14.5" r="1.9"/>
+      <circle transform="rotate(216)" cy="-14.5" r="1.9"/>
+      <circle transform="rotate(288)" cy="-14.5" r="1.9"/>
+    </g>
+    <circle r="5" fill="#7C6DE1"/>
+  </g>
+</svg>

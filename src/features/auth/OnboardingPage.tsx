@@ -21,7 +21,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
-import { Logo } from '@/shared/ui/Logo';
+import { FlowerMark } from '@/shared/ui/FlowerMark';
 import { useI18n } from '@/shared/i18n/I18nContext';
 
 type Mode = 'choose' | 'create' | 'join';
@@ -93,7 +93,7 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Logo size={48} className="mx-auto mb-2" />
+          <FlowerMark className="mx-auto mb-2 size-12" />
           <CardTitle className="text-xl">{t.onboarding.title}</CardTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {t.onboarding.greeting}{session?.email ? `, ${session.email.split('@')[0]}` : ''}{t.onboarding.subtitle}
