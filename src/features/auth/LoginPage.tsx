@@ -11,9 +11,10 @@ import { Mail } from 'lucide-react';
 
 interface LoginPageProps {
   joinCode?: string;
+  initialMode?: 'login' | 'register';
 }
 
-export function LoginPage({ joinCode }: LoginPageProps) {
+export function LoginPage({ joinCode, initialMode = 'login' }: LoginPageProps) {
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -21,7 +22,7 @@ export function LoginPage({ joinCode }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [name, setName] = useState('');
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
 
