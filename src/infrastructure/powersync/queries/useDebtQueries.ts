@@ -4,7 +4,12 @@ import type { DebtRow, DebtTransactionRow } from './types';
 /** All active debts with full data (debt management page). */
 export function useDebtsQuery() {
   return useQuery<DebtRow>(
-    `SELECT id, name, description, initial_amount, currency, disbursed_at
+    `SELECT id, name, description, initial_amount, currency, disbursed_at, household_id,
+            COALESCE(kind, 'personal') AS kind, lender,
+            COALESCE(interest_rate, 0) AS interest_rate,
+            COALESCE(amortization, 'none') AS amortization,
+            term_months, installment_amount,
+            COALESCE(monthly_fees, 0) AS monthly_fees
      FROM debts WHERE deleted_at IS NULL ORDER BY disbursed_at DESC`,
   );
 }
@@ -12,7 +17,10 @@ export function useDebtsQuery() {
 /** All debt transactions with full data. */
 export function useDebtTransactionsQuery() {
   return useQuery<DebtTransactionRow>(
-    `SELECT id, debt_id, amount, original_amount, original_currency, exchange_rate,
+    `SELECT id, debt_id, amount,
+            COALESCE(interest_amount, 0) AS interest_amount,
+            COALESCE(fees_amount, 0) AS fees_amount,
+            original_amount, original_currency, exchange_rate,
             type, note, date, source, expense_id
      FROM debt_transactions WHERE deleted_at IS NULL ORDER BY date DESC, created_at DESC`,
   );

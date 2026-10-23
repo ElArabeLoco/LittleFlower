@@ -7,7 +7,9 @@
 import { db } from '../client';
 import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import type { IDebtRepository } from '@/domain/debt/IDebtRepository';
-import type { Debt, DebtTransaction, DebtTransactionType, DebtTransactionSource } from '@/domain/debt/Debt';
+import type {
+  Debt, DebtTransaction, DebtTransactionType, DebtTransactionSource, DebtKind, AmortizationMethod,
+} from '@/domain/debt/Debt';
 
 // ---------------------------------------------------------------------------
 // Raw SQLite row types (snake_case)
@@ -21,6 +23,14 @@ interface DebtRow {
   initial_amount: number;
   currency: string;
   disbursed_at: string;
+  // Nullable locally: rows synced before the financial-debts migration lack them
+  kind: string | null;
+  lender: string | null;
+  interest_rate: number | null;
+  amortization: string | null;
+  term_months: number | null;
+  installment_amount: number | null;
+  monthly_fees: number | null;
   created_by: string;
   created_at: string;
   deleted_at: string | null;
@@ -34,6 +44,8 @@ interface DebtTransactionRow {
   household_id: string;
   debt_id: string;
   amount: number;
+  interest_amount: number | null;
+  fees_amount: number | null;
   original_amount: number | null;
   original_currency: string | null;
   exchange_rate: number | null;
@@ -60,6 +72,13 @@ function mapDebt(row: DebtRow): Debt {
     initialAmount: row.initial_amount,
     currency: row.currency,
     disbursedAt: row.disbursed_at,
+    kind: (row.kind ?? 'personal') as DebtKind,
+    lender: row.lender,
+    interestRate: row.interest_rate ?? 0,
+    amortization: (row.amortization ?? 'none') as AmortizationMethod,
+    termMonths: row.term_months,
+    installmentAmount: row.installment_amount,
+    monthlyFees: row.monthly_fees ?? 0,
     createdBy: row.created_by,
     createdAt: row.created_at,
     deletedAt: row.deleted_at,
@@ -75,6 +94,8 @@ function mapTransaction(row: DebtTransactionRow): DebtTransaction {
     householdId: row.household_id,
     debtId: row.debt_id,
     amount: row.amount,
+    interestAmount: row.interest_amount ?? 0,
+    feesAmount: row.fees_amount ?? 0,
     originalAmount: row.original_amount,
     originalCurrency: row.original_currency,
     exchangeRate: row.exchange_rate,
@@ -143,8 +164,22 @@ export interface InsertDebtPayload {
   currency: string;
   /** 'YYYY-MM-DD' */
   disbursed_at: string;
+  kind?: DebtKind;
+  lender?: string | null;
+  /** Effective annual rate as a fraction (0.125 = 12.5% E.A.) */
+  interest_rate?: number;
+  amortization?: AmortizationMethod;
+  term_months?: number | null;
+  installment_amount?: number | null;
+  monthly_fees?: number;
   created_by: string;
 }
+
+/** Loan-term columns accepted by insertDebt / updateDebt. */
+const DEBT_TERM_FIELDS = [
+  'kind', 'lender', 'interest_rate', 'amortization',
+  'term_months', 'installment_amount', 'monthly_fees',
+] as const;
 
 export async function insertDebt(payload: InsertDebtPayload, userId: string): Promise<string> {
   assertAuth(payload.household_id, userId);
@@ -154,8 +189,9 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
   await db.execute(
     `INSERT INTO debts
        (id, household_id, name, description, initial_amount, currency, disbursed_at,
+        kind, lender, interest_rate, amortization, term_months, installment_amount, monthly_fees,
         created_by, created_at, updated_at, last_edited_by, last_edited_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
@@ -164,6 +200,13 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
       payload.initial_amount,
       payload.currency,
       payload.disbursed_at,
+      payload.kind ?? 'personal',
+      payload.lender ?? null,
+      payload.interest_rate ?? 0,
+      payload.amortization ?? 'none',
+      payload.term_months ?? null,
+      payload.installment_amount ?? null,
+      payload.monthly_fees ?? 0,
       payload.created_by,
       ts,
       ts,
@@ -176,7 +219,9 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
 
 export async function updateDebt(
   id: string,
-  patch: Partial<Pick<InsertDebtPayload, 'name' | 'description' | 'initial_amount' | 'currency' | 'disbursed_at'>>,
+  patch: Partial<Pick<InsertDebtPayload,
+    'name' | 'description' | 'initial_amount' | 'currency' | 'disbursed_at' | (typeof DEBT_TERM_FIELDS)[number]
+  >>,
   userId: string,
 ): Promise<void> {
   const stamp = authorshipStamp(userId);
@@ -188,6 +233,9 @@ export async function updateDebt(
   if (patch.initial_amount !== undefined) { fields.push('initial_amount = ?'); values.push(patch.initial_amount); }
   if (patch.currency !== undefined) { fields.push('currency = ?'); values.push(patch.currency); }
   if (patch.disbursed_at !== undefined) { fields.push('disbursed_at = ?'); values.push(patch.disbursed_at); }
+  for (const key of DEBT_TERM_FIELDS) {
+    if (patch[key] !== undefined) { fields.push(`${key} = ?`); values.push(patch[key]); }
+  }
 
   if (fields.length === 0) return;
   fields.push('updated_at = ?', 'last_edited_by = ?', 'last_edited_at = ?');
@@ -207,8 +255,12 @@ export async function softDeleteDebt(id: string, userId: string): Promise<void> 
 export interface InsertDebtTransactionPayload {
   household_id: string;
   debt_id: string;
-  /** Always COP integer */
+  /** Principal portion — always COP integer */
   amount: number;
+  /** Interest portion (COP integer), default 0 */
+  interest_amount?: number;
+  /** Insurance / fees portion (COP integer), default 0 */
+  fees_amount?: number;
   /** Amount in original currency if USD, null for COP transactions */
   original_amount?: number;
   /** 'USD' if applicable, null for COP */
@@ -232,14 +284,16 @@ export async function insertDebtTransaction(
   const id = newId();
   await db.execute(
     `INSERT INTO debt_transactions
-       (id, household_id, debt_id, amount, original_amount, original_currency,
-        exchange_rate, type, note, date, source, expense_id, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, household_id, debt_id, amount, interest_amount, fees_amount, original_amount,
+        original_currency, exchange_rate, type, note, date, source, expense_id, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
       payload.debt_id,
       payload.amount,
+      payload.interest_amount ?? 0,
+      payload.fees_amount ?? 0,
       payload.original_amount ?? null,
       payload.original_currency ?? null,
       payload.exchange_rate ?? null,

@@ -187,6 +187,13 @@ const debts = new Table(
     initial_amount: column.integer, // COP integer — original disbursed amount
     currency: column.text, // 'COP' | 'USD'
     disbursed_at: column.text, // 'YYYY-MM-DD'
+    kind: column.text, // 'personal' | 'mortgage' | 'credit_card' | 'loan' | 'other'
+    lender: column.text, // nullable — financial institution name
+    interest_rate: column.real, // effective annual rate as a fraction (0.125 = 12.5% E.A.)
+    amortization: column.text, // 'none' | 'fixed_installment' | 'fixed_principal'
+    term_months: column.integer, // nullable
+    installment_amount: column.integer, // nullable — agreed installment without fees
+    monthly_fees: column.integer, // insurance / handling fee per installment
     created_by: column.text,
     created_at: column.text,
     deleted_at: column.text, // nullable — soft delete
@@ -205,7 +212,9 @@ const debt_transactions = new Table(
   {
     household_id: column.text,
     debt_id: column.text,
-    amount: column.integer, // always COP integer (converted if USD)
+    amount: column.integer, // always COP integer (converted if USD) — principal portion
+    interest_amount: column.integer, // interest portion of a payment (not part of the balance)
+    fees_amount: column.integer, // insurance / fees portion of a payment (not part of the balance)
     original_amount: column.integer, // nullable — amount in original currency if USD
     original_currency: column.text, // nullable — 'USD' if applicable
     exchange_rate: column.real, // nullable — TRM used at transaction time

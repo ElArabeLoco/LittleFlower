@@ -81,12 +81,22 @@ export interface DebtRow {
   currency: string;
   disbursed_at: string;
   household_id: string;
+  kind: string;
+  lender: string | null;
+  interest_rate: number;
+  amortization: string;
+  term_months: number | null;
+  installment_amount: number | null;
+  monthly_fees: number;
 }
 
 export interface DebtTransactionRow {
   id: string;
   debt_id: string;
+  /** Principal portion */
   amount: number;
+  interest_amount: number;
+  fees_amount: number;
   original_amount: number | null;
   original_currency: string | null;
   exchange_rate: number | null;
