@@ -103,6 +103,14 @@ describe('describeChangeText()', () => {
     );
   });
 
+  it('names members and holders', () => {
+    expect(describeChangeText(change({ table: 'household_members' }), es).title).toBe('Integrante creado');
+    expect(describeChangeText(change({ table: 'household_members', op: 'delete' }), en).title).toBe('Member deleted');
+    expect(describeChangeText(change({ table: 'holders' }), es).title).toBe('Titular asignado');
+    expect(describeChangeText(change({ table: 'holders', op: 'delete' }), es).title).toBe('Titular quitado');
+    expect(describeChangeText(change({ table: 'holders', op: 'delete' }), en).title).toBe('Holder removed');
+  });
+
   it('adds the month to the label', () => {
     const budgetMonth = change({ table: 'budget_months', op: 'update', month: '2026-10' });
     expect(describeChangeText(budgetMonth, es)).toEqual({

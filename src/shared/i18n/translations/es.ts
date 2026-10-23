@@ -932,6 +932,8 @@ export const es = {
       },
       households: { created: 'Hogar creado', updated: 'Hogar actualizado', deleted: 'Hogar eliminado' },
       users: { created: 'Perfil creado', updated: 'Perfil actualizado', deleted: 'Perfil eliminado' },
+      household_members: { created: 'Integrante creado', updated: 'Integrante actualizado', deleted: 'Integrante eliminado' },
+      holders: { created: 'Titular asignado', updated: 'Titular actualizado', deleted: 'Titular quitado' },
       generic: { created: 'Registro creado', updated: 'Registro actualizado', deleted: 'Registro eliminado' },
     },
   },

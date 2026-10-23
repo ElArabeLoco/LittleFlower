@@ -60,3 +60,12 @@ export {
   type InsertDebtPayload,
   type InsertDebtTransactionPayload,
 } from './repositories/PowerSyncDebtRepository';
+
+export {
+  insertMember,
+  updateMember,
+  softDeleteMember,
+  setHolders,
+  type InsertMemberPayload,
+  type SetHoldersPayload,
+} from './repositories/PowerSyncMemberRepository';

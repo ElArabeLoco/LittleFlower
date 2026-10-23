@@ -69,6 +69,8 @@ export const DESCRIBED_COLUMNS = [
   'budget_id',
   'income_id',
   'debt_id',
+  'subject_type',
+  'subject_id',
   'deleted_at',
 ] as const;
 
@@ -153,6 +155,14 @@ function describeFields(table: string, id: string, row: Row, lookup: NameLookup)
         currency: 'COP',
         month: null,
       };
+    case 'household_members':
+      return { ...NO_FIELDS, label: text(row['name']) };
+    case 'holders': {
+      // A holder is described by what it belongs to: the income or debt name.
+      const subjectType = row['subject_type'];
+      const subjectTable = subjectType === 'income' ? 'incomes' : subjectType === 'debt' ? 'debts' : null;
+      return { ...NO_FIELDS, label: subjectTable ? text(lookup(subjectTable, row['subject_id'])) : null };
+    }
     case 'households':
     case 'users':
       return { ...NO_FIELDS, label: text(row['name']) };

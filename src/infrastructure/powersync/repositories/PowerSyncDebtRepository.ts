@@ -4,9 +4,9 @@
  * snake_case columns (SQLite) ↔ camelCase domain types (TypeScript).
  */
 
-import type { LockContext } from '@powersync/web';
 import { db } from '../client';
-import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
+import { newId, now, authorshipStamp, assertAuth, type Executor } from '../mutationHelpers';
+import { setHolders } from './PowerSyncMemberRepository';
 import type { IDebtRepository } from '@/domain/debt/IDebtRepository';
 import { splitPayment, type LoanTerms, type PaymentSplit } from '@/domain/debt/amortization';
 import { planBackfill, type BackfillEntry, type DebtMovement } from '@/domain/debt/backfill';
@@ -184,12 +184,43 @@ const DEBT_TERM_FIELDS = [
   'term_months', 'installment_amount', 'monthly_fees',
 ] as const;
 
-export async function insertDebt(payload: InsertDebtPayload, userId: string): Promise<string> {
+/**
+ * `holderIds` (optional): the complete list of holders of the new debt.
+ * When given, the debt and its holders are written in ONE transaction.
+ */
+export async function insertDebt(
+  payload: InsertDebtPayload,
+  userId: string,
+  holderIds?: string[],
+): Promise<string> {
   assertAuth(payload.household_id, userId);
   const id = newId();
+  if (holderIds === undefined) {
+    await writeDebtRow(db, id, payload, userId);
+    return id;
+  }
+  await db.writeTransaction(async tx => {
+    await writeDebtRow(tx, id, payload, userId);
+    await setHolders(tx, {
+      householdId: payload.household_id,
+      subjectType: 'debt',
+      subjectId: id,
+      memberIds: holderIds,
+      userId,
+    });
+  });
+  return id;
+}
+
+async function writeDebtRow(
+  exec: Executor,
+  id: string,
+  payload: InsertDebtPayload,
+  userId: string,
+): Promise<void> {
   const stamp = authorshipStamp(userId);
   const ts = now();
-  await db.execute(
+  await exec.execute(
     `INSERT INTO debts
        (id, household_id, name, description, initial_amount, currency, disbursed_at,
         kind, lender, interest_rate, amortization, term_months, installment_amount, monthly_fees,
@@ -217,15 +248,21 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
       stamp.last_edited_at,
     ],
   );
-  return id;
 }
 
+/**
+ * `holderIds` (optional): the complete list of holders after the update.
+ * `undefined` leaves holders untouched, `[]` removes them all. When given,
+ * the debt update and the holders are written in ONE transaction — and the
+ * holders apply even when `patch` has no fields.
+ */
 export async function updateDebt(
   id: string,
   patch: Partial<Pick<InsertDebtPayload,
     'name' | 'description' | 'initial_amount' | 'currency' | 'disbursed_at' | (typeof DEBT_TERM_FIELDS)[number]
   >>,
   userId: string,
+  holderIds?: string[],
 ): Promise<void> {
   const stamp = authorshipStamp(userId);
   const fields: string[] = [];
@@ -240,11 +277,31 @@ export async function updateDebt(
     if (patch[key] !== undefined) { fields.push(`${key} = ?`); values.push(patch[key]); }
   }
 
-  if (fields.length === 0) return;
+  const hasFields = fields.length > 0;
+  if (!hasFields && holderIds === undefined) return;
   fields.push('updated_at = ?', 'last_edited_by = ?', 'last_edited_at = ?');
   values.push(now(), stamp.last_edited_by, stamp.last_edited_at, id);
+  const sql = `UPDATE debts SET ${fields.join(', ')} WHERE id = ?`;
 
-  await db.execute(`UPDATE debts SET ${fields.join(', ')} WHERE id = ?`, values);
+  if (holderIds === undefined) {
+    await db.execute(sql, values);
+    return;
+  }
+  await db.writeTransaction(async tx => {
+    if (hasFields) await tx.execute(sql, values);
+    const row = await tx.getOptional<{ household_id: string }>(
+      `SELECT household_id FROM debts WHERE id = ?`,
+      [id],
+    );
+    if (!row) return;
+    await setHolders(tx, {
+      householdId: row.household_id,
+      subjectType: 'debt',
+      subjectId: id,
+      memberIds: holderIds,
+      userId,
+    });
+  });
 }
 
 export async function softDeleteDebt(id: string, userId: string): Promise<void> {
@@ -278,9 +335,6 @@ export interface InsertDebtTransactionPayload {
   /** Set when source='expense' */
   expense_id?: string;
 }
-
-/** Reads and writes on the database or inside an open write transaction. */
-type Executor = Pick<LockContext, 'execute' | 'getAll' | 'getOptional'>;
 
 export async function insertDebtTransaction(
   payload: InsertDebtTransactionPayload,

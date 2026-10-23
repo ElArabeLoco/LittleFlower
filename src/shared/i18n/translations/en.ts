@@ -930,6 +930,8 @@ export const en: Translations = {
       },
       households: { created: 'Household created', updated: 'Household updated', deleted: 'Household deleted' },
       users: { created: 'Profile created', updated: 'Profile updated', deleted: 'Profile deleted' },
+      household_members: { created: 'Member created', updated: 'Member updated', deleted: 'Member deleted' },
+      holders: { created: 'Holder assigned', updated: 'Holder updated', deleted: 'Holder removed' },
       generic: { created: 'Record created', updated: 'Record updated', deleted: 'Record deleted' },
     },
   },

@@ -3,7 +3,8 @@
  */
 
 import { db } from '../client';
-import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
+import { newId, now, authorshipStamp, assertAuth, type Executor } from '../mutationHelpers';
+import { setHolders } from './PowerSyncMemberRepository';
 import type { IIncomeRepository } from '@/domain/income/IIncomeRepository';
 import type { Income, IncomeMonth } from '@/domain/income/Income';
 
@@ -128,10 +129,36 @@ export interface InsertIncomePayload {
   created_by: string;
 }
 
-export async function insertIncome(payload: InsertIncomePayload, _userId: string): Promise<string> {
+/**
+ * `holderIds` (optional): the complete list of holders of the new income.
+ * When given, the income and its holders are written in ONE transaction.
+ */
+export async function insertIncome(
+  payload: InsertIncomePayload,
+  _userId: string,
+  holderIds?: string[],
+): Promise<string> {
   assertAuth(payload.household_id, payload.created_by);
   const id = newId();
-  await db.execute(
+  if (holderIds === undefined) {
+    await writeIncomeRow(db, id, payload);
+    return id;
+  }
+  await db.writeTransaction(async tx => {
+    await writeIncomeRow(tx, id, payload);
+    await setHolders(tx, {
+      householdId: payload.household_id,
+      subjectType: 'income',
+      subjectId: id,
+      memberIds: holderIds,
+      userId: payload.created_by,
+    });
+  });
+  return id;
+}
+
+async function writeIncomeRow(exec: Executor, id: string, payload: InsertIncomePayload): Promise<void> {
+  await exec.execute(
     `INSERT INTO incomes
        (id, household_id, name, person, is_fixed, category,
         default_amount, currency, start_month, end_month, created_by, created_at)
@@ -151,13 +178,19 @@ export async function insertIncome(payload: InsertIncomePayload, _userId: string
       now(),
     ],
   );
-  return id;
 }
 
+/**
+ * `holderIds` (optional): the complete list of holders after the update.
+ * `undefined` leaves holders untouched, `[]` removes them all. When given,
+ * the income update and the holders are written in ONE transaction — and the
+ * holders apply even when `patch` has no fields.
+ */
 export async function updateIncome(
   id: string,
   patch: Partial<Pick<InsertIncomePayload, 'name' | 'default_amount' | 'currency' | 'is_fixed' | 'category' | 'end_month'>>,
   userId: string,
+  holderIds?: string[],
 ): Promise<void> {
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -169,11 +202,29 @@ export async function updateIncome(
   if (patch.category !== undefined) { fields.push('category = ?'); values.push(patch.category); }
   if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
 
-  if (fields.length === 0) return;
+  if (fields.length === 0 && holderIds === undefined) return;
   values.push(id);
-  // userId param accepted for future audit logging parity
-  void userId;
-  await db.execute(`UPDATE incomes SET ${fields.join(', ')} WHERE id = ?`, values);
+  const sql = `UPDATE incomes SET ${fields.join(', ')} WHERE id = ?`;
+
+  if (holderIds === undefined) {
+    await db.execute(sql, values);
+    return;
+  }
+  await db.writeTransaction(async tx => {
+    if (fields.length > 0) await tx.execute(sql, values);
+    const row = await tx.getOptional<{ household_id: string }>(
+      `SELECT household_id FROM incomes WHERE id = ?`,
+      [id],
+    );
+    if (!row) return;
+    await setHolders(tx, {
+      householdId: row.household_id,
+      subjectType: 'income',
+      subjectId: id,
+      memberIds: holderIds,
+      userId,
+    });
+  });
 }
 
 export async function deleteIncome(id: string): Promise<void> {

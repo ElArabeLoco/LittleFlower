@@ -118,3 +118,37 @@ export interface UserRow {
   name: string;
   color: string | null;
 }
+
+export interface MemberRow {
+  id: string;
+  name: string;
+  /** Raw palette key from SQLite; read it with toMemberTone(). */
+  tone: string;
+}
+
+/** One holder of an income or a debt, joined with its active member. */
+export interface HolderRow {
+  subject_id: string;
+  member_id: string;
+  name: string;
+  tone: string;
+}
+
+/** How many active incomes / debts a member holds (one row per subject type). */
+export interface MemberHoldingCountRow {
+  member_id: string;
+  subject_type: string; // 'income' | 'debt'
+  n: number;
+}
+
+/** One income or debt held by a member. */
+export interface MemberHoldingRow {
+  subject_type: string; // 'income' | 'debt'
+  subject_id: string;
+  name: string;
+}
+
+export interface HouseholdUserRow {
+  id: string;
+  name: string;
+}
