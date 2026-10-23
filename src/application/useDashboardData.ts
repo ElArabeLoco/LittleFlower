@@ -8,9 +8,10 @@
 import { useMemo } from 'react';
 import { toCOP, prevNMonthsFrom } from '@/shared/helpers';
 import { useBudgetsQuery, useBudgetMonthsForMonths } from '@/infrastructure/powersync/queries/useBudgetQueries';
-import { useExpenseSumsForMonths } from '@/infrastructure/powersync/queries/useExpenseQueries';
+import { useExpenseSumsForMonths, useExpenseSumsByModeForRange } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useActiveIncomes, useIncomeMonthsForMonths } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRatesForMonths } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
+import { cashEnvelope } from './cashEnvelope';
 
 
 // ---------------------------------------------------------------------------
@@ -22,9 +23,13 @@ export interface MonthlyDataPoint {
   /** Display label (short month name) — populated by the feature-layer adapter. */
   label: string;
   available: number;
+  /** Cash envelope, as in the month view (see cashEnvelope). */
   budgeted: number;
   spent: number;
+  /** Balance ideal: available − budgeted. */
   balance: number;
+  /** Balance real: available − every cash-paid expense of the month. */
+  realBalance: number;
   pending: number;
 }
 
@@ -59,6 +64,8 @@ export function useDashboardData(selectedMonth: string): DashboardData {
   const { data: budgets = [] } = useBudgetsQuery();
   const { data: budgetMonths = [] } = useBudgetMonthsForMonths(last6);
   const { data: expenseSums = [] } = useExpenseSumsForMonths(last6);
+  // last6 is ascending, so its ends bound the range.
+  const { data: expenseSumsByMode = [] } = useExpenseSumsByModeForRange(last6[0], last6[last6.length - 1]);
   const { data: incomes = [] } = useActiveIncomes();
   const { data: incomeMonths = [] } = useIncomeMonthsForMonths(last6);
   const { data: exchangeRates = [] } = useExchangeRatesForMonths(last6);
@@ -82,6 +89,18 @@ export function useDashboardData(selectedMonth: string): DashboardData {
     for (const bm of budgetMonths) m.set(`${bm.budget_id}|${bm.month}`, bm.amount);
     return m;
   }, [budgetMonths]);
+
+  /** month → (budget_month_id → cash-paid total) */
+  const cashSpentByMonth = useMemo(() => {
+    const byMonth = new Map<string, Map<string, number>>();
+    for (const row of expenseSumsByMode) {
+      if (row.paid_with_credit_card === 1) continue;
+      const forMonth = byMonth.get(row.month) ?? new Map<string, number>();
+      forMonth.set(row.budget_month_id, (forMonth.get(row.budget_month_id) ?? 0) + row.total);
+      byMonth.set(row.month, forMonth);
+    }
+    return byMonth;
+  }, [expenseSumsByMode]);
 
   const imMap = useMemo(() => {
     const m = new Map<string, { income_id: string; month: string; real_amount: number; currency: string }>();
@@ -111,25 +130,28 @@ export function useDashboardData(selectedMonth: string): DashboardData {
         available += toCOP(amount, currency, trm);
       }
 
-      // Cash budgets only (credit card and dual are not direct cash outflows)
-      let budgeted = 0, spent = 0;
-      for (const b of budgets) {
-        if (b.payment_mode !== 'cash') continue;
-        if (b.start_month > month) continue;
-        if (b.end_month && b.end_month < month) continue;
-        const bmKey = `${b.id}|${month}`;
-        const bmRow = bmIdMap.get(bmKey);
-        const amount = budgetAmountMap.get(bmKey) ?? b.default_amount;
-        budgeted += amount;
-        if (bmRow) spent += expenseByBmId.get(bmRow.id) ?? 0;
+      // Same cash envelope as the month view and Home, so the three screens agree.
+      const activeBudgets = budgets.filter(
+        b => b.start_month <= month && (b.end_month == null || b.end_month >= month),
+      );
+      const budgetMonthByBudgetId = new Map<string, { id: string; amount: number }>();
+      for (const b of activeBudgets) {
+        const bmRow = bmIdMap.get(`${b.id}|${month}`);
+        if (bmRow) budgetMonthByBudgetId.set(b.id, bmRow);
       }
+      const { budgeted, executed: spent, realSpent } = cashEnvelope({
+        budgets: activeBudgets,
+        budgetMonthByBudgetId,
+        cashSpentByBudgetMonthId: cashSpentByMonth.get(month) ?? new Map(),
+      });
 
       const balance = available - budgeted;
+      const realBalance = available - realSpent;
       const pending = Math.max(0, budgeted - spent);
 
-      return { month, label: month, available, budgeted, spent, balance, pending };
+      return { month, label: month, available, budgeted, spent, balance, realBalance, pending };
     });
-  }, [last6, budgets, incomes, budgetAmountMap, bmIdMap, expenseByBmId, imMap, trmMap]);
+  }, [last6, budgets, incomes, bmIdMap, cashSpentByMonth, imMap, trmMap]);
 
   return useMemo(() => ({
     monthlyData,

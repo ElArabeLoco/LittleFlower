@@ -36,27 +36,26 @@ export function useHomeData(month: string, userId: string): HomeData {
     creditCardBudgets,
     cashBudgets,
     bmMap,
-    cashExpenseMap,
     activeIncomes,
     trm,
     totalAvailable,
     hasMissingTrm,
     cashTotals,
+    cashRealSpent,
   } = useMonthViewData(month);
   const { data: users = [] } = useUserQuery(userId);
   const { totalBalance, activeDebts } = useDebtManagementSummary();
   const { data: recentExpenses = [] } = useRecentExpenses(month, RECENT_EXPENSES_LIMIT);
 
-  const balance = useMemo(() => {
-    let realSpent = 0;
-    for (const spent of cashExpenseMap.values()) realSpent += spent;
-    return summarizeMonthBalance({
+  const balance = useMemo(
+    () => summarizeMonthBalance({
       available: totalAvailable,
       budgeted: cashTotals.budgeted,
       executed: cashTotals.spent,
-      realSpent,
-    });
-  }, [cashExpenseMap, totalAvailable, cashTotals]);
+      realSpent: cashRealSpent,
+    }),
+    [totalAvailable, cashTotals, cashRealSpent],
+  );
 
   const budgets = useMemo(
     () => listMonthBudgets(creditCardBudgets, cashBudgets, bmMap, month),

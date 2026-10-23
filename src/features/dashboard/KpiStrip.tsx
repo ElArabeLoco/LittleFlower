@@ -63,7 +63,7 @@ export function KpiStrip() {
   const { dashDebts, dashDebtTxs, debtInitialCOP } = useDebtData();
 
   const currentData = monthlyData.find(d => d.month === currentMonth) ?? {
-    available: 0, budgeted: 0, spent: 0, balance: 0, pending: 0,
+    available: 0, budgeted: 0, spent: 0, balance: 0, realBalance: 0, pending: 0,
   };
 
   const hasDebts = dashDebts.length > 0;
@@ -87,14 +87,14 @@ export function KpiStrip() {
   );
 
   const balanceHighlight: 'positive' | 'negative' | 'default' =
-    currentData.balance > 0 ? 'positive' : currentData.balance < 0 ? 'negative' : 'default';
+    currentData.realBalance > 0 ? 'positive' : currentData.realBalance < 0 ? 'negative' : 'default';
 
   // Tiles stay at least ~150px wide: large amounts do not fit a sixth of a tablet row.
   return (
     <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${hasDebts ? 'xl:grid-cols-6' : 'lg:grid-cols-5'}`}>
       <KpiTile
         label={t.dashboard.realBalance}
-        value={currentData.balance}
+        value={currentData.realBalance}
         icon={Scale}
         highlight={balanceHighlight}
       />
