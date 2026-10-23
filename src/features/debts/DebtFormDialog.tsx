@@ -19,7 +19,7 @@ import {
   type RatePeriod,
 } from '@/application/debtPlan';
 import { todayISO } from './helpers';
-import type { DebtFormState, DebtRow } from './types';
+import type { DebtFormState } from './types';
 
 const defaultDebtForm = (): DebtFormState => ({
   name: '',
@@ -36,25 +36,6 @@ const defaultDebtForm = (): DebtFormState => ({
   installment_amount: '',
   monthly_fees: '',
 });
-
-/** Edit-mode form state for an existing debt. The rate is shown as E.A. */
-export function debtFormFromRow(debt: DebtRow): DebtFormState {
-  return {
-    name: debt.name,
-    description: debt.description ?? '',
-    initial_amount: String(debt.initial_amount),
-    currency: debt.currency,
-    disbursed_at: debt.disbursed_at,
-    kind: debt.kind as DebtKind,
-    lender: debt.lender ?? '',
-    rate: debt.interest_rate ? String(Number(ratePercents(debt.interest_rate).ea.toFixed(4))) : '',
-    rate_period: 'EA',
-    amortization: debt.amortization as DebtFormState['amortization'],
-    term_months: debt.term_months ? String(debt.term_months) : '',
-    installment_amount: debt.installment_amount ? String(debt.installment_amount) : '',
-    monthly_fees: debt.monthly_fees ? String(debt.monthly_fees) : '',
-  };
-}
 
 function parseInteger(s: string): number | null {
   const n = parseInt(s.replace(/\D/g, ''), 10);

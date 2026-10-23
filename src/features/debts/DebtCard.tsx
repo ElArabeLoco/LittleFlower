@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Link2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Link2, X, CalendarRange } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
@@ -8,9 +9,9 @@ import { computeDebtBalance } from '@/domain/debt/Debt';
 import { useDebtMutations } from '@/application/useDebtMutations';
 import { isFinancialDebt, projectDebt, ratePercents } from '@/application/debtPlan';
 import { getCurrentMonth } from '@/shared/helpers/dateHelpers';
-import { DebtFormDialog, debtFormFromRow } from './DebtFormDialog';
+import { DebtFormDialog } from './DebtFormDialog';
 import { DebtTransactionDialog } from './DebtTransactionDialog';
-import { formatDate } from './helpers';
+import { debtFormFromRow, formatDate } from './helpers';
 import type { DebtRow, DebtTransactionRow } from './types';
 
 interface DebtCardProps {
@@ -163,6 +164,12 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
             />
           </div>
         </div>
+
+        <Button asChild variant="outline" size="sm" className="mt-3 w-full gap-1.5 h-8 text-xs">
+          <Link to="/debts/$debtId" params={{ debtId: debt.id }}>
+            <CalendarRange size={12} /> {t.debts.viewProjection}
+          </Link>
+        </Button>
       </div>
 
       <button

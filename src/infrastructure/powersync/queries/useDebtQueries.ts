@@ -84,3 +84,15 @@ export function useDebtOptionsQuery() {
     `SELECT id, name FROM debts WHERE deleted_at IS NULL ORDER BY name ASC`,
   );
 }
+
+/** Monthly amount budgeted toward a debt in `month` (sum of its active linked budgets). */
+export function useLinkedBudgetAmountQuery(debtId: string, month: string) {
+  return useQuery<{ total: number | null }>(
+    `SELECT SUM(COALESCE(bm.amount, b.default_amount)) AS total
+     FROM budgets b
+     LEFT JOIN budget_months bm ON bm.budget_id = b.id AND bm.month = ?
+     WHERE b.debt_id = ? AND b.deleted_at IS NULL
+       AND b.start_month <= ? AND (b.end_month IS NULL OR b.end_month >= ?)`,
+    [month, debtId, month, month],
+  );
+}

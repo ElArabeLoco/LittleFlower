@@ -573,6 +573,7 @@ export const es = {
       none: 'Pagos libres (sin plan)',
     },
     termLabel: 'Plazo (meses)',
+    termMonths: (n: number) => `${n} meses`,
     installmentLabel: 'Cuota pactada sin seguros (opcional)',
     installmentComputed: (amount: string) => `Si la dejas vacía se usa la calculada: ${amount}`,
     feesLabel: 'Seguros y otros cargos por cuota',

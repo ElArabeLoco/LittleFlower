@@ -574,6 +574,7 @@ export const en: Translations = {
       none: 'Free payments (no plan)',
     },
     termLabel: 'Term (months)',
+    termMonths: (n: number) => `${n} months`,
     installmentLabel: 'Agreed installment without fees (optional)',
     installmentComputed: (amount: string) => `Leave it empty to use the computed one: ${amount}`,
     feesLabel: 'Insurance and fees per installment',
