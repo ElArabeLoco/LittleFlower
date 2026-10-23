@@ -4,10 +4,15 @@
  * snake_case columns (SQLite) ↔ camelCase domain types (TypeScript).
  */
 
+import type { LockContext } from '@powersync/web';
 import { db } from '../client';
 import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import type { IDebtRepository } from '@/domain/debt/IDebtRepository';
-import type { Debt, DebtTransaction, DebtTransactionType, DebtTransactionSource } from '@/domain/debt/Debt';
+import { splitPayment, type LoanTerms, type PaymentSplit } from '@/domain/debt/amortization';
+import { planBackfill, type BackfillEntry, type DebtMovement } from '@/domain/debt/backfill';
+import type {
+  Debt, DebtTransaction, DebtTransactionType, DebtTransactionSource, DebtKind, AmortizationMethod,
+} from '@/domain/debt/Debt';
 
 // ---------------------------------------------------------------------------
 // Raw SQLite row types (snake_case)
@@ -21,6 +26,14 @@ interface DebtRow {
   initial_amount: number;
   currency: string;
   disbursed_at: string;
+  // Nullable locally: rows synced before the financial-debts migration lack them
+  kind: string | null;
+  lender: string | null;
+  interest_rate: number | null;
+  amortization: string | null;
+  term_months: number | null;
+  installment_amount: number | null;
+  monthly_fees: number | null;
   created_by: string;
   created_at: string;
   deleted_at: string | null;
@@ -34,6 +47,8 @@ interface DebtTransactionRow {
   household_id: string;
   debt_id: string;
   amount: number;
+  interest_amount: number | null;
+  fees_amount: number | null;
   original_amount: number | null;
   original_currency: string | null;
   exchange_rate: number | null;
@@ -60,6 +75,13 @@ function mapDebt(row: DebtRow): Debt {
     initialAmount: row.initial_amount,
     currency: row.currency,
     disbursedAt: row.disbursed_at,
+    kind: (row.kind ?? 'personal') as DebtKind,
+    lender: row.lender,
+    interestRate: row.interest_rate ?? 0,
+    amortization: (row.amortization ?? 'none') as AmortizationMethod,
+    termMonths: row.term_months,
+    installmentAmount: row.installment_amount,
+    monthlyFees: row.monthly_fees ?? 0,
     createdBy: row.created_by,
     createdAt: row.created_at,
     deletedAt: row.deleted_at,
@@ -75,6 +97,8 @@ function mapTransaction(row: DebtTransactionRow): DebtTransaction {
     householdId: row.household_id,
     debtId: row.debt_id,
     amount: row.amount,
+    interestAmount: row.interest_amount ?? 0,
+    feesAmount: row.fees_amount ?? 0,
     originalAmount: row.original_amount,
     originalCurrency: row.original_currency,
     exchangeRate: row.exchange_rate,
@@ -143,8 +167,22 @@ export interface InsertDebtPayload {
   currency: string;
   /** 'YYYY-MM-DD' */
   disbursed_at: string;
+  kind?: DebtKind;
+  lender?: string | null;
+  /** Effective annual rate as a fraction (0.125 = 12.5% E.A.) */
+  interest_rate?: number;
+  amortization?: AmortizationMethod;
+  term_months?: number | null;
+  installment_amount?: number | null;
+  monthly_fees?: number;
   created_by: string;
 }
+
+/** Loan-term columns accepted by insertDebt / updateDebt. */
+const DEBT_TERM_FIELDS = [
+  'kind', 'lender', 'interest_rate', 'amortization',
+  'term_months', 'installment_amount', 'monthly_fees',
+] as const;
 
 export async function insertDebt(payload: InsertDebtPayload, userId: string): Promise<string> {
   assertAuth(payload.household_id, userId);
@@ -154,8 +192,9 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
   await db.execute(
     `INSERT INTO debts
        (id, household_id, name, description, initial_amount, currency, disbursed_at,
+        kind, lender, interest_rate, amortization, term_months, installment_amount, monthly_fees,
         created_by, created_at, updated_at, last_edited_by, last_edited_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
@@ -164,6 +203,13 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
       payload.initial_amount,
       payload.currency,
       payload.disbursed_at,
+      payload.kind ?? 'personal',
+      payload.lender ?? null,
+      payload.interest_rate ?? 0,
+      payload.amortization ?? 'none',
+      payload.term_months ?? null,
+      payload.installment_amount ?? null,
+      payload.monthly_fees ?? 0,
       payload.created_by,
       ts,
       ts,
@@ -176,7 +222,9 @@ export async function insertDebt(payload: InsertDebtPayload, userId: string): Pr
 
 export async function updateDebt(
   id: string,
-  patch: Partial<Pick<InsertDebtPayload, 'name' | 'description' | 'initial_amount' | 'currency' | 'disbursed_at'>>,
+  patch: Partial<Pick<InsertDebtPayload,
+    'name' | 'description' | 'initial_amount' | 'currency' | 'disbursed_at' | (typeof DEBT_TERM_FIELDS)[number]
+  >>,
   userId: string,
 ): Promise<void> {
   const stamp = authorshipStamp(userId);
@@ -188,6 +236,9 @@ export async function updateDebt(
   if (patch.initial_amount !== undefined) { fields.push('initial_amount = ?'); values.push(patch.initial_amount); }
   if (patch.currency !== undefined) { fields.push('currency = ?'); values.push(patch.currency); }
   if (patch.disbursed_at !== undefined) { fields.push('disbursed_at = ?'); values.push(patch.disbursed_at); }
+  for (const key of DEBT_TERM_FIELDS) {
+    if (patch[key] !== undefined) { fields.push(`${key} = ?`); values.push(patch[key]); }
+  }
 
   if (fields.length === 0) return;
   fields.push('updated_at = ?', 'last_edited_by = ?', 'last_edited_at = ?');
@@ -207,8 +258,12 @@ export async function softDeleteDebt(id: string, userId: string): Promise<void> 
 export interface InsertDebtTransactionPayload {
   household_id: string;
   debt_id: string;
-  /** Always COP integer */
+  /** Principal portion — always COP integer */
   amount: number;
+  /** Interest portion (COP integer), default 0 */
+  interest_amount?: number;
+  /** Insurance / fees portion (COP integer), default 0 */
+  fees_amount?: number;
   /** Amount in original currency if USD, null for COP transactions */
   original_amount?: number;
   /** 'USD' if applicable, null for COP */
@@ -224,22 +279,28 @@ export interface InsertDebtTransactionPayload {
   expense_id?: string;
 }
 
+/** Reads and writes on the database or inside an open write transaction. */
+type Executor = Pick<LockContext, 'execute' | 'getAll' | 'getOptional'>;
+
 export async function insertDebtTransaction(
   payload: InsertDebtTransactionPayload,
   userId: string,
+  executor: Executor = db,
 ): Promise<string> {
   assertAuth(payload.household_id, userId);
   const id = newId();
-  await db.execute(
+  await executor.execute(
     `INSERT INTO debt_transactions
-       (id, household_id, debt_id, amount, original_amount, original_currency,
-        exchange_rate, type, note, date, source, expense_id, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, household_id, debt_id, amount, interest_amount, fees_amount, original_amount,
+        original_currency, exchange_rate, type, note, date, source, expense_id, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       payload.household_id,
       payload.debt_id,
       payload.amount,
+      payload.interest_amount ?? 0,
+      payload.fees_amount ?? 0,
       payload.original_amount ?? null,
       payload.original_currency ?? null,
       payload.exchange_rate ?? null,
@@ -253,6 +314,149 @@ export async function insertDebtTransaction(
     ],
   );
   return id;
+}
+
+interface DebtTermsRow {
+  currency: string;
+  initial_amount: number;
+  interest_rate: number;
+  amortization: string;
+  term_months: number | null;
+  installment_amount: number | null;
+  monthly_fees: number;
+}
+
+const DEBT_TERMS_SELECT = `d.currency, d.initial_amount,
+            COALESCE(d.interest_rate, 0) AS interest_rate,
+            COALESCE(d.amortization, 'none') AS amortization,
+            d.term_months, d.installment_amount,
+            COALESCE(d.monthly_fees, 0) AS monthly_fees`;
+
+/** Loan terms only apply to COP debts; anything else is paid straight to principal. */
+function toLoanTerms(row: DebtTermsRow): LoanTerms {
+  const cop = row.currency === 'COP';
+  return {
+    initialAmount: row.initial_amount,
+    interestRate: cop ? row.interest_rate : 0,
+    amortization: row.amortization as AmortizationMethod,
+    termMonths: row.term_months,
+    installmentAmount: row.installment_amount,
+    monthlyFees: cop ? row.monthly_fees : 0,
+  };
+}
+
+/**
+ * Default principal / interest / fees split for a payment on a debt, from its
+ * current balance and loan terms. Used when the caller does not provide one.
+ */
+export async function suggestDebtPaymentSplit(debtId: string, total: number): Promise<PaymentSplit> {
+  const row = await db.getOptional<DebtTermsRow & { delta: number }>(
+    `SELECT ${DEBT_TERMS_SELECT},
+            COALESCE((
+              SELECT SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE -t.amount END)
+              FROM debt_transactions t
+              WHERE t.debt_id = d.id AND t.deleted_at IS NULL
+            ), 0) AS delta
+     FROM debts d WHERE d.id = ?`,
+    [debtId],
+  );
+  if (!row) return { principal: total, interest: 0, fees: 0 };
+  return splitPayment(total, row.initial_amount + row.delta, toLoanTerms(row));
+}
+
+interface PastExpenseRow {
+  expense_id: string;
+  date: string;
+  /** Net of reversals */
+  total: number;
+  note: string | null;
+}
+
+async function loadBackfill(executor: Executor, budgetId: string, debtId: string) {
+  const debt = await executor.getOptional<DebtTermsRow & { disbursed_at: string | null }>(
+    `SELECT ${DEBT_TERMS_SELECT}, d.disbursed_at
+     FROM debts d WHERE d.id = ? AND d.deleted_at IS NULL`,
+    [debtId],
+  );
+  if (!debt) return { entries: [] as BackfillEntry[], notes: new Map<string, string | null>() };
+
+  const movements = await executor.getAll<DebtMovement>(
+    `SELECT type, amount, date FROM debt_transactions WHERE debt_id = ? AND deleted_at IS NULL`,
+    [debtId],
+  );
+  // An expense already applied to this debt (even if that payment was removed
+  // later) or to another live debt is never applied again.
+  const expenses = await executor.getAll<PastExpenseRow>(
+    `SELECT expense_id, date, total, note FROM (
+       SELECT e.id AS expense_id, substr(e.timestamp, 1, 10) AS date, e.note, e.timestamp,
+              e.amount + COALESCE((
+                SELECT SUM(r.amount) FROM expenses r
+                WHERE r.linked_expense_id = e.id AND r.deleted_at IS NULL
+              ), 0) AS total
+       FROM expenses e
+       WHERE e.budget_id = ? AND e.deleted_at IS NULL AND e.amount > 0
+         AND substr(e.timestamp, 1, 10) >= ?
+         AND NOT EXISTS (
+           SELECT 1 FROM debt_transactions t JOIN debts d ON d.id = t.debt_id
+           WHERE t.expense_id = e.id
+             AND (t.debt_id = ? OR (t.deleted_at IS NULL AND d.deleted_at IS NULL))
+         )
+     ) WHERE total > 0
+     ORDER BY timestamp`,
+    [budgetId, debt.disbursed_at ?? '', debtId],
+  );
+
+  const entries = planBackfill(
+    toLoanTerms(debt),
+    movements,
+    expenses.map(e => ({ expenseId: e.expense_id, date: e.date, total: e.total })),
+  );
+  return { entries, notes: new Map(expenses.map(e => [e.expense_id, e.note])) };
+}
+
+/**
+ * Payments a budget's past expenses would make on a debt it gets linked to:
+ * expenses dated from the debt start that are not applied to it yet, split
+ * in date order from the balance at each date.
+ */
+export async function planDebtBackfill(budgetId: string, debtId: string): Promise<BackfillEntry[]> {
+  return (await loadBackfill(db, budgetId, debtId)).entries;
+}
+
+/**
+ * Records the backfill of a budget on a debt. It is planned again inside the
+ * write, so running it twice never applies an expense twice.
+ * Returns how many payments were recorded.
+ */
+export async function applyDebtBackfill(
+  householdId: string,
+  budgetId: string,
+  debtId: string,
+  userId: string,
+): Promise<number> {
+  assertAuth(householdId, userId);
+  return db.writeTransaction(async tx => {
+    const { entries, notes } = await loadBackfill(tx, budgetId, debtId);
+    for (const entry of entries) {
+      await insertDebtTransaction(
+        {
+          household_id: householdId,
+          debt_id: debtId,
+          amount: entry.principal,
+          interest_amount: entry.interest,
+          fees_amount: entry.fees,
+          type: 'debit',
+          source: 'expense',
+          expense_id: entry.expenseId,
+          date: entry.date,
+          note: notes.get(entry.expenseId) ?? undefined,
+        },
+        userId,
+        tx,
+      );
+    }
+    return entries.length;
+  });
 }
 
 export async function softDeleteDebtTransaction(id: string): Promise<void> {

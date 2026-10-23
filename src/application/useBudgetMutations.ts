@@ -7,13 +7,16 @@ import {
   updateBudgetMonthExecution as updateBudgetMonthExecutionMW,
   registerFullPaymentAndExecute as registerFullPaymentAndExecuteMW,
   applyBudgetMonthAmountForward as applyBudgetMonthAmountForwardMW,
+  planDebtBackfill,
+  applyDebtBackfill as applyDebtBackfillMW,
   type InsertBudgetPayload,
   type UpsertBudgetMonthPayload,
   type RegisterFullPaymentPayload,
   type ApplyForwardPayload,
 } from '@/infrastructure/powersync/mutationWrappers';
+import { summarizeBackfill, type BackfillSummary } from '@/domain/debt/backfill';
 
-export type { InsertBudgetPayload, UpsertBudgetMonthPayload, RegisterFullPaymentPayload, ApplyForwardPayload };
+export type { InsertBudgetPayload, UpsertBudgetMonthPayload, RegisterFullPaymentPayload, ApplyForwardPayload, BackfillSummary };
 
 export function useBudgetMutations(householdId: string, userId: string) {
   const insertBudget = useCallback(
@@ -68,6 +71,21 @@ export function useBudgetMutations(householdId: string, userId: string) {
     [householdId, userId],
   );
 
+  /** Past payments of a budget that linking it to `debtId` would record on the debt. */
+  const previewDebtBackfill = useCallback(
+    async (budgetId: string, debtId: string): Promise<BackfillSummary> => {
+      return summarizeBackfill(await planDebtBackfill(budgetId, debtId));
+    },
+    [],
+  );
+
+  const applyDebtBackfill = useCallback(
+    async (budgetId: string, debtId: string) => {
+      return applyDebtBackfillMW(householdId, budgetId, debtId, userId);
+    },
+    [householdId, userId],
+  );
+
   return {
     insertBudget,
     updateBudget,
@@ -76,5 +94,7 @@ export function useBudgetMutations(householdId: string, userId: string) {
     updateBudgetMonthExecution,
     registerFullPaymentAndExecute,
     applyBudgetMonthAmountForward,
+    previewDebtBackfill,
+    applyDebtBackfill,
   };
 }

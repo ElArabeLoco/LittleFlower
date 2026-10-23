@@ -32,6 +32,13 @@ function makeDebtRow(overrides: Partial<DebtRow> = {}): DebtRow {
     currency: 'COP',
     disbursed_at: '2024-01-01',
     household_id: 'hh-1',
+    kind: 'personal',
+    lender: null,
+    interest_rate: 0,
+    amortization: 'none',
+    term_months: null,
+    installment_amount: null,
+    monthly_fees: 0,
     ...overrides,
   };
 }
@@ -45,6 +52,8 @@ function makeTx(
     id: `tx-${Math.random()}`,
     debt_id: debtId,
     amount,
+    interest_amount: 0,
+    fees_amount: 0,
     original_amount: null,
     original_currency: null,
     exchange_rate: null,

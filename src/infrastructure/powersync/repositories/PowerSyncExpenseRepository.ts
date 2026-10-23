@@ -8,7 +8,8 @@
 
 import { db } from '../client';
 import { newId, now, assertAuth } from '../mutationHelpers';
-import { insertDebtTransaction } from './PowerSyncDebtRepository';
+import { insertDebtTransaction, suggestDebtPaymentSplit } from './PowerSyncDebtRepository';
+import type { PaymentSplit } from '@/domain/debt/amortization';
 import type { IExpenseRepository } from '@/domain/expense/IExpenseRepository';
 import type { Expense } from '@/domain/expense/Expense';
 
@@ -106,6 +107,8 @@ export interface RecordExpensePayload {
   linked_expense_id?: string; // set when reversing another expense
   /** If the budget is linked to a debt, pass the debt_id here to auto-create a debit transaction */
   debt_id?: string;
+  /** Principal / interest / fees of the payment; computed from the debt when omitted */
+  debt_split?: PaymentSplit;
 }
 
 /**
@@ -117,6 +120,10 @@ export interface RecordExpensePayload {
  */
 export async function recordExpense(payload: RecordExpensePayload): Promise<string> {
   assertAuth(payload.household_id, payload.recorded_by);
+  const split = payload.debt_split;
+  if (split && split.principal + split.interest + split.fees !== payload.amount) {
+    throw new Error('[recordExpense] debt_split must add up to the expense amount');
+  }
   const id = newId();
   await db.execute(
     `INSERT INTO expenses
@@ -141,11 +148,14 @@ export async function recordExpense(payload: RecordExpensePayload): Promise<stri
   // Auto-create a debt debit transaction if this budget is linked to a debt
   if (payload.debt_id && payload.amount > 0) {
     const date = payload.timestamp.split('T')[0];
+    const parts = split ?? await suggestDebtPaymentSplit(payload.debt_id, payload.amount);
     await insertDebtTransaction(
       {
         household_id: payload.household_id,
         debt_id: payload.debt_id,
-        amount: payload.amount,
+        amount: parts.principal,
+        interest_amount: parts.interest,
+        fees_amount: parts.fees,
         type: 'debit',
         source: 'expense',
         expense_id: id,
@@ -159,7 +169,15 @@ export async function recordExpense(payload: RecordExpensePayload): Promise<stri
   return id;
 }
 
-/** MVP soft-delete: marks the expense as deleted via deleted_at. */
+/**
+ * MVP soft-delete: marks the expense as deleted via deleted_at, together with
+ * the debt payment it created (if the budget was linked to a debt).
+ */
 export async function softDeleteExpense(id: string): Promise<void> {
-  await db.execute(`UPDATE expenses SET deleted_at = ? WHERE id = ?`, [now(), id]);
+  const ts = now();
+  await db.execute(`UPDATE expenses SET deleted_at = ? WHERE id = ?`, [ts, id]);
+  await db.execute(
+    `UPDATE debt_transactions SET deleted_at = ? WHERE expense_id = ? AND deleted_at IS NULL`,
+    [ts, id],
+  );
 }

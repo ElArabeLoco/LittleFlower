@@ -55,6 +55,8 @@ export {
   softDeleteDebt,
   insertDebtTransaction,
   softDeleteDebtTransaction,
+  planDebtBackfill,
+  applyDebtBackfill,
   type InsertDebtPayload,
   type InsertDebtTransactionPayload,
 } from './repositories/PowerSyncDebtRepository';

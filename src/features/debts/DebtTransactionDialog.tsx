@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -16,13 +17,16 @@ interface DebtTransactionDialogProps {
   householdId: string;
   userId: string;
   currentMonthRate: number | null;
+  /** Financial debts let a payment carry interest and fees besides principal */
+  financial?: boolean;
   trigger: React.ReactNode;
 }
 
 export function DebtTransactionDialog({
-  debtId, debtCurrency, householdId, userId, currentMonthRate, trigger,
+  debtId, debtCurrency, householdId, userId, currentMonthRate, financial = false, trigger,
 }: DebtTransactionDialogProps) {
   const { t } = useI18n();
+  const { formatCOP } = useNumberFormat();
   const { insertDebtTransaction } = useDebtMutations(householdId, userId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<TransactionFormState>({
@@ -32,6 +36,8 @@ export function DebtTransactionDialog({
     exchange_rate: currentMonthRate ? String(currentMonthRate) : '',
     date: todayISO(),
     note: '',
+    interest: '',
+    fees: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +56,8 @@ export function DebtTransactionDialog({
         exchange_rate: currentMonthRate ? String(currentMonthRate) : '',
         date: todayISO(),
         note: '',
+        interest: '',
+        fees: '',
       });
     }
     setError(null);
@@ -76,11 +84,20 @@ export function DebtTransactionDialog({
       amountCOP = Math.round(rawAmount * rate);
     }
 
+    // The amount is the total paid; interest and fees do not reduce the balance
+    const withSplit = financial && form.type === 'debit';
+    const interest = withSplit ? parseInt(form.interest.replace(/\D/g, ''), 10) || 0 : 0;
+    const fees = withSplit ? parseInt(form.fees.replace(/\D/g, ''), 10) || 0 : 0;
+    const principal = amountCOP - interest - fees;
+    if (principal < 0) { setError(t.debts.splitMismatch(formatCOP(-principal))); return; }
+
     setSaving(true);
     try {
       const payload: Omit<InsertDebtTransactionPayload, 'household_id'> = {
         debt_id: debtId,
-        amount: amountCOP,
+        amount: principal,
+        interest_amount: interest,
+        fees_amount: fees,
         original_amount: originalAmount,
         original_currency: originalCurrency,
         exchange_rate: exchangeRate,
@@ -155,6 +172,21 @@ export function DebtTransactionDialog({
                   ≈ {Math.round(parseInt(form.amount.replace(/\D/g, '') || '0') * parseFloat(form.exchange_rate)).toLocaleString('es-CO')} COP
                 </p>
               )}
+            </div>
+          )}
+
+          {financial && form.type === 'debit' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="tx-interest">{t.debts.splitInterest}</Label>
+                <Input id="tx-interest" inputMode="numeric" placeholder="0" value={form.interest}
+                  onChange={e => set('interest', e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tx-fees">{t.debts.splitFees}</Label>
+                <Input id="tx-fees" inputMode="numeric" placeholder="0" value={form.fees}
+                  onChange={e => set('fees', e.target.value)} />
+              </div>
             </div>
           )}
 

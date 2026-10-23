@@ -24,6 +24,7 @@ import { Route as AnualRouteImport } from './routes/anual'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsBudgetsRouteImport } from './routes/settings/budgets'
+import { Route as DebtsDebtIdRouteImport } from './routes/debts_.$debtId'
 
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
@@ -100,6 +101,11 @@ const SettingsBudgetsRoute = SettingsBudgetsRouteImport.update({
   path: '/settings/budgets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DebtsDebtIdRoute = DebtsDebtIdRouteImport.update({
+  id: '/debts_/$debtId',
+  path: '/debts/$debtId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
+  '/debts/$debtId': typeof DebtsDebtIdRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
+  '/debts/$debtId': typeof DebtsDebtIdRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings': typeof SettingsIndexRoute
 }
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/month': typeof MonthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
+  '/debts_/$debtId': typeof DebtsDebtIdRoute
   '/settings/budgets': typeof SettingsBudgetsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/month'
     | '/onboarding'
     | '/transactions'
+    | '/debts/$debtId'
     | '/settings/budgets'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/month'
     | '/onboarding'
     | '/transactions'
+    | '/debts/$debtId'
     | '/settings/budgets'
     | '/settings'
   id:
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/month'
     | '/onboarding'
     | '/transactions'
+    | '/debts_/$debtId'
     | '/settings/budgets'
     | '/settings/'
   fileRoutesById: FileRoutesById
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   MonthRoute: typeof MonthRoute
   OnboardingRoute: typeof OnboardingRoute
   TransactionsRoute: typeof TransactionsRoute
+  DebtsDebtIdRoute: typeof DebtsDebtIdRoute
   SettingsBudgetsRoute: typeof SettingsBudgetsRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsBudgetsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/debts_/$debtId': {
+      id: '/debts_/$debtId'
+      path: '/debts/$debtId'
+      fullPath: '/debts/$debtId'
+      preLoaderRoute: typeof DebtsDebtIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -349,6 +369,7 @@ const rootRouteChildren: RootRouteChildren = {
   MonthRoute: MonthRoute,
   OnboardingRoute: OnboardingRoute,
   TransactionsRoute: TransactionsRoute,
+  DebtsDebtIdRoute: DebtsDebtIdRoute,
   SettingsBudgetsRoute: SettingsBudgetsRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }

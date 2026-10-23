@@ -1,25 +1,6 @@
-export interface DebtRow {
-  id: string;
-  name: string;
-  description: string | null;
-  initial_amount: number;
-  currency: string;
-  disbursed_at: string;
-}
+import type { DebtKind, AmortizationMethod, RatePeriod } from '@/application/debtPlan';
 
-export interface DebtTransactionRow {
-  id: string;
-  debt_id: string;
-  amount: number;
-  original_amount: number | null;
-  original_currency: string | null;
-  exchange_rate: number | null;
-  type: string;
-  note: string | null;
-  date: string;
-  source: string;
-  expense_id: string | null;
-}
+export type { DebtRow, DebtTransactionRow } from '@/application/useDebtSummary';
 
 export interface ExchangeRateRow {
   month: string;
@@ -32,6 +13,15 @@ export interface DebtFormState {
   initial_amount: string;
   currency: string;
   disbursed_at: string;
+  kind: DebtKind;
+  lender: string;
+  /** Rate as typed, in percent */
+  rate: string;
+  rate_period: RatePeriod;
+  amortization: AmortizationMethod;
+  term_months: string;
+  installment_amount: string;
+  monthly_fees: string;
 }
 
 export interface TransactionFormState {
@@ -41,4 +31,7 @@ export interface TransactionFormState {
   exchange_rate: string;
   date: string;
   note: string;
+  /** Financial debts: interest and fees included in a payment */
+  interest: string;
+  fees: string;
 }
