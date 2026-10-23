@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { toMemberTone, type MemberRef } from '@/domain/member/HouseholdMember';
+import { nextMemberTone, toMemberTone, type MemberRef, type MemberTone } from '@/domain/member/HouseholdMember';
 import {
   useHouseholdMembersQuery,
   useMemberHoldingCountsQuery,
@@ -16,6 +16,8 @@ export interface HouseholdMembersData {
   /** How many active incomes and debts each member holds (by member id). */
   countsByMember: Map<string, MemberHoldingCounts>;
   hasMembers: boolean;
+  /** The first palette tone no active member uses: the default for a new member. */
+  suggestedTone: MemberTone;
 }
 
 /** The household's active members and how many incomes / debts each holds. */
@@ -38,6 +40,11 @@ export function useHouseholdMembers(): HouseholdMembersData {
       countsByMember.set(row.member_id, counts);
     }
 
-    return { members, countsByMember, hasMembers: members.length > 0 };
+    return {
+      members,
+      countsByMember,
+      hasMembers: members.length > 0,
+      suggestedTone: nextMemberTone(members.map(member => member.tone)),
+    };
   }, [memberRows, countRows]);
 }

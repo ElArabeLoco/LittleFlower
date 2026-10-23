@@ -4,6 +4,7 @@
  * Página de perfil del usuario:
  *   1. Tarjeta de perfil — avatar grande, email, nombre del usuario
  *   2. Tarjeta de hogar  — nombre del household + ID (solo lectura, con botón de copiar)
+ *                          + acceso a los integrantes de la economía
  *   3. Apariencia        — tema claro / oscuro / automático
  *   4. Idioma            — español / english
  *   5. Números           — formato abreviado / completo
@@ -12,16 +13,18 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/AuthContext';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
-import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages, Tag } from 'lucide-react';
+import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages, Tag, Users, ChevronRight } from 'lucide-react';
 import { ExportImportSection } from './export/ExportImportSection';
 import { cn } from '@/shared/ui/cn';
 import { useHouseholdQuery, useUserQuery } from '@/infrastructure/powersync/queries/useHouseholdQueries';
 import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
+import { useHouseholdMembers } from '@/application/useHouseholdMembers';
+import { formatList } from '@/features/members/formatList';
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -84,7 +87,8 @@ function ProfileCard({ email, userName }: { email: string; userName: string | nu
 // ---------------------------------------------------------------------------
 
 function HouseholdCard({ householdName, joinCode }: { householdName: string; joinCode: string | null }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { members } = useHouseholdMembers();
   const [copied, setCopied] = useState(false);
 
   const inviteLink = joinCode ? `${window.location.origin}/join?code=${joinCode}` : null;
@@ -151,7 +155,28 @@ function HouseholdCard({ householdName, joinCode }: { householdName: string; joi
             {copied ? t.settings.linkCopied : t.settings.inviteFamily}
           </button>
         )}
+        {joinCode && (
+          <p className="mt-2 text-center text-xs text-[var(--text-muted)]">{t.settings.inviteFamilyHint}</p>
+        )}
       </div>
+
+      {/* Members of the household economy (not accounts) */}
+      <Link
+        to="/members"
+        className="flex min-h-14 items-center gap-3 px-5 py-4 transition-colors hover:bg-[var(--bg-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]"
+      >
+        <Users size={18} aria-hidden="true" className="shrink-0 text-sky-700 dark:text-sky-300" />
+        <div className="min-w-0 flex-1">
+          <p className="mb-0.5 text-xs text-[var(--text-muted)]">{t.settings.membersLabel}</p>
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+            {members.length > 0 ? formatList(locale, members.map(member => member.name)) : t.settings.membersNone}
+          </p>
+        </div>
+        <span className="flex shrink-0 items-center gap-0.5 text-sm font-medium text-[var(--text-brand)]">
+          {t.settings.membersManage}
+          <ChevronRight size={16} aria-hidden="true" />
+        </span>
+      </Link>
     </>
   );
 }

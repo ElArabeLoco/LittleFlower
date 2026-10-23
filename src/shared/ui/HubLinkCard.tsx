@@ -21,7 +21,7 @@ import { Link, type LinkProps } from '@tanstack/react-router';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
 
-export type HubLinkCardTone = 'petal' | 'iris' | 'leaf' | 'polen';
+export type HubLinkCardTone = 'petal' | 'iris' | 'leaf' | 'polen' | 'sky';
 
 // Each light/dark pair keeps the icon above 3:1 against the card surface.
 const TONE_ICON_CLASS: Record<HubLinkCardTone, string> = {
@@ -29,6 +29,7 @@ const TONE_ICON_CLASS: Record<HubLinkCardTone, string> = {
   iris: 'text-violet-600 dark:text-violet-300',
   leaf: 'text-green-700 dark:text-green-300',
   polen: 'text-amber-700 dark:text-amber-300',
+  sky: 'text-sky-700 dark:text-sky-300',
 };
 
 export interface HubLinkCardProps {
