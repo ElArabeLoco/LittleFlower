@@ -180,6 +180,34 @@ export const es = {
     spent: 'Ejecutado',
     toSpend: 'Por ejecutar',
     totalOwed: 'Total adeudado',
+    metricInfoButton: (label: string) => `Qué significa ${label}`,
+    metricFormulaLabel: 'Cómo se calcula',
+    metricInfo: {
+      realBalance: {
+        description: 'Lo que de verdad le queda al hogar este mes: el ingreso disponible menos todo lo que ya se pagó en efectivo. Es el mismo balance real que ves en la vista mensual y en el inicio.',
+        formula: 'Disponible − gastos pagados en efectivo',
+      },
+      available: {
+        description: 'El dinero que entra al hogar este mes, sumando todos los ingresos activos. Los ingresos en dólares se pasan a pesos con la TRM del mes; si esa TRM no está registrada, no se suman.',
+        formula: 'Suma de los ingresos del mes, en pesos',
+      },
+      budgeted: {
+        description: 'Lo que planearon pagar en efectivo este mes. Las partidas que se pagan con tarjeta de crédito, o con tarjeta y efectivo, se planean aparte, dentro de la tarjeta.',
+        formula: 'Suma de las partidas en efectivo del mes',
+      },
+      spent: {
+        description: 'Lo que ya se pagó en efectivo de las partidas del mes, incluido lo pagado en efectivo en partidas de tarjeta y efectivo. Lo que se pagó con tarjeta no cuenta aquí.',
+        formula: 'Gastos en efectivo de las partidas del mes',
+      },
+      toSpend: {
+        description: 'Lo que todavía falta por pagar de lo presupuestado este mes. Si ya se gastó más de lo planeado, aparece en cero.',
+        formula: 'Presupuestado − Ejecutado (nunca menos de cero)',
+      },
+      totalOwed: {
+        description: 'Lo que el hogar todavía debe, sumando todas sus deudas. Las deudas en dólares se pasan a pesos con la TRM más reciente.',
+        formula: 'Por cada deuda: monto inicial + nuevos cargos − pagos',
+      },
+    },
     trend6m: 'Tendencia de los últimos 6 meses',
     budgetedVsSpent: 'Presupuestado vs. gastado real',
     budgetedLabel: 'Presupuestado',

@@ -6,6 +6,7 @@ import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { cn } from '@/shared/ui/cn';
 import { useMonthlyData } from './useMonthlyData';
 import { useDebtData } from './useDebtData';
+import { MetricInfo } from './MetricInfo';
 
 type KpiHighlight = 'positive' | 'negative' | 'default';
 
@@ -19,6 +20,8 @@ interface KpiTileProps {
   label: string;
   value: number;
   icon: LucideIcon;
+  /** Plain-words explanation shown when the corner icon is pressed. */
+  info: { description: string; formula: string };
   highlight?: KpiHighlight;
 }
 
@@ -37,8 +40,8 @@ function amountSize(length: number) {
   return 'text-sm';
 }
 
-/** One KPI: sentence-case label, muted icon, large amount. */
-export function KpiTile({ label, value, icon: Icon, highlight = 'default' }: KpiTileProps) {
+/** One KPI: sentence-case label, corner icon that explains the metric, large amount. */
+export function KpiTile({ label, value, icon, info, highlight = 'default' }: KpiTileProps) {
   const { formatCOP } = useNumberFormat();
   const size = amountSize(formatCOP(value).length);
 
@@ -47,7 +50,7 @@ export function KpiTile({ label, value, icon: Icon, highlight = 'default' }: Kpi
     <div className="flex flex-col justify-between gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
       <div className="flex items-start justify-between gap-2">
         <span className="text-[13px] font-medium leading-snug text-[var(--text-secondary)]">{label}</span>
-        <Icon size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+        <MetricInfo label={label} icon={icon} description={info.description} formula={info.formula} />
       </div>
       {/* Size before leading: tailwind-merge drops a `leading-*` that precedes a `text-*` size. */}
       <p className={cn('font-bold tabular-nums tracking-[-0.01em]', size, 'leading-tight', HIGHLIGHT_CLASS[highlight])}>
@@ -94,30 +97,35 @@ export function KpiStrip() {
     <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${hasDebts ? 'xl:grid-cols-6' : 'lg:grid-cols-5'}`}>
       <KpiTile
         label={t.dashboard.realBalance}
+        info={t.dashboard.metricInfo.realBalance}
         value={currentData.realBalance}
         icon={Scale}
         highlight={balanceHighlight}
       />
       <KpiTile
         label={t.dashboard.available}
+        info={t.dashboard.metricInfo.available}
         value={currentData.available}
         icon={Wallet}
         highlight="default"
       />
       <KpiTile
         label={t.dashboard.budgeted}
+        info={t.dashboard.metricInfo.budgeted}
         value={currentData.budgeted}
         icon={TrendingUp}
         highlight="default"
       />
       <KpiTile
         label={t.dashboard.spent}
+        info={t.dashboard.metricInfo.spent}
         value={currentData.spent}
         icon={TrendingDown}
         highlight={currentData.spent > currentData.budgeted ? 'negative' : 'default'}
       />
       <KpiTile
         label={t.dashboard.toSpend}
+        info={t.dashboard.metricInfo.toSpend}
         value={currentData.pending ?? 0}
         icon={TrendingDown}
         highlight="default"
@@ -125,6 +133,7 @@ export function KpiStrip() {
       {hasDebts && (
         <KpiTile
           label={t.dashboard.totalOwed}
+        info={t.dashboard.metricInfo.totalOwed}
           value={totalDebtBalance}
           icon={AlertCircle}
           highlight={totalDebtBalance > 0 ? 'negative' : 'positive'}

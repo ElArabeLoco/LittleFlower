@@ -181,6 +181,34 @@ export const en: Translations = {
     spent: 'Spent',
     toSpend: 'To spend',
     totalOwed: 'Total owed',
+    metricInfoButton: (label: string) => `What “${label}” means`,
+    metricFormulaLabel: 'How it is calculated',
+    metricInfo: {
+      realBalance: {
+        description: 'What the household really has left this month: available income minus everything already paid in cash. It is the same real balance you see in the monthly view and on Home.',
+        formula: 'Available − expenses paid in cash',
+      },
+      available: {
+        description: 'The money coming into the household this month, adding up every active income. Dollar income is converted to pesos with the month’s exchange rate; without that rate it is left out.',
+        formula: 'Sum of the month’s income, in pesos',
+      },
+      budgeted: {
+        description: 'What you planned to pay in cash this month. Items paid by credit card, or by card and cash, are planned separately, inside the card.',
+        formula: 'Sum of the month’s cash items',
+      },
+      spent: {
+        description: 'What has already been paid in cash for the month’s items, including cash paid on card-and-cash items. Anything paid by card does not count here.',
+        formula: 'Cash expenses on the month’s items',
+      },
+      toSpend: {
+        description: 'What is still left to pay of this month’s budget. If more was spent than planned, it shows zero.',
+        formula: 'Budgeted − Spent (never below zero)',
+      },
+      totalOwed: {
+        description: 'What the household still owes, adding up all its debts. Dollar debts are converted to pesos with the latest exchange rate.',
+        formula: 'For each debt: initial amount + new charges − payments',
+      },
+    },
     trend6m: 'Last 6 months trend',
     budgetedVsSpent: 'Budgeted vs. actual spending',
     budgetedLabel: 'Budgeted',
