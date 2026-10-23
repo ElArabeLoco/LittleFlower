@@ -6,7 +6,9 @@ import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { computeDebtBalance } from '@/domain/debt/Debt';
 import { useDebtMutations } from '@/application/useDebtMutations';
-import { DebtFormDialog } from './DebtFormDialog';
+import { isFinancialDebt, projectDebt, ratePercents } from '@/application/debtPlan';
+import { getCurrentMonth } from '@/shared/helpers/dateHelpers';
+import { DebtFormDialog, debtFormFromRow } from './DebtFormDialog';
 import { DebtTransactionDialog } from './DebtTransactionDialog';
 import { formatDate } from './helpers';
 import type { DebtRow, DebtTransactionRow } from './types';
@@ -45,6 +47,13 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
     return { totalBase: initialAmountCOP + credits, totalPaid: debits };
   }, [initialAmountCOP, transactions]);
 
+  const financial = isFinancialDebt(debt.kind);
+  const projection = useMemo(
+    () => financial ? projectDebt(debt, initialAmountCOP, balance, transactions, getCurrentMonth()) : null,
+    [financial, debt, initialAmountCOP, balance, transactions],
+  );
+  const nextRow = projection?.rows[0];
+
   const pctPaid = totalBase > 0 ? Math.min(100, Math.max(0, Math.round((totalPaid / totalBase) * 100))) : 0;
   const isFullyPaid = balance <= 0;
 
@@ -58,11 +67,11 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
               <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{debt.name}</h3>
-              <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
+              <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0',
                 isFullyPaid
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
                   : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)]')}>
-                {debt.currency}
+                {financial ? t.debts.kinds[debt.kind as keyof typeof t.debts.kinds] : debt.currency}
               </span>
               {isFullyPaid && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
@@ -71,6 +80,7 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
               )}
             </div>
             <p className="text-xs text-[var(--text-muted)]">
+              {debt.lender && `${debt.lender} · `}
               {t.debts.since(formatDate(debt.disbursed_at, t.months.shortLower))}
               {debt.description && ` · ${debt.description}`}
             </p>
@@ -82,13 +92,7 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
               debtId={debt.id}
               householdId={householdId}
               userId={userId}
-              initial={{
-                name: debt.name,
-                description: debt.description ?? '',
-                initial_amount: String(debt.initial_amount),
-                currency: debt.currency,
-                disbursed_at: debt.disbursed_at,
-              }}
+              initial={debtFormFromRow(debt)}
               onDone={() => {}}
               trigger={
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -120,6 +124,31 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
             </p>
           </div>
         </div>
+
+        {financial && !isFullyPaid && (
+          <div className="grid grid-cols-3 gap-3 mb-3 text-xs rounded-xl bg-[var(--bg-surface-2)] px-3 py-2">
+            <div>
+              <p className="text-[var(--text-muted)] mb-0.5">{t.debts.rateShortLabel}</p>
+              <p className="font-semibold text-[var(--text-secondary)]">
+                {t.debts.rateShort(ratePercents(debt.interest_rate).ea.toLocaleString('es-CO', { maximumFractionDigits: 2 }))}
+              </p>
+            </div>
+            {projection?.status === 'never_pays_off' ? (
+              <p className="col-span-2 self-center text-red-600 dark:text-red-400">{t.debts.neverPaysOff}</p>
+            ) : nextRow ? (
+              <>
+                <div>
+                  <p className="text-[var(--text-muted)] mb-0.5">{t.debts.nextInstallment}</p>
+                  <p className="font-semibold text-[var(--text-secondary)]">{formatCOP(nextRow.payment)}</p>
+                </div>
+                <div>
+                  <p className="text-[var(--text-muted)] mb-0.5">{t.debts.installmentsLeft}</p>
+                  <p className="font-semibold text-[var(--text-secondary)]">{projection.rows.length}</p>
+                </div>
+              </>
+            ) : null}
+          </div>
+        )}
 
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
@@ -165,7 +194,10 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
             <p className="text-center text-xs text-[var(--text-muted)] py-6">{t.debts.noTransactions}</p>
           ) : (
             <div className="divide-y divide-[var(--border-subtle)]">
-              {transactions.map(tx => (
+              {transactions.map(tx => {
+                const extras = tx.interest_amount + tx.fees_amount;
+                const shown = tx.type === 'debit' ? tx.amount + extras : tx.amount;
+                return (
                 <div key={tx.id}
                   className="flex items-center gap-2 px-4 py-2.5 hover:bg-[var(--bg-hover)] group transition-colors">
                   <span className={cn('shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold',
@@ -179,9 +211,19 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
                   </span>
                   <span className={cn('font-semibold text-xs tabular-nums shrink-0',
                     tx.type === 'debit' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400')}>
-                    {tx.type === 'debit' ? '-' : '+'}{tx.amount.toLocaleString('es-CO')}
+                    {tx.type === 'debit' ? '-' : '+'}{shown.toLocaleString('es-CO')}
                   </span>
-                  <span className="text-xs text-[var(--text-muted)] flex-1 truncate">{tx.note ?? ''}</span>
+                  <span className="text-xs text-[var(--text-muted)] flex-1 truncate">
+                    {extras > 0 && (
+                      <span className="text-[11px]">
+                        {t.debts.principalShort} {tx.amount.toLocaleString('es-CO')}
+                        {tx.interest_amount > 0 && ` · ${t.debts.interestShort} ${tx.interest_amount.toLocaleString('es-CO')}`}
+                        {tx.fees_amount > 0 && ` · ${t.debts.feesShort} ${tx.fees_amount.toLocaleString('es-CO')}`}
+                        {tx.note && ' · '}
+                      </span>
+                    )}
+                    {tx.note ?? ''}
+                  </span>
                   {tx.source === 'expense' && (
                     <span title={t.debts.fromExpense} className="shrink-0 text-[var(--text-muted)]">
                       <Link2 size={10} />
@@ -196,7 +238,8 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
                     </button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
