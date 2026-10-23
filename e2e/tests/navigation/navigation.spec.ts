@@ -9,13 +9,14 @@ import { test, expect } from '@playwright/test';
 import { BasePage } from '../../pages/BasePage';
 
 test.describe('Bottom navigation', () => {
-  test('shows all 4 nav tabs on home', async ({ page }) => {
+  test('shows Inicio, Dashboard, Presupuesto, Finanzas and Perfil in the nav', async ({ page }) => {
     const base = new BasePage(page);
     await page.goto('/home');
     await base.waitForAppReady();
 
     const nav = page.getByRole('navigation');
     await expect(nav.getByText('Inicio')).toBeVisible();
+    await expect(nav.getByText('Dashboard')).toBeVisible();
     await expect(nav.getByText('Presupuesto')).toBeVisible();
     await expect(nav.getByText('Finanzas')).toBeVisible();
     await expect(nav.getByText('Perfil')).toBeVisible();
@@ -45,13 +46,21 @@ test.describe('Bottom navigation', () => {
     await expect(page).toHaveURL(/\/settings/);
   });
 
-  test('Inicio tab is the current page on /home and on /dashboard', async ({ page }) => {
+  test('each of Inicio and Dashboard is the current page on its own route', async ({ page }) => {
     const base = new BasePage(page);
-    for (const path of ['/home', '/dashboard']) {
+    for (const [path, tab] of [['/home', 'Inicio'], ['/dashboard', 'Dashboard']]) {
       await page.goto(path);
       await base.waitForAppReady();
-      await expect(page.getByRole('navigation').getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page');
+      await expect(page.getByRole('navigation').getByRole('link', { name: tab })).toHaveAttribute('aria-current', 'page');
     }
+  });
+
+  test('navigates to /dashboard via nav tab', async ({ page }) => {
+    const base = new BasePage(page);
+    await page.goto('/home');
+    await base.waitForAppReady();
+    await base.clickNavTab('Dashboard');
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test('home links to the year view', async ({ page }) => {
