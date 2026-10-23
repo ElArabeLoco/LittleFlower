@@ -557,3 +557,33 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Flower bloom — the landing's one orchestrated moment (FlowerMark `bloom`).
+   Petals unfold from the heart one after another, then the stamens appear,
+   then the hero's petal tags fade in (`.flower-bloom-tag`, delay set inline).
+   --------------------------------------------------------------------------- */
+
+@keyframes flower-bloom-petal {
+  from { transform: rotate(-50deg) scale(0.12); opacity: 0; }
+}
+
+@keyframes flower-bloom-heart {
+  from { transform: scale(0.3); opacity: 0; }
+}
+
+@keyframes flower-bloom-fade {
+  from { opacity: 0; }
+}
+
+.flower-bloom-petal { animation: flower-bloom-petal 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.flower-bloom-heart { animation: flower-bloom-heart 600ms ease-out 900ms both; }
+.flower-bloom-tag { animation: flower-bloom-fade 500ms ease-out both; }
+
+/* The global rule above shortens durations but keeps delays, which would hide
+   the flower for a moment; reduced motion shows it open right away. */
+@media (prefers-reduced-motion: reduce) {
+  .flower-bloom-petal,
+  .flower-bloom-heart,
+  .flower-bloom-tag { animation: none !important; }
+}

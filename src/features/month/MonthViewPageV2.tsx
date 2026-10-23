@@ -112,7 +112,6 @@ export function MonthViewPageV2() {
     cashBudgets,
     bmMap,
     expenseMap,
-    cashExpenseMap,
     activeIncomes,
     imMap,
     trm,
@@ -120,6 +119,7 @@ export function MonthViewPageV2() {
     hasMissingTrm,
     ccTotals,
     cashTotals,
+    cashRealSpent,
   } = useMonthViewData(month);
 
   const sortedCCBudgets = useMemo(
@@ -135,10 +135,6 @@ export function MonthViewPageV2() {
 
   const totalBudgeted = cashTotals.budgeted;
   const totalSpent = cashTotals.spent;
-  const totalRealSpent = useMemo(
-    () => Array.from(cashExpenseMap.values()).reduce((s, v) => s + v, 0),
-    [cashExpenseMap],
-  );
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
@@ -189,7 +185,7 @@ export function MonthViewPageV2() {
             available={totalAvailable}
             totalBudgeted={totalBudgeted}
             totalSpent={totalSpent}
-            totalRealSpent={totalRealSpent}
+            totalRealSpent={cashRealSpent}
             hasMissingTrm={hasMissingTrm}
           />
 

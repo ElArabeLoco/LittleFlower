@@ -6,7 +6,7 @@ import { AppSettingsProvider } from '@/features/settings/AppSettingsContext';
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nContext';
 import { useSyncActivityTracking } from '@/application/useSyncStatus';
 import { SyncStatusProvider } from '@/features/sync/SyncStatusProvider';
-import { Logo } from '@/shared/ui/Logo';
+import { FlowerMark } from '@/shared/ui/FlowerMark';
 
 // ---------------------------------------------------------------------------
 // RootInner
@@ -23,7 +23,7 @@ function RootInner() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)]">
         <div className="text-center">
-          <Logo size={48} className="mx-auto mb-3" />
+          <FlowerMark className="mx-auto mb-3 size-12" />
           <p className="text-sm text-[var(--text-muted)]">{t.common.loading}</p>
         </div>
       </div>

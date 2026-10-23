@@ -5,6 +5,7 @@ import { useExpenseSumsByModeForMonth } from '@/infrastructure/powersync/queries
 import { useIncomesForMonth, useIncomeMonthsForMonth } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRateForMonth } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
 import type { BudgetRow, BudgetMonthRow, IncomeRow, IncomeMonthRow } from '@/infrastructure/powersync/queries/types';
+import { cashEnvelope } from './cashEnvelope';
 
 export type { BudgetRow, BudgetMonthRow, IncomeRow, IncomeMonthRow };
 
@@ -39,8 +40,10 @@ export interface MonthViewData {
   hasMissingTrm: boolean;
   /** Aggregated totals for credit card budgets. */
   ccTotals: GroupTotals;
-  /** Aggregated totals for cash budgets. */
+  /** Cash envelope totals (see cashEnvelope): budgeted cash, executed cash. */
   cashTotals: GroupTotals;
+  /** Every cash-paid expense of the month ("Balance real" = available − this). */
+  cashRealSpent: number;
 }
 
 /**
@@ -138,7 +141,19 @@ export function useMonthViewData(month: string): MonthViewData {
   );
 
   const ccTotals = useMemo(() => calcGroupTotals(creditCardBudgets, true), [creditCardBudgets, calcGroupTotals]);
-  const cashTotals = useMemo(() => calcGroupTotals(cashBudgets, false), [cashBudgets, calcGroupTotals]);
+  // Shared with the dashboard and Home so the three screens show the same figures.
+  const cashEnvelopeTotals = useMemo(() => {
+    const budgetMonthByBudgetId = new Map<string, BudgetMonthRow>();
+    for (const b of cashBudgets) {
+      const bm = bmMap.get(`${b.id}|${month}`);
+      if (bm) budgetMonthByBudgetId.set(b.id, bm);
+    }
+    return cashEnvelope({ budgets: cashBudgets, budgetMonthByBudgetId, cashSpentByBudgetMonthId: cashExpenseMap });
+  }, [cashBudgets, bmMap, cashExpenseMap, month]);
+  const cashTotals = useMemo<GroupTotals>(
+    () => ({ budgeted: cashEnvelopeTotals.budgeted, spent: cashEnvelopeTotals.executed }),
+    [cashEnvelopeTotals],
+  );
 
   return {
     budgets,
@@ -155,5 +170,6 @@ export function useMonthViewData(month: string): MonthViewData {
     hasMissingTrm,
     ccTotals,
     cashTotals,
+    cashRealSpent: cashEnvelopeTotals.realSpent,
   };
 }

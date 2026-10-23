@@ -15,6 +15,7 @@ import { Route as MonthRouteImport } from './routes/month'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as IncomeRouteImport } from './routes/income'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as FinancesRouteImport } from './routes/finances'
 import { Route as DebtsRouteImport } from './routes/debts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -52,6 +53,11 @@ const JoinRoute = JoinRouteImport.update({
 const IncomeRoute = IncomeRouteImport.update({
   id: '/income',
   path: '/income',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinancesRoute = FinancesRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/debts': typeof DebtsRoute
   '/finances': typeof FinancesRoute
+  '/home': typeof HomeRoute
   '/income': typeof IncomeRoute
   '/join': typeof JoinRoute
   '/login': typeof LoginRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/debts': typeof DebtsRoute
   '/finances': typeof FinancesRoute
+  '/home': typeof HomeRoute
   '/income': typeof IncomeRoute
   '/join': typeof JoinRoute
   '/login': typeof LoginRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/debts': typeof DebtsRoute
   '/finances': typeof FinancesRoute
+  '/home': typeof HomeRoute
   '/income': typeof IncomeRoute
   '/join': typeof JoinRoute
   '/login': typeof LoginRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/finances'
+    | '/home'
     | '/income'
     | '/join'
     | '/login'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/finances'
+    | '/home'
     | '/income'
     | '/join'
     | '/login'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/finances'
+    | '/home'
     | '/income'
     | '/join'
     | '/login'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DebtsRoute: typeof DebtsRoute
   FinancesRoute: typeof FinancesRoute
+  HomeRoute: typeof HomeRoute
   IncomeRoute: typeof IncomeRoute
   JoinRoute: typeof JoinRoute
   LoginRoute: typeof LoginRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/income'
       fullPath: '/income'
       preLoaderRoute: typeof IncomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/finances': {
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DebtsRoute: DebtsRoute,
   FinancesRoute: FinancesRoute,
+  HomeRoute: HomeRoute,
   IncomeRoute: IncomeRoute,
   JoinRoute: JoinRoute,
   LoginRoute: LoginRoute,

@@ -36,13 +36,13 @@ export default defineConfig({
         'apple-touch-icon.png',
       ],
       manifest: {
-        name: 'LittleFlower',
-        short_name: 'LittleFlower',
-        description: 'Family finance tracker',
+        name: 'Florecita',
+        short_name: 'Florecita',
+        description: 'Presupuesto compartido para el hogar',
         theme_color: '#F9F5F7',
         background_color: '#F9F5F7',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         start_url: '/',
         scope: '/',
         icons: [

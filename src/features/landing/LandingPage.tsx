@@ -1,370 +1,160 @@
 /**
  * LandingPage — /
  *
- * Página pública de marketing. Visible solo para usuarios NO autenticados.
- * Autenticados son redirigidos a /dashboard desde la ruta.
+ * Public page, only for visitors without a session (the route sends signed-in
+ * users into the app).
  *
- * Secciones:
- *   1. Hero       — logo, tagline, CTAs
- *   2. Features   — 4 propuestas de valor
- *   3. Preview    — mockup visual de la app
- *   4. CTA final  — llamada a la acción
- *   5. Footer     — mínimo
+ * Sections:
+ *   1. Bar        — flower + name, sign in (and create, from `sm`)
+ *   2. Hero       — headline, CTAs, the blooming flower with petal tags
+ *   3. Steps      — create, invite, log (the flower grows with each step)
+ *   4. Features   — samples of the real interface
+ *   5. Privacy    — night band
+ *   6. Footer
  */
 
-import { useMemo } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { cn } from '@/shared/ui/cn';
-import {
-  BarChart3, RefreshCw, Users, ArrowLeftRight,
-  ChevronRight, Sparkles, ShieldCheck, Smartphone,
-} from 'lucide-react';
-import { Logo } from '@/shared/ui/Logo';
+import { Link } from '@tanstack/react-router';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { buttonVariants } from '@/shared/ui/button';
+import { cn } from '@/shared/ui/cn';
+import { FlowerMark } from '@/shared/ui/FlowerMark';
+import { PetalMeter } from '@/shared/ui/PetalMeter';
+import { FeatureShowcase } from './components/FeatureShowcase';
+import { HeroBloom } from './components/HeroBloom';
 
-// ---------------------------------------------------------------------------
-// Mock screen preview — decorative representation of the app UI
-// ---------------------------------------------------------------------------
+const SAMPLE_JOIN_CODE = '482917';
 
-function AppPreview() {
+const SECTION_TITLE_CLASS =
+  'max-w-[15em] text-[32px] font-[790] leading-[1.08] tracking-[-0.03em] text-[var(--text-primary)] sm:text-[42px]';
+
+export function LandingPage() {
   const { t } = useI18n();
-  const bars = [65, 90, 45, 78, 55, 82];
-  const categories = [
-    { name: 'Vivienda', pct: 32, color: '#f9a8d4' },
-    { name: 'Alimentación', pct: 24, color: '#86efac' },
-    { name: 'Transporte', pct: 18, color: '#93c5fd' },
-    { name: 'Servicios', pct: 14, color: '#fcd34d' },
-    { name: 'Otros', pct: 12, color: '#c4b5fd' },
+  const l = t.landing;
+
+  const steps = [
+    { title: l.step1Title, desc: l.step1Desc, petals: 0.2 },
+    { title: l.step2Title, desc: l.step2Desc, petals: 0.6 },
+    { title: l.step3Title, desc: l.step3Desc, petals: 1 },
   ];
 
   return (
-    <div className="relative mx-auto w-full max-w-sm">
-      {/* Phone frame */}
-      <div className="relative rounded-[2.5rem] border-[6px] border-[#1a1826] bg-[#0f0e17] shadow-2xl overflow-hidden"
-        style={{ aspectRatio: '9/19' }}>
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[var(--bg-app)] text-[var(--text-primary)]">
 
-        {/* Status bar */}
-        <div className="flex justify-between items-center px-6 pt-3 pb-1">
-          <span className="text-[9px] text-white/60 font-medium">9:41</span>
-          <div className="w-16 h-3.5 rounded-full bg-[#1a1826] border border-white/10" />
-          <div className="flex gap-1">
-            {[3, 5, 7].map(h => (
-              <div key={h} className="w-0.5 rounded-full bg-white/40" style={{ height: h }} />
-            ))}
-            <div className="w-3 h-1.5 rounded-full border border-white/40 ml-0.5 mt-auto" />
-          </div>
+      {/* ── Bar ── */}
+      <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--bg-bar)] pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link to="/" aria-label={l.homeLink} className="flex items-center gap-2.5 rounded-lg">
+            <FlowerMark className="size-8 shrink-0" />
+            <span className="text-xl font-[760] tracking-[-0.02em]">Florecita</span>
+          </Link>
+          <nav aria-label={l.accountNav} className="flex items-center gap-2">
+            <Link to="/login" className={buttonVariants({ variant: 'outline' })}>
+              {l.signIn}
+            </Link>
+            <Link to="/login" search={{ mode: 'register' }} className={cn(buttonVariants(), 'hidden sm:inline-flex')}>
+              {l.createHousehold}
+            </Link>
+          </nav>
         </div>
-
-        {/* App content */}
-        <div className="px-4 pb-4 space-y-3 overflow-hidden">
-
-          {/* Header */}
-          <div className="flex items-center justify-between py-1">
-            <div>
-              <p className="text-[9px] text-white/50">{t.landing.previewDashboard}</p>
-              <p className="text-xs font-bold text-white">{t.landing.previewMonth}</p>
-            </div>
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-400 to-violet-400 flex items-center justify-center">
-              <span className="text-[7px] font-bold text-white">J</span>
-            </div>
-          </div>
-
-          {/* KPI strip */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {[
-              { label: t.landing.previewBalance, value: '$1.8M', color: 'text-green-400' },
-              { label: t.landing.previewAvailable, value: '$4.2M', color: 'text-white' },
-              { label: t.landing.previewBudgeted, value: '$3.1M', color: 'text-white' },
-              { label: t.landing.previewSpent, value: '$2.4M', color: 'text-pink-400' },
-            ].map(kpi => (
-              <div key={kpi.label} className="bg-white/5 rounded-xl p-2 border border-white/5">
-                <p className="text-[8px] text-white/40 mb-0.5">{kpi.label}</p>
-                <p className={cn('text-[11px] font-bold tabular-nums', kpi.color)}>{kpi.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Bar chart */}
-          <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-            <p className="text-[8px] text-white/40 mb-2">{t.landing.previewTrend}</p>
-            <div className="flex items-end gap-1 h-14">
-              {bars.map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                  <div className="w-full rounded-t flex flex-col justify-end gap-px" style={{ height: 48 }}>
-                    <div className="w-full rounded-sm bg-violet-400/60" style={{ height: `${h * 0.55}%` }} />
-                    <div className="w-full rounded-sm bg-pink-400" style={{ height: `${h * 0.4}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between mt-1">
-              {['S','O','N','D','E','F'].map(m => (
-                <span key={m} className="text-[7px] text-white/30 flex-1 text-center">{m}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Category pie legend */}
-          <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-            <p className="text-[8px] text-white/40 mb-2">{t.landing.previewCategory}</p>
-            <div className="space-y-1.5">
-              {categories.map(c => (
-                <div key={c.name} className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c.color }} />
-                  <p className="text-[8px] text-white/60 flex-1">{c.name}</p>
-                  <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${c.pct}%`, background: c.color }} />
-                  </div>
-                  <p className="text-[8px] text-white/40 w-5 text-right">{c.pct}%</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom nav */}
-          <div className="flex justify-around pt-1 border-t border-white/5">
-            {['⬡', '📅', '💰', '👤'].map((icon, i) => (
-              <div key={i} className={cn(
-                'flex flex-col items-center gap-0.5',
-                i === 0 ? 'text-pink-400' : 'text-white/30',
-              )}>
-                <span className="text-[12px]">{icon}</span>
-                <div className={cn('h-0.5 w-4 rounded-full', i === 0 ? 'bg-pink-400' : 'bg-transparent')} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Glow behind phone */}
-      <div className="absolute inset-0 -z-10 blur-3xl opacity-30 rounded-full"
-        style={{ background: 'radial-gradient(ellipse, #f472b6 0%, #a78bfa 50%, transparent 80%)' }} />
-
-      {/* Floating badges */}
-      <div className="absolute -right-4 top-16 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-lg px-3 py-2 text-[10px] font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
-        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-        {t.landing.previewSynced}
-      </div>
-      <div className="absolute -left-4 bottom-24 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-lg px-3 py-2 text-[10px] font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
-        <Smartphone size={11} className="text-violet-400" />
-        {t.landing.previewOffline}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// LandingPage
-// ---------------------------------------------------------------------------
-
-export function LandingPage() {
-  const navigate = useNavigate();
-  const { t } = useI18n();
-
-  const features = useMemo(() => [
-    {
-      icon: <BarChart3 size={22} />,
-      color: 'from-pink-400 to-rose-400',
-      bg: 'bg-pink-50 dark:bg-pink-950/30',
-      border: 'border-pink-100 dark:border-pink-900/40',
-      title: t.landing.feature1Title,
-      desc: t.landing.feature1Desc,
-    },
-    {
-      icon: <RefreshCw size={22} />,
-      color: 'from-violet-400 to-purple-400',
-      bg: 'bg-violet-50 dark:bg-violet-950/30',
-      border: 'border-violet-100 dark:border-violet-900/40',
-      title: t.landing.feature2Title,
-      desc: t.landing.feature2Desc,
-    },
-    {
-      icon: <Users size={22} />,
-      color: 'from-emerald-400 to-teal-400',
-      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-      border: 'border-emerald-100 dark:border-emerald-900/40',
-      title: t.landing.feature3Title,
-      desc: t.landing.feature3Desc,
-    },
-    {
-      icon: <ArrowLeftRight size={22} />,
-      color: 'from-amber-400 to-orange-400',
-      bg: 'bg-amber-50 dark:bg-amber-950/30',
-      border: 'border-amber-100 dark:border-amber-900/40',
-      title: t.landing.feature4Title,
-      desc: t.landing.feature4Desc,
-    },
-    {
-      icon: <Sparkles size={22} />,
-      color: 'from-fuchsia-400 to-pink-400',
-      bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/30',
-      border: 'border-fuchsia-100 dark:border-fuchsia-900/40',
-      title: t.landing.feature5Title,
-      desc: t.landing.feature5Desc,
-    },
-    {
-      icon: <ShieldCheck size={22} />,
-      color: 'from-blue-400 to-cyan-400',
-      bg: 'bg-blue-50 dark:bg-blue-950/30',
-      border: 'border-blue-100 dark:border-blue-900/40',
-      title: t.landing.feature6Title,
-      desc: t.landing.feature6Desc,
-    },
-  ], [t]);
-
-  return (
-    <div className="min-h-screen bg-[var(--bg-app)] flex flex-col overflow-x-hidden">
-
-      {/* ── Navbar ── */}
-      <nav className="sticky top-0 z-30 bg-[var(--bg-surface)]/80 backdrop-blur-md border-b border-[var(--border-subtle)]">
-        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
-          <span className="text-base font-bold text-[var(--text-brand)] flex items-center gap-1.5">
-            <Logo size={22} /> LittleFlower
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate({ to: '/login' })}
-              className="px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-            >
-              {t.landing.signIn}
-            </button>
-            <button
-              onClick={() => navigate({ to: '/login' })}
-              className="px-4 py-1.5 text-sm font-semibold rounded-xl bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity shadow-sm"
-            >
-              {t.landing.startFree}
-            </button>
-          </div>
-        </div>
-      </nav>
+      </header>
 
       <main className="flex-1">
 
         {/* ── Hero ── */}
-        <section className="relative max-w-5xl mx-auto px-5 pt-16 pb-20 flex flex-col lg:flex-row items-center gap-12">
-
-          {/* Left: copy */}
-          <div className="flex-1 text-center lg:text-left">
-            {/* Pill badge */}
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-brand)] bg-[var(--group-available-bg)] border border-[var(--border-medium)] rounded-full px-3 py-1 mb-6">
-              <Sparkles size={11} /> {t.landing.pill}
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-[var(--text-primary)] leading-tight tracking-tight mb-4">
-              {t.landing.heroTitle1}
-              <br />
-              <span className="bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">
-                {t.landing.heroTitle2}
-              </span>
+        <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-20 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-6 lg:pb-28">
+          <div className="max-w-xl">
+            <h1 className="text-[40px] font-[820] leading-[1.04] tracking-[-0.04em] sm:text-[56px] lg:text-[64px]">
+              {l.heroTitle}
             </h1>
-
-            <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md mx-auto lg:mx-0 mb-8">
-              {t.landing.heroDesc}
+            <p className="mt-5 max-w-[30em] text-[17px] leading-relaxed text-[var(--text-secondary)] sm:text-[19px]">
+              {l.heroDesc}
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <button
-                onClick={() => navigate({ to: '/login' })}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-violet-500 text-white font-semibold text-sm shadow-lg hover:shadow-pink-200 dark:hover:shadow-pink-900/40 hover:opacity-95 transition-all"
-              >
-                {t.landing.startFree} <ChevronRight size={16} />
-              </button>
-              <button
-                onClick={() => navigate({ to: '/login' })}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border-2 border-[var(--border-strong)] text-[var(--text-primary)] font-semibold text-sm hover:bg-[var(--bg-hover)] transition-colors"
-              >
-                {t.landing.signIn}
-              </button>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link to="/login" search={{ mode: 'register' }} className={buttonVariants({ size: 'lg' })}>
+                {l.createHousehold}
+              </Link>
+              <Link to="/login" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                {l.haveAccount}
+              </Link>
             </div>
-
-            {/* Social proof */}
-            <p className="mt-6 text-xs text-[var(--text-muted)] flex items-center gap-1.5 justify-center lg:justify-start">
-              <ShieldCheck size={13} className="text-green-500" />
-              {t.landing.socialProof}
-            </p>
+            <p className="mt-5 text-sm text-[var(--text-muted)]">{l.heroNote}</p>
           </div>
 
-          {/* Right: app preview */}
-          <div className="flex-1 flex justify-center lg:justify-end w-full max-w-xs lg:max-w-none">
-            <AppPreview />
+          <div className="flex justify-center">
+            <HeroBloom />
           </div>
+        </section>
 
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 -z-10 w-96 h-96 rounded-full opacity-20 blur-3xl"
-            style={{ background: 'radial-gradient(circle, #f472b6, transparent)' }} />
-          <div className="absolute bottom-0 left-0 -z-10 w-64 h-64 rounded-full opacity-15 blur-3xl"
-            style={{ background: 'radial-gradient(circle, #a78bfa, transparent)' }} />
+        {/* ── Steps ── */}
+        <section className="border-y border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+            <h2 className={SECTION_TITLE_CLASS}>{l.stepsTitle}</h2>
+            <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
+              {steps.map((step, index) => (
+                <li key={step.title} className="flex flex-col gap-3.5">
+                  <PetalMeter value={step.petals} className="size-16" />
+                  <h3 className="text-[22px] font-[720] tracking-[-0.015em]">
+                    {index + 1}. {step.title}
+                  </h3>
+                  <p className="max-w-[30em] text-base leading-relaxed text-[var(--text-secondary)]">{step.desc}</p>
+                  {index === 1 && (
+                    <p aria-label={l.step2CodeLabel(SAMPLE_JOIN_CODE)} className="mt-1 flex gap-1.5">
+                      {SAMPLE_JOIN_CODE.split('').map((digit, i) => (
+                        <span
+                          key={i}
+                          aria-hidden="true"
+                          className="grid h-12 w-10 place-items-center rounded-[10px] border border-[var(--border-medium)] bg-[var(--bg-surface-2)] text-[22px] font-bold tabular-nums"
+                        >
+                          {digit}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
         </section>
 
         {/* ── Features ── */}
-        <section className="bg-[var(--bg-surface)] border-y border-[var(--border-subtle)] py-16">
-          <div className="max-w-5xl mx-auto px-5">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-                {t.landing.featuresTitle}
-              </h2>
-              <p className="text-sm text-[var(--text-muted)] max-w-md mx-auto">
-                {t.landing.featuresSubtitle}
-              </p>
-            </div>
+        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <h2 className={cn(SECTION_TITLE_CLASS, 'mb-10 sm:mb-12')}>{l.featuresTitle}</h2>
+          <FeatureShowcase />
+        </section>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {features.map((f, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'rounded-2xl border p-5 transition-all hover:shadow-md hover:-translate-y-0.5',
-                    f.bg, f.border,
-                  )}
-                >
-                  <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center text-white bg-gradient-to-br mb-4 shadow-sm',
-                    f.color,
-                  )}>
-                    {f.icon}
-                  </div>
-                  <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1.5">{f.title}</h3>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">{f.desc}</p>
-                </div>
-              ))}
+        {/* ── Privacy ── */}
+        <section className="bg-[#181015] text-[#F4EEF2] [--flower-edge:#181015] dark:bg-[var(--bg-surface)] dark:[--flower-edge:var(--bg-surface)]">
+          <div className="mx-auto flex max-w-6xl flex-col items-start gap-10 px-4 py-16 sm:px-6 sm:py-24 md:flex-row md:items-center md:gap-16">
+            <FlowerMark className="size-40 shrink-0 sm:size-56 lg:size-72" />
+            <div className="max-w-xl">
+              <h2 className="text-[34px] font-[800] leading-[1.06] tracking-[-0.035em] sm:text-[48px]">{l.privacyTitle}</h2>
+              <p className="mt-5 text-[17px] leading-relaxed text-[#C3B6BE] sm:text-lg">{l.privacyDesc}</p>
+              <Link
+                to="/login"
+                search={{ mode: 'register' }}
+                className={cn(buttonVariants({ size: 'lg' }), 'mt-8 focus-visible:ring-offset-[#181015]')}
+              >
+                {l.createHousehold}
+              </Link>
             </div>
           </div>
         </section>
-
-        {/* ── CTA final ── */}
-        <section className="max-w-5xl mx-auto px-5 py-20 text-center">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 -z-10 blur-2xl opacity-30 rounded-full"
-              style={{ background: 'radial-gradient(ellipse, #f472b6, #a78bfa)' }} />
-            <Logo size={64} className="mx-auto mb-6" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-3 tracking-tight">
-            {t.landing.ctaTitle}
-          </h2>
-          <p className="text-sm text-[var(--text-secondary)] mb-8 max-w-sm mx-auto">
-            {t.landing.ctaDesc}
-          </p>
-          <button
-            onClick={() => navigate({ to: '/login' })}
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-violet-500 text-white font-bold text-sm shadow-lg hover:opacity-95 transition-all hover:shadow-pink-200 dark:hover:shadow-pink-900/40"
-          >
-            {t.landing.ctaButton} <ChevronRight size={16} />
-          </button>
-        </section>
-
       </main>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
-        <div className="max-w-5xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
-          <span className="font-semibold text-[var(--text-brand)] flex items-center gap-1">
-            <Logo size={14} /> LittleFlower
-          </span>
-          <span>{t.landing.footer} 🇨🇴</span>
-          <span>© {new Date().getFullYear()}</span>
-        </div>
+      <footer className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-10 text-sm text-[var(--text-secondary)] sm:px-6">
+        <span className="flex items-center gap-2 font-bold text-[var(--text-primary)]">
+          <FlowerMark className="size-[22px]" />
+          Florecita
+        </span>
+        <nav aria-label={l.footerNav} className="flex flex-wrap gap-5">
+          <Link to="/login" className="font-medium text-[var(--text-brand)] hover:underline">{l.signIn}</Link>
+          <Link to="/login" search={{ mode: 'register' }} className="font-medium text-[var(--text-brand)] hover:underline">
+            {l.footerCreate}
+          </Link>
+        </nav>
+        <span>florecita.club</span>
       </footer>
-
     </div>
   );
 }

@@ -93,7 +93,7 @@ function HouseholdCard({ householdName, joinCode }: { householdName: string; joi
     if (!inviteLink || !joinCode) return;
 
     const shareData = {
-      title: 'LittleFlower',
+      title: 'Florecita',
       text: t.settings.shareText(joinCode),
       url: inviteLink,
     };
