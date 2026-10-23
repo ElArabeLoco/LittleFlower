@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.15.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.14.0...littleflower-v0.15.0) (2026-10-23)
+
+
+### Features
+
+* **debts:** financial debts with interest, amortization and payment projection ([#74](https://github.com/ElArabeLoco/LittleFlower/issues/74)) ([f878833](https://github.com/ElArabeLoco/LittleFlower/commit/f878833e1790fd54d2d29429225d628adaf0242e))
+
 ## [0.14.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.13.0...littleflower-v0.14.0) (2026-10-23)
 
 
