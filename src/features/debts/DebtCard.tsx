@@ -7,6 +7,8 @@ import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { computeDebtBalance } from '@/domain/debt/Debt';
 import { useDebtMutations } from '@/application/useDebtMutations';
+import type { MemberRef } from '@/domain/member/HouseholdMember';
+import { HolderChips } from '@/features/members/components/HolderChips';
 import { isFinancialDebt, projectDebt, ratePercents } from '@/application/debtPlan';
 import { getCurrentMonth } from '@/shared/helpers/dateHelpers';
 import { DebtFormDialog } from './DebtFormDialog';
@@ -20,11 +22,15 @@ interface DebtCardProps {
   householdId: string;
   userId: string;
   currentMonthRate: number | null;
+  /** Active holders of this debt (empty = the whole household). */
+  holders: MemberRef[];
+  /** Whether the household has any active member. */
+  hasMembers: boolean;
   formatCOP: (v: number) => string;
   onDelete: (id: string, name: string) => void;
 }
 
-export function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, formatCOP, onDelete }: DebtCardProps) {
+export function DebtCard({ debt, transactions, householdId, userId, currentMonthRate, holders, hasMembers, formatCOP, onDelete }: DebtCardProps) {
   const { t } = useI18n();
   const { formatNumber } = useNumberFormat();
   const { softDeleteDebtTransaction } = useDebtMutations(householdId, userId);
@@ -85,6 +91,7 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
               {t.debts.since(formatDate(debt.disbursed_at, t.months.shortLower))}
               {debt.description && ` · ${debt.description}`}
             </p>
+            <HolderChips holders={holders} hasMembers={hasMembers} subject="debt" className="mt-2" />
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
@@ -93,7 +100,7 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
               debtId={debt.id}
               householdId={householdId}
               userId={userId}
-              initial={debtFormFromRow(debt)}
+              initial={debtFormFromRow(debt, holders.map(holder => holder.id))}
               onDone={() => {}}
               trigger={
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--text-primary)]">

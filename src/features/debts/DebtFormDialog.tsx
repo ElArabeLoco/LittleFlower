@@ -7,6 +7,8 @@ import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { useDebtMutations, type InsertDebtPayload } from '@/application/useDebtMutations';
+import { useHouseholdMembers } from '@/application/useHouseholdMembers';
+import { HolderPicker } from '@/features/members/components/HolderPicker';
 import {
   AMORTIZATION_METHODS,
   DEBT_KINDS,
@@ -35,6 +37,7 @@ const defaultDebtForm = (): DebtFormState => ({
   term_months: '',
   installment_amount: '',
   monthly_fees: '',
+  holder_ids: [],
 });
 
 function parseInteger(s: string): number | null {
@@ -63,6 +66,7 @@ export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onD
   const { t } = useI18n();
   const { formatCOP } = useNumberFormat();
   const { insertDebt, updateDebt } = useDebtMutations(householdId, userId);
+  const { members } = useHouseholdMembers();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<DebtFormState>(initial ?? defaultDebtForm());
   const [saving, setSaving] = useState(false);
@@ -149,9 +153,9 @@ export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onD
     setSaving(true);
     try {
       if (mode === 'create') {
-        await insertDebt(fields);
+        await insertDebt(fields, form.holder_ids);
       } else if (mode === 'edit' && debtId) {
-        await updateDebt(debtId, fields);
+        await updateDebt(debtId, fields, form.holder_ids);
       }
       setOpen(false);
       onDone();
@@ -194,6 +198,13 @@ export function DebtFormDialog({ mode, debtId, initial, householdId, userId, onD
                 onChange={e => set('lender', e.target.value)} />
             </div>
           )}
+
+          <HolderPicker
+            members={members}
+            value={form.holder_ids}
+            onChange={ids => set('holder_ids', ids)}
+            subject="debt"
+          />
 
           <div className="space-y-1.5">
             <Label htmlFor="d-desc">{t.debts.descriptionLabel}</Label>

@@ -11,8 +11,8 @@ export function formatDate(d: string, monthLabels: Record<string, string>): stri
   return `${parseInt(day)} ${monthLabels[mm] ?? m}`;
 }
 
-/** Edit-mode form state for an existing debt. The rate is shown as E.A. */
-export function debtFormFromRow(debt: DebtRow): DebtFormState {
+/** Edit-mode form state for an existing debt and its holders. The rate is shown as E.A. */
+export function debtFormFromRow(debt: DebtRow, holderIds: string[]): DebtFormState {
   return {
     name: debt.name,
     description: debt.description ?? '',
@@ -27,5 +27,6 @@ export function debtFormFromRow(debt: DebtRow): DebtFormState {
     term_months: debt.term_months ? String(debt.term_months) : '',
     installment_amount: debt.installment_amount ? String(debt.installment_amount) : '',
     monthly_fees: debt.monthly_fees ? String(debt.monthly_fees) : '',
+    holder_ids: holderIds,
   };
 }

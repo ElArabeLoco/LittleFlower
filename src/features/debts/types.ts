@@ -22,6 +22,8 @@ export interface DebtFormState {
   term_months: string;
   installment_amount: string;
   monthly_fees: string;
+  /** Member ids the debt is in the name of; empty = the whole household. */
+  holder_ids: string[];
 }
 
 export interface TransactionFormState {

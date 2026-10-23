@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { cn } from '@/shared/ui/cn';
 import { useIncomeMutations } from '@/application/useIncomeMutations';
+import { useHouseholdMembers } from '@/application/useHouseholdMembers';
+import { HolderPicker } from '@/features/members/components/HolderPicker';
 import { getCurrentMonth } from './helpers';
 import type { IncomeFormState } from './types';
 
@@ -21,6 +23,7 @@ const defaultIncomeForm = (): IncomeFormState => ({
   is_fixed: true,
   start_month: getCurrentMonth(),
   end_month: '',
+  holder_ids: [],
 });
 
 interface IncomeFormDialogProps {
@@ -37,6 +40,7 @@ interface IncomeFormDialogProps {
 export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId, onDone, trigger, defaultOpen = false }: IncomeFormDialogProps) {
   const { t } = useI18n();
   const { insertIncome, updateIncome } = useIncomeMutations(householdId, userId);
+  const { members } = useHouseholdMembers();
   const [open, setOpen] = useState(defaultOpen);
   const [form, setForm] = useState<IncomeFormState>(initial ?? defaultIncomeForm());
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +77,7 @@ export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId,
           start_month: form.start_month,
           end_month: form.end_month || null,
           created_by: userId,
-        });
+        }, form.holder_ids);
       } else if (mode === 'edit' && incomeId) {
         await updateIncome(incomeId, {
           name: form.name.trim(),
@@ -82,7 +86,7 @@ export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId,
           is_fixed: form.is_fixed,
           category: form.category,
           end_month: form.end_month || null,
-        });
+        }, form.holder_ids);
       }
       setOpen(false);
     } catch (err) {
@@ -115,6 +119,13 @@ export function IncomeFormDialog({ mode, initial, incomeId, householdId, userId,
               </SelectContent>
             </Select>
           </div>
+
+          <HolderPicker
+            members={members}
+            value={form.holder_ids}
+            onChange={ids => set('holder_ids', ids)}
+            subject="income"
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

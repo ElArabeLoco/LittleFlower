@@ -5,6 +5,8 @@ import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/ui/cn';
 import { useIncomeMutations } from '@/application/useIncomeMutations';
+import type { MemberRef } from '@/domain/member/HouseholdMember';
+import { HolderChips } from '@/features/members/components/HolderChips';
 import { SalaryBreakdownDialog } from './SalaryBreakdownDialog';
 import type { IncomeRow, IncomeMonthRow } from './types';
 
@@ -15,11 +17,15 @@ interface IncomeCardProps {
   householdId: string;
   userId: string;
   trm: number | null;
+  /** Active holders of this income (empty = the whole household). */
+  holders: MemberRef[];
+  /** Whether the household has any active member. */
+  hasMembers: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, onEdit, onDelete }: IncomeCardProps) {
+export function IncomeCard({ income, incomeMonth, month, householdId, userId, trm, holders, hasMembers, onEdit, onDelete }: IncomeCardProps) {
   const { t } = useI18n();
   const { formatCOP, formatNumber } = useNumberFormat();
   const { upsertIncomeMonth } = useIncomeMutations(householdId, userId);
@@ -82,6 +88,7 @@ export function IncomeCard({ income, incomeMonth, month, householdId, userId, tr
             </span>
           </div>
           <p className="text-xs text-gray-400">{t.income.categories[income.category] ?? income.category} · {t.common.from} {income.start_month}</p>
+          <HolderChips holders={holders} hasMembers={hasMembers} subject="income" className="mt-2" />
         </div>
 
         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -6,6 +6,8 @@ import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { useIncomeMutations } from '@/application/useIncomeMutations';
+import { useHoldersBySubject } from '@/application/useHolders';
+import { useHouseholdMembers } from '@/application/useHouseholdMembers';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { getCurrentMonth, prevMonth, nextMonth } from './helpers';
@@ -27,6 +29,8 @@ export function IncomePage() {
 
   const { incomes, imMap, exchangeRate, trm, hasUSDIncome, totalCOP, missingTrm } = useIncomeData(month);
   const { deleteIncome } = useIncomeMutations(householdId, userId);
+  const holdersByIncome = useHoldersBySubject('income');
+  const { hasMembers } = useHouseholdMembers();
 
   const fmtMonth = (m: string) => {
     const [y, mo] = m.split('-');
@@ -111,6 +115,8 @@ export function IncomePage() {
             householdId={householdId}
             userId={userId}
             trm={trm}
+            holders={holdersByIncome.get(income.id) ?? []}
+            hasMembers={hasMembers}
             onEdit={() => setEditingIncome(income)}
             onDelete={() => handleDeleteIncome(income.id, income.name)}
           />
@@ -133,6 +139,7 @@ export function IncomePage() {
             is_fixed: editingIncome.is_fixed === 1,
             start_month: editingIncome.start_month,
             end_month: editingIncome.end_month ?? '',
+            holder_ids: (holdersByIncome.get(editingIncome.id) ?? []).map(holder => holder.id),
           }}
           onDone={() => setEditingIncome(null)}
           trigger={<span />}

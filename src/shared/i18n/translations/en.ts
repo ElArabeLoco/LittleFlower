@@ -498,7 +498,7 @@ export const en: Translations = {
     newIncome: 'New income source',
     editIncome: 'Edit income',
     nameLabel: 'Name *',
-    namePlaceholder: 'E.g.: Salary',
+    namePlaceholder: 'E.g.: Salary, Apartment rent',
     categoryLabel: 'Category',
     defaultAmount: 'Default amount',
     currencyLabel: 'Currency',
@@ -738,6 +738,27 @@ export const en: Translations = {
         `Those incomes and debts are not deleted and their amounts do not change. They just stop showing ${name}: shared ones stay in the other holders' names and the rest become the household's.`,
       confirm: (name: string) => `Delete ${name}`,
     },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Holders — picker in forms and chips on cards
+  // ---------------------------------------------------------------------------
+  holders: {
+    legend: 'Holders (optional)',
+    summaryNone: {
+      income: 'No holder: the income belongs to the household.',
+      debt: 'No holder: the debt belongs to the household.',
+    },
+    summarySingle: (name: string) => `In the name of ${name}.`,
+    summaryShared: {
+      income: (list: string) => `Shared between ${list}.`,
+      debt: (list: string) => `Shared between ${list}.`,
+    },
+    noMembers: 'No members yet. You can save without holders and assign them once you create them in',
+    noMembersLink: 'Finances › Members',
+    sharedIncome: 'shared',
+    sharedDebt: 'shared',
+    household: 'Household',
   },
 
   // ---------------------------------------------------------------------------

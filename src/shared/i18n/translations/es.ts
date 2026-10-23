@@ -497,7 +497,7 @@ export const es = {
     newIncome: 'Nueva fuente de ingreso',
     editIncome: 'Editar ingreso',
     nameLabel: 'Nombre *',
-    namePlaceholder: 'Ej: Salario Jaime',
+    namePlaceholder: 'Ej: Salario, Arriendo apartamento',
     categoryLabel: 'Categoría',
     defaultAmount: 'Monto por defecto',
     currencyLabel: 'Moneda',
@@ -737,6 +737,27 @@ export const es = {
         `Esos ingresos y deudas no se borran ni cambian sus montos. Solo dejan de mostrar a ${name}: lo compartido queda a nombre de los demás titulares y lo demás pasa a ser del hogar.`,
       confirm: (name: string) => `Eliminar a ${name}`,
     },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Holders (titulares) — picker in forms and chips on cards
+  // ---------------------------------------------------------------------------
+  holders: {
+    legend: 'Titulares (opcional)',
+    summaryNone: {
+      income: 'Sin titular: el ingreso es del hogar.',
+      debt: 'Sin titular: la deuda es del hogar.',
+    },
+    summarySingle: (name: string) => `A nombre de ${name}.`,
+    summaryShared: {
+      income: (list: string) => `Compartido entre ${list}.`,
+      debt: (list: string) => `Compartida entre ${list}.`,
+    },
+    noMembers: 'Aún no hay integrantes. Puedes guardar sin titulares y asignarlos cuando los crees en',
+    noMembersLink: 'Finanzas › Integrantes',
+    sharedIncome: 'compartido',
+    sharedDebt: 'compartida',
+    household: 'Del hogar',
   },
 
   // ---------------------------------------------------------------------------
