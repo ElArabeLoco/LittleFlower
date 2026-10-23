@@ -12,13 +12,7 @@
 
 import { useId, type SVGProps } from 'react';
 import { cn } from './cn';
-
-/** One petal pointing up from the flower's heart at (0, 0); tip at y = -54. */
-export const PETAL_PATH =
-  'M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z';
-
-/** Petal directions, clockwise from the top. */
-export const PETAL_ANGLES = [0, 72, 144, 216, 288];
+import { PETAL_ANGLES, PETAL_PATH } from './flowerGeometry';
 
 /** Long stamens sit over the petals, short ones between them. */
 const STAMENS = [

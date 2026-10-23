@@ -11,20 +11,8 @@
  */
 
 import { useId } from 'react';
-import { PETAL_ANGLES, PETAL_PATH, PetalGradient } from './FlowerMark';
-
-/** Petal tip distance from the heart, in viewBox units. */
-const PETAL_LENGTH = 54;
-
-/** How full each petal is (0..1), clockwise from the top. */
-export function petalFills(value: number): number[] {
-  const safe = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
-  return PETAL_ANGLES.map((_, index) => {
-    // Round away float noise (0.7 * 5 - 3 = 0.5000000000000004).
-    const fill = Math.round((safe * PETAL_ANGLES.length - index) * 1000) / 1000;
-    return Math.min(1, Math.max(0, fill));
-  });
-}
+import { PetalGradient } from './FlowerMark';
+import { PETAL_ANGLES, PETAL_LENGTH, PETAL_PATH, petalFills } from './flowerGeometry';
 
 interface PetalMeterProps {
   /** Progress from 0 to 1; values outside are clamped. */

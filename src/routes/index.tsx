@@ -21,7 +21,7 @@ export const Route = createFileRoute('/')({
   beforeLoad: async () => {
     const session = await getCurrentSession();
     // Already authenticated → go straight to the app
-    if (session?.householdId) throw redirect({ to: '/dashboard' });
+    if (session?.householdId) throw redirect({ to: '/home' });
     if (session) throw redirect({ to: '/onboarding' });
     // No session → show landing
   },

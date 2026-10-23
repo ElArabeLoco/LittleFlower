@@ -116,10 +116,58 @@ export const es = {
   // Navigation
   // ---------------------------------------------------------------------------
   nav: {
+    home: 'Inicio',
     dashboard: 'Dashboard',
     budget: 'Presupuesto',
     finances: 'Finanzas',
     profile: 'Perfil',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Home
+  // ---------------------------------------------------------------------------
+  home: {
+    greetingMorning: (name: string | null) => (name ? `Buenos días, ${name}` : 'Buenos días'),
+    greetingAfternoon: (name: string | null) => (name ? `Buenas tardes, ${name}` : 'Buenas tardes'),
+    greetingEvening: (name: string | null) => (name ? `Buenas noches, ${name}` : 'Buenas noches'),
+    daysLeft: (n: number) =>
+      n === 0 ? 'Hoy cierra el mes.' : n === 1 ? 'Queda 1 día para cerrar el mes.' : `Quedan ${n} días para cerrar el mes.`,
+    currentMonth: 'Mes actual',
+    seeMonth: 'Ver el mes',
+    executedPct: (pct: number) => `${pct}% del presupuesto ejecutado`,
+    nothingBudgeted: 'Este mes aún no tiene presupuesto',
+    register: 'Registrar',
+    registerExpense: 'Registrar gasto',
+    registerIncome: 'Registrar ingreso',
+    trmOf: (month: string, value: string) => `TRM de ${month}: ${value}`,
+    trmMissing: (month: string) => `Falta la TRM de ${month}. Los ingresos en dólares no se suman hasta que la agregues.`,
+    addTrm: 'Agregar TRM',
+    changeTrm: 'Cambiar',
+    sectionsTitle: 'Secciones',
+    monthLine: (done: number, total: number) => `${done} de ${total} partidas ejecutadas`,
+    yearLine: 'Todas las partidas, mes a mes',
+    dashboardLine: 'Gráficas de los últimos meses',
+    incomeLine: (count: number, foreign: boolean) =>
+      count === 0
+        ? 'Sin ingresos este mes'
+        : `${count} ${count === 1 ? 'ingreso' : 'ingresos'} este mes${foreign ? ', con dólares' : ''}`,
+    budgetsLine: (count: number) => (count === 1 ? '1 partida activa' : `${count} partidas activas`),
+    debtsLine: (amount: string | null) => (amount ? `Saldo pendiente ${amount}` : 'Sin deudas pendientes'),
+    transactionsLine: 'Todos los movimientos del mes',
+    profileTitle: 'Perfil y hogar',
+    profileLine: 'Código de invitación y tema',
+    pendingTitle: 'Pendientes del mes',
+    pendingTotal: (amount: string) => `Total ${amount}`,
+    pendingEmpty: 'Todo está ejecutado este mes.',
+    pendingMore: (n: number) => (n === 1 ? 'Ver 1 más en el mes' : `Ver ${n} más en el mes`),
+    modeBoth: 'Tarjeta y efectivo',
+    recentEmpty: 'Todavía no hay gastos este mes.',
+    seeTransactions: 'Ver todas las transacciones',
+    pickBudgetDesc: '¿En qué partida va el gasto?',
+    searchBudget: 'Buscar partida',
+    noBudgetMatch: 'Ninguna partida coincide con la búsqueda.',
+    noBudgets: 'Primero crea las partidas de tu presupuesto.',
+    createBudgets: 'Ir a Presupuestos',
   },
 
   // ---------------------------------------------------------------------------

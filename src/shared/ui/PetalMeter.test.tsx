@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { PetalMeter, petalFills } from './PetalMeter';
+import { petalFills } from './flowerGeometry';
+import { PetalMeter } from './PetalMeter';
 
 describe('petalFills', () => {
   it('fills petals clockwise, a fifth of the value each', () => {

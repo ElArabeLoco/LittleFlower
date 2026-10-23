@@ -37,10 +37,10 @@ setup('authenticate', async ({ page }) => {
   await page.locator('#password').fill(password);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
 
-  // Wait for redirect to dashboard (app fully loaded + household present)
+  // Wait for redirect to home (app fully loaded + household present)
   await page.waitForURL('/', { timeout: 30_000 });
-  // The app may redirect / → /dashboard after checking auth
-  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 30_000 });
+  // The app redirects / → /home after checking auth
+  await page.waitForURL(/\/(home|onboarding)/, { timeout: 30_000 });
 
   // If we landed on onboarding, the test user has no household — abort clearly
   const url = page.url();

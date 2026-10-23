@@ -117,10 +117,58 @@ export const en: Translations = {
   // Navigation
   // ---------------------------------------------------------------------------
   nav: {
+    home: 'Home',
     dashboard: 'Dashboard',
     budget: 'Budget',
     finances: 'Finances',
     profile: 'Profile',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Home
+  // ---------------------------------------------------------------------------
+  home: {
+    greetingMorning: (name: string | null) => (name ? `Good morning, ${name}` : 'Good morning'),
+    greetingAfternoon: (name: string | null) => (name ? `Good afternoon, ${name}` : 'Good afternoon'),
+    greetingEvening: (name: string | null) => (name ? `Good evening, ${name}` : 'Good evening'),
+    daysLeft: (n: number) =>
+      n === 0 ? 'The month closes today.' : n === 1 ? '1 day left in the month.' : `${n} days left in the month.`,
+    currentMonth: 'Current month',
+    seeMonth: 'Open the month',
+    executedPct: (pct: number) => `${pct}% of the budget executed`,
+    nothingBudgeted: 'This month has no budget yet',
+    register: 'Record',
+    registerExpense: 'Record expense',
+    registerIncome: 'Record income',
+    trmOf: (month: string, value: string) => `${month} exchange rate: ${value}`,
+    trmMissing: (month: string) => `The ${month} exchange rate is missing. Dollar income is left out until you add it.`,
+    addTrm: 'Add exchange rate',
+    changeTrm: 'Change',
+    sectionsTitle: 'Sections',
+    monthLine: (done: number, total: number) => `${done} of ${total} items executed`,
+    yearLine: 'Every budget item, month by month',
+    dashboardLine: 'Charts for the last months',
+    incomeLine: (count: number, foreign: boolean) =>
+      count === 0
+        ? 'No income this month'
+        : `${count} ${count === 1 ? 'income' : 'incomes'} this month${foreign ? ', with dollars' : ''}`,
+    budgetsLine: (count: number) => (count === 1 ? '1 active item' : `${count} active items`),
+    debtsLine: (amount: string | null) => (amount ? `Outstanding ${amount}` : 'No outstanding debts'),
+    transactionsLine: 'Every movement of the month',
+    profileTitle: 'Profile and household',
+    profileLine: 'Invite code and theme',
+    pendingTitle: 'Pending this month',
+    pendingTotal: (amount: string) => `Total ${amount}`,
+    pendingEmpty: 'Everything is executed this month.',
+    pendingMore: (n: number) => (n === 1 ? 'See 1 more in the month' : `See ${n} more in the month`),
+    modeBoth: 'Card and cash',
+    recentEmpty: 'No expenses this month yet.',
+    seeTransactions: 'See all transactions',
+    pickBudgetDesc: 'Which budget item is this expense for?',
+    searchBudget: 'Search items',
+    noBudgetMatch: 'No item matches the search.',
+    noBudgets: 'First create your budget items.',
+    createBudgets: 'Go to Budgets',
   },
 
   // ---------------------------------------------------------------------------

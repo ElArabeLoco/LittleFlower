@@ -4,7 +4,7 @@
  * Mobile-first. Fixed to the bottom of the viewport.
  * 4 tabs + profile avatar:
  *
- *   Dashboard   → /dashboard
+ *   Inicio      → /home      (and the dashboard it links to)
  *   Presupuesto → /budget   (hub: Mensual + Anual)
  *   Finanzas    → /finances (hub: Ingresos + Presupuestos + Deudas)
  *   Perfil      → /settings (avatar con inicial del usuario)
@@ -13,7 +13,7 @@
  */
 
 import { Link, useRouterState } from '@tanstack/react-router';
-import { LayoutDashboard, CalendarDays, Wallet, type LucideIcon } from 'lucide-react';
+import { House, CalendarDays, Wallet, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useI18n } from '@/shared/i18n/I18nContext';
@@ -38,10 +38,10 @@ function UserAvatar({ email, size = 20 }: { email: string; size?: number }) {
 // Nav item definitions (all except profile — profile is special)
 // ---------------------------------------------------------------------------
 
-type NavPath = '/dashboard' | '/budget' | '/finances' | '/settings';
+type NavPath = '/home' | '/budget' | '/finances' | '/settings';
 
 interface NavItem {
-  labelKey: 'dashboard' | 'budget' | 'finances';
+  labelKey: 'home' | 'budget' | 'finances';
   icon: LucideIcon;
   to: NavPath;
   /** All paths that should highlight this tab as active */
@@ -50,10 +50,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    labelKey: 'dashboard',
-    icon: LayoutDashboard,
-    to: '/dashboard',
-    match: ['/dashboard'],
+    labelKey: 'home',
+    icon: House,
+    to: '/home',
+    // The dashboard is one of Home's sections
+    match: ['/home', '/dashboard'],
   },
   {
     labelKey: 'budget',
