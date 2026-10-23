@@ -51,14 +51,23 @@ const TABLE_COLUMNS: Record<string, string[]> = {
   ],
   debts: [
     'id', 'household_id', 'name', 'description', 'initial_amount', 'currency',
-    'disbursed_at', 'created_by', 'created_at', 'deleted_at',
+    'disbursed_at', 'kind', 'lender', 'interest_rate', 'amortization',
+    'term_months', 'installment_amount', 'monthly_fees',
+    'created_by', 'created_at', 'deleted_at',
     'updated_at', 'last_edited_by', 'last_edited_at',
   ],
   debt_transactions: [
-    'id', 'household_id', 'debt_id', 'amount', 'original_amount',
-    'original_currency', 'exchange_rate', 'type', 'note', 'date',
+    'id', 'household_id', 'debt_id', 'amount', 'interest_amount', 'fees_amount',
+    'original_amount', 'original_currency', 'exchange_rate', 'type', 'note', 'date',
     'source', 'expense_id', 'created_by', 'created_at', 'deleted_at',
   ],
+};
+
+// Defaults for NOT NULL columns missing from older backups (or from rows
+// synced before the column existed) — NULL would be rejected by Supabase.
+const COLUMN_DEFAULTS: Record<string, Record<string, unknown>> = {
+  debts: { kind: 'personal', interest_rate: 0, amortization: 'none', monthly_fees: 0 },
+  debt_transactions: { interest_amount: 0, fees_amount: 0 },
 };
 
 // Import order respects FK dependencies
@@ -83,6 +92,7 @@ async function importTable(
   householdId: string,
 ): Promise<{ imported: number; skipped: number }> {
   const allowedCols = TABLE_COLUMNS[tableName];
+  const defaults = COLUMN_DEFAULTS[tableName] ?? {};
   if (!allowedCols || rows.length === 0) return { imported: 0, skipped: 0 };
 
   // Fetch existing IDs in batches to avoid per-row round trips
@@ -112,7 +122,7 @@ async function importTable(
     const vals: unknown[] = [];
     for (const col of allowedCols) {
       cols.push(col);
-      vals.push(col === 'household_id' ? householdId : (row[col] ?? null));
+      vals.push(col === 'household_id' ? householdId : (row[col] ?? defaults[col] ?? null));
     }
 
     const placeholders = cols.map(() => '?').join(', ');
