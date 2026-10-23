@@ -6,7 +6,8 @@
  *
  * Three formats:
  *   - .lf   — Florecita proprietary JSON (full fidelity, importable)
- *   - .xlsx  — Excel / Numbers (5 sheets: Gastos, Ingresos, Deudas, Detalle, TRM)
+ *   - .xlsx  — Excel / Numbers (5 sheets: Gastos, Ingresos, Deudas, Detalle, TRM);
+ *             Ingresos and Deudas list the holders (Titulares) of each record
  */
 
 import { db } from '@/infrastructure/powersync/client';
@@ -42,6 +43,37 @@ function num(v: unknown): number {
   return typeof v === 'number' ? v : 0;
 }
 
+/** Spreadsheet text for an income / debt without holders. */
+const HOUSEHOLD_HOLDERS = 'Hogar';
+
+/**
+ * Active holder names per income or debt id, alphabetical. Holders of deleted
+ * members are left out, like everywhere else in the app. Backups made before
+ * members existed simply have none.
+ */
+function holderNamesBySubject(data: FlorecitaExport, type: 'income' | 'debt'): Map<string, string[]> {
+  const activeMembers = new Map<string, string>(
+    (data.household_members ?? [])
+      .filter(m => !m.deleted_at)
+      .map(m => [m.id as string, m.name as string]),
+  );
+
+  const result = new Map<string, string[]>();
+  for (const h of data.holders ?? []) {
+    if (h.subject_type !== type) continue;
+    const name = activeMembers.get(h.member_id as string);
+    if (name === undefined) continue;
+    const subjectId = h.subject_id as string;
+    result.set(subjectId, [...(result.get(subjectId) ?? []), name]);
+  }
+  for (const names of result.values()) names.sort((a, b) => a.localeCompare(b));
+  return result;
+}
+
+function holdersText(names: string[] | undefined): string {
+  return names && names.length > 0 ? names.join(', ') : HOUSEHOLD_HOLDERS;
+}
+
 // ---------------------------------------------------------------------------
 // Query all tables
 // ---------------------------------------------------------------------------
@@ -58,6 +90,8 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     exchange_rates,
     debts,
     debt_transactions,
+    household_members,
+    holders,
   ] = await Promise.all([
     db.getAll('SELECT * FROM households WHERE id = ?', [householdId]),
     db.getAll('SELECT * FROM users WHERE household_id = ?', [householdId]),
@@ -69,6 +103,8 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     db.getAll('SELECT * FROM exchange_rates WHERE household_id = ?', [householdId]),
     db.getAll('SELECT * FROM debts WHERE household_id = ?', [householdId]),
     db.getAll('SELECT * FROM debt_transactions WHERE household_id = ?', [householdId]),
+    db.getAll('SELECT * FROM household_members WHERE household_id = ?', [householdId]),
+    db.getAll('SELECT * FROM holders WHERE household_id = ?', [householdId]),
   ]);
 
   return {
@@ -87,6 +123,8 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     exchange_rates: exchange_rates as Record<string, unknown>[],
     debts: debts as Record<string, unknown>[],
     debt_transactions: debt_transactions as Record<string, unknown>[],
+    household_members: household_members as Record<string, unknown>[],
+    holders: holders as Record<string, unknown>[],
   };
 }
 
@@ -184,10 +222,8 @@ function buildGastosSheet(data: FlorecitaExport): Row[] {
 }
 
 /** Sheet 2 — Ingresos: income sources × months grid */
-function buildIngresosSheet(data: FlorecitaExport): Row[] {
-  const userMap = new Map<string, string>(
-    (data.users as Record<string, unknown>[]).map(u => [u.id as string, (u.name ?? u.email) as string])
-  );
+export function buildIngresosSheet(data: FlorecitaExport): Row[] {
+  const holdersByIncome = holderNamesBySubject(data, 'income');
 
   const activeIncomes = (data.incomes as Record<string, unknown>[])
     .filter(i => !i.deleted_at)
@@ -207,7 +243,7 @@ function buildIngresosSheet(data: FlorecitaExport): Row[] {
 
   const result: Row[] = [
     ['INGRESOS MENSUALES', ...Array(allMonths.length + 3).fill('')],
-    ['Fuente', 'Persona', 'Moneda', ...allMonths.map(fmtMonth), 'TOTAL'],
+    ['Fuente', 'Titulares', 'Moneda', ...allMonths.map(fmtMonth), 'TOTAL'],
   ];
 
   const colTotals = Array(allMonths.length).fill(0) as number[];
@@ -215,7 +251,7 @@ function buildIngresosSheet(data: FlorecitaExport): Row[] {
   for (const inc of activeIncomes) {
     const row: Row = [
       inc.name as string,
-      userMap.get(inc.person as string) ?? (inc.person as string),
+      holdersText(holdersByIncome.get(inc.id as string)),
       inc.currency as string,
     ];
     let rowTotal = 0;
@@ -234,7 +270,8 @@ function buildIngresosSheet(data: FlorecitaExport): Row[] {
 }
 
 /** Sheet 3 — Deudas: one mini-table per debt with running balance */
-function buildDeudasSheet(data: FlorecitaExport): Row[] {
+export function buildDeudasSheet(data: FlorecitaExport): Row[] {
+  const holdersByDebt = holderNamesBySubject(data, 'debt');
   const activeDebts = (data.debts as Record<string, unknown>[])
     .filter(d => !d.deleted_at)
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
@@ -259,6 +296,7 @@ function buildDeudasSheet(data: FlorecitaExport): Row[] {
       `Original: ${num(debt.initial_amount).toLocaleString('es-CO')} ${debt.currency}`,
       `Desembolso: ${debt.disbursed_at}`,
       debt.description ? `Nota: ${debt.description}` : null,
+      `Titulares: ${holdersText(holdersByDebt.get(debt.id as string))}`,
     ]);
 
     rows.push(['Fecha', 'Tipo', 'Monto COP', 'Monto Original', 'Moneda', 'TRM', 'Nota', 'Saldo acumulado']);
