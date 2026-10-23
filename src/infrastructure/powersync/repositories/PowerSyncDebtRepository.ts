@@ -7,6 +7,7 @@
 import { db } from '../client';
 import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import type { IDebtRepository } from '@/domain/debt/IDebtRepository';
+import { splitPayment, type PaymentSplit } from '@/domain/debt/amortization';
 import type {
   Debt, DebtTransaction, DebtTransactionType, DebtTransactionSource, DebtKind, AmortizationMethod,
 } from '@/domain/debt/Debt';
@@ -307,6 +308,49 @@ export async function insertDebtTransaction(
     ],
   );
   return id;
+}
+
+interface DebtTermsRow {
+  currency: string;
+  initial_amount: number;
+  interest_rate: number;
+  amortization: string;
+  term_months: number | null;
+  installment_amount: number | null;
+  monthly_fees: number;
+  /** credits − debits (principal) */
+  delta: number;
+}
+
+/**
+ * Default principal / interest / fees split for a payment on a debt, from its
+ * current balance and loan terms. Used when the caller does not provide one.
+ */
+export async function suggestDebtPaymentSplit(debtId: string, total: number): Promise<PaymentSplit> {
+  const row = await db.getOptional<DebtTermsRow>(
+    `SELECT d.currency, d.initial_amount,
+            COALESCE(d.interest_rate, 0) AS interest_rate,
+            COALESCE(d.amortization, 'none') AS amortization,
+            d.term_months, d.installment_amount,
+            COALESCE(d.monthly_fees, 0) AS monthly_fees,
+            COALESCE((
+              SELECT SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE -t.amount END)
+              FROM debt_transactions t
+              WHERE t.debt_id = d.id AND t.deleted_at IS NULL
+            ), 0) AS delta
+     FROM debts d WHERE d.id = ?`,
+    [debtId],
+  );
+  // Loan terms only apply to COP debts; anything else is paid straight to principal.
+  if (!row || row.currency !== 'COP') return { principal: total, interest: 0, fees: 0 };
+  return splitPayment(total, row.initial_amount + row.delta, {
+    initialAmount: row.initial_amount,
+    interestRate: row.interest_rate,
+    amortization: row.amortization as AmortizationMethod,
+    termMonths: row.term_months,
+    installmentAmount: row.installment_amount,
+    monthlyFees: row.monthly_fees,
+  });
 }
 
 export async function softDeleteDebtTransaction(id: string): Promise<void> {

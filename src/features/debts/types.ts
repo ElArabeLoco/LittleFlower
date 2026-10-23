@@ -31,4 +31,7 @@ export interface TransactionFormState {
   exchange_rate: string;
   date: string;
   note: string;
+  /** Financial debts: interest and fees included in a payment */
+  interest: string;
+  fees: string;
 }

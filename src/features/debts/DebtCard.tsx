@@ -182,6 +182,7 @@ export function DebtCard({ debt, transactions, householdId, userId, currentMonth
               householdId={householdId}
               userId={userId}
               currentMonthRate={currentMonthRate}
+              financial={financial}
               trigger={
                 <Button variant="outline" size="sm" className="w-full gap-1.5 h-8 text-xs">
                   <Plus size={12} /> {t.debts.addTransaction}

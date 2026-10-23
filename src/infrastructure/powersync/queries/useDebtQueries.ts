@@ -1,28 +1,49 @@
 import { useQuery } from '@powersync/react';
 import type { DebtRow, DebtTransactionRow } from './types';
 
-/** All active debts with full data (debt management page). */
-export function useDebtsQuery() {
-  return useQuery<DebtRow>(
-    `SELECT id, name, description, initial_amount, currency, disbursed_at, household_id,
+// Rows synced before the financial-debts migration lack the loan-term columns.
+const DEBT_COLUMNS = `id, name, description, initial_amount, currency, disbursed_at, household_id,
             COALESCE(kind, 'personal') AS kind, lender,
             COALESCE(interest_rate, 0) AS interest_rate,
             COALESCE(amortization, 'none') AS amortization,
             term_months, installment_amount,
-            COALESCE(monthly_fees, 0) AS monthly_fees
-     FROM debts WHERE deleted_at IS NULL ORDER BY disbursed_at DESC`,
+            COALESCE(monthly_fees, 0) AS monthly_fees`;
+
+const DEBT_TX_COLUMNS = `id, debt_id, amount,
+            COALESCE(interest_amount, 0) AS interest_amount,
+            COALESCE(fees_amount, 0) AS fees_amount,
+            original_amount, original_currency, exchange_rate,
+            type, note, date, source, expense_id`;
+
+/** All active debts with full data (debt management page). */
+export function useDebtsQuery() {
+  return useQuery<DebtRow>(
+    `SELECT ${DEBT_COLUMNS} FROM debts WHERE deleted_at IS NULL ORDER BY disbursed_at DESC`,
+  );
+}
+
+/** One active debt by id (projection page, payment split). */
+export function useDebtByIdQuery(debtId: string) {
+  return useQuery<DebtRow>(
+    `SELECT ${DEBT_COLUMNS} FROM debts WHERE id = ? AND deleted_at IS NULL LIMIT 1`,
+    [debtId],
   );
 }
 
 /** All debt transactions with full data. */
 export function useDebtTransactionsQuery() {
   return useQuery<DebtTransactionRow>(
-    `SELECT id, debt_id, amount,
-            COALESCE(interest_amount, 0) AS interest_amount,
-            COALESCE(fees_amount, 0) AS fees_amount,
-            original_amount, original_currency, exchange_rate,
-            type, note, date, source, expense_id
+    `SELECT ${DEBT_TX_COLUMNS}
      FROM debt_transactions WHERE deleted_at IS NULL ORDER BY date DESC, created_at DESC`,
+  );
+}
+
+/** Active transactions of one debt (descending date). */
+export function useDebtTransactionsForDebtQuery(debtId: string) {
+  return useQuery<DebtTransactionRow>(
+    `SELECT ${DEBT_TX_COLUMNS}
+     FROM debt_transactions WHERE debt_id = ? AND deleted_at IS NULL ORDER BY date DESC, created_at DESC`,
+    [debtId],
   );
 }
 

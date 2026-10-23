@@ -21,6 +21,8 @@ import type { PaymentMode } from '@/domain/budget/Budget';
 import { useExpenseMutations } from '@/application/useExpenseMutations';
 import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { useExpensesForBudgetMonth } from '@/infrastructure/powersync/queries/useExpenseQueries';
+import { useDebtDetail } from '@/application/useDebtDetail';
+import { suggestPaymentSplit, type PaymentSplit } from '@/application/debtPlan';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
 
@@ -50,6 +52,20 @@ export interface ExpenseFormDialogProps {
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Payment split as typed in the form (financial debts only). */
+type SplitForm = Record<keyof PaymentSplit, string>;
+
+const SPLIT_PARTS: (keyof PaymentSplit)[] = ['principal', 'interest', 'fees'];
+
+function toSplitForm(split: PaymentSplit): SplitForm {
+  return { principal: String(split.principal), interest: String(split.interest), fees: String(split.fees) };
+}
+
+function parseSplit(form: SplitForm): PaymentSplit {
+  const n = (v: string) => parseInt(v.replace(/\D/g, ''), 10) || 0;
+  return { principal: n(form.principal), interest: n(form.interest), fees: n(form.fees) };
 }
 
 // ---------------------------------------------------------------------------
@@ -82,6 +98,24 @@ export function ExpenseFormDialog({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Financial debts: principal / interest / fees of this payment, editable
+  const debtDetail = useDebtDetail(debtId);
+  const [split, setSplit] = useState<SplitForm | null>(null);
+  const splitLabels: SplitForm = {
+    principal: t.debts.splitPrincipal,
+    interest: t.debts.splitInterest,
+    fees: t.debts.splitFees,
+  };
+
+  function handleAmountChange(value: string) {
+    setAmount(value);
+    const parsed = parseInt(value.replace(/\D/g, ''), 10);
+    const { debt, isFinancial, initialCOP, balance } = debtDetail;
+    setSplit(isFinancial && debt && parsed > 0
+      ? toSplitForm(suggestPaymentSplit(parsed, debt, initialCOP, balance))
+      : null);
+  }
 
   // For dual-mode budgets: which payment mode is selected for this transaction
   const isDual = budgetPaymentMode === 'both';
@@ -118,6 +152,7 @@ export function ExpenseFormDialog({
     setAmount('');
     setDate(todayISO());
     setNote('');
+    setSplit(null);
     setError(null);
     // Reset mode to default for the budget
     setPaidWithCC(budgetPaymentMode !== 'cash');
@@ -134,7 +169,9 @@ export function ExpenseFormDialog({
   }
 
   // Core save logic — shared by form submit and quick-pay button
-  async function saveExpense(expenseAmount: number, expenseDate: string, expenseNote: string, overrideCC?: boolean): Promise<string> {
+  async function saveExpense(
+    expenseAmount: number, expenseDate: string, expenseNote: string, overrideCC?: boolean, debtSplit?: PaymentSplit,
+  ): Promise<string> {
     const modeCC = overrideCC ?? paidWithCC;
     let bmId = resolvedBmId;
     if (!bmId) {
@@ -152,6 +189,7 @@ export function ExpenseFormDialog({
       timestamp: new Date(expenseDate + 'T12:00:00').toISOString(),
       paid_with_credit_card: modeCC,
       debt_id: debtId ?? undefined,
+      debt_split: debtSplit,
     });
     return bmId;
   }
@@ -164,11 +202,19 @@ export function ExpenseFormDialog({
       setError(t.expenses.validationAmount);
       return;
     }
+    const debtSplit = split ? parseSplit(split) : undefined;
+    if (debtSplit) {
+      const diff = parsed - (debtSplit.principal + debtSplit.interest + debtSplit.fees);
+      if (diff !== 0) {
+        setError(t.debts.splitMismatch(formatCOP(Math.abs(diff))));
+        return;
+      }
+    }
     const shouldKeepOpen = keepOpenRef.current;
     keepOpenRef.current = false;
     setSaving(true);
     try {
-      await saveExpense(parsed, date, note.trim());
+      await saveExpense(parsed, date, note.trim(), undefined, debtSplit);
       resetForm();
       if (!shouldKeepOpen) {
         handleOpenChange(false);
@@ -397,10 +443,31 @@ export function ExpenseFormDialog({
                   inputMode="numeric"
                   placeholder="0"
                   value={amount}
-                  onChange={e => setAmount(e.target.value)}
+                  onChange={e => handleAmountChange(e.target.value)}
                   autoFocus
                 />
               </div>
+
+              {split && (
+                <div className="space-y-1.5 rounded-lg border border-[var(--border-subtle)] p-2.5">
+                  <p className="text-xs font-semibold text-[var(--text-secondary)]">{t.debts.splitTitle}</p>
+                  {SPLIT_PARTS.map(part => (
+                    <div key={part} className="flex items-center gap-2">
+                      <Label htmlFor={`split-${part}`} className="flex-1 text-[11px] font-normal text-[var(--text-muted)]">
+                        {splitLabels[part]}
+                      </Label>
+                      <Input
+                        id={`split-${part}`}
+                        inputMode="numeric"
+                        className="h-7 w-28 text-right text-xs tabular-nums"
+                        value={split[part]}
+                        onChange={e => setSplit(s => s && { ...s, [part]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-[10px] leading-snug text-[var(--text-muted)]">{t.debts.splitHint}</p>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="exp-date">{t.expenses.dateLabel}</Label>
