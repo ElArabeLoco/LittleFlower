@@ -185,7 +185,7 @@ export const es = {
     budgetedLabel: 'Presupuestado',
     spentLabel: 'Gastado',
     balanceOverTime: 'Balance real mes a mes',
-    availableMinusBudgeted: 'Disponible − Presupuestado (efectivo)',
+    availableMinusCashSpent: 'Disponible − gastos pagados en efectivo',
     spendByCategory: 'Gasto por categoría',
     distributionThisMonth: 'Distribución este mes',
     noDataThisMonth: 'Sin datos este mes',

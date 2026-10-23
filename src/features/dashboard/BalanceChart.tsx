@@ -11,7 +11,7 @@ export function BalanceChart() {
   return (
     <ChartCard
       title={t.dashboard.balanceOverTime}
-      subtitle={t.dashboard.availableMinusBudgeted}
+      subtitle={t.dashboard.availableMinusCashSpent}
     >
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={monthlyData}>
@@ -35,8 +35,8 @@ export function BalanceChart() {
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }} />
           <Area
             type="monotone"
-            dataKey="balance"
-            name="Balance"
+            dataKey="realBalance"
+            name={t.dashboard.realBalance}
             stroke="#f472b6"
             strokeWidth={2.5}
             fill="url(#balanceGrad)"

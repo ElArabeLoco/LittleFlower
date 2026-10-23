@@ -186,7 +186,7 @@ export const en: Translations = {
     budgetedLabel: 'Budgeted',
     spentLabel: 'Spent',
     balanceOverTime: 'Real balance month by month',
-    availableMinusBudgeted: 'Available − Budgeted (cash)',
+    availableMinusCashSpent: 'Available − expenses paid in cash',
     spendByCategory: 'Spending by category',
     distributionThisMonth: 'Distribution this month',
     noDataThisMonth: 'No data this month',
