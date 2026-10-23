@@ -11,6 +11,14 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.14.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.13.0...littleflower-v0.14.0) (2026-10-23)
+
+
+### Features
+
+* Florecita brand rollout, new landing, Home and dashboard metric explanations ([#73](https://github.com/ElArabeLoco/LittleFlower/issues/73)) ([4063227](https://github.com/ElArabeLoco/LittleFlower/commit/4063227d81cf8b6fff2056d6be4c2c816f1cabfb))
+* **year-view:** spreadsheet-style annual sheet with lenses, selection and status bar ([#71](https://github.com/ElArabeLoco/LittleFlower/issues/71)) ([39614d3](https://github.com/ElArabeLoco/LittleFlower/commit/39614d33c8584cf95b22f43b58f2258dc01d3720))
+
 ## [0.13.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.12.3...littleflower-v0.13.0) (2026-10-17)
 
 
