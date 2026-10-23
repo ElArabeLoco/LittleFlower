@@ -429,6 +429,13 @@ export const en: Translations = {
     linkDebt: 'Link to debt (optional)',
     noLink: '— No link —',
     debtLinkHint: 'When recording an expense here, it will automatically debit the linked debt.',
+    backfillTitle: 'Earlier payments found',
+    backfillBody: (count: number, debt: string, from: string) =>
+      `This budget has ${count} ${count === 1 ? 'payment' : 'payments'} since ${from}. If you record them, they are applied to "${debt}" as follows:`,
+    backfillTotal: 'Total',
+    backfillEstimate: 'The split is estimated from the debt rate. If it does not match your statement, adjust the balance from the debt.',
+    backfillConfirm: 'Save and record payments',
+    backfillSkip: 'Save without recording',
     validationAmount: 'Amount must be a valid COP number',
     validationName: 'Name is required',
     validationEndMonth: 'End month must be equal to or after start month',

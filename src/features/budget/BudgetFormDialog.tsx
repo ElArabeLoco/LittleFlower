@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CreditCard, Banknote, ArrowLeftRight } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/shared/ui/cn';
 import { CATEGORIES } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
-import { useBudgetMutations } from '@/application/useBudgetMutations';
+import { useBudgetMutations, type BackfillSummary } from '@/application/useBudgetMutations';
 import type { BudgetFormState, DebtOption } from './types';
 
 const defaultForm = (): BudgetFormState => ({
@@ -55,33 +56,122 @@ const MODE_STYLES: Record<PaymentMode, { active: string; inactive: string }> = {
   },
 };
 
+interface BackfillPanelProps {
+  summary: BackfillSummary;
+  debtName: string;
+  busy: boolean;
+  onConfirm: () => void;
+  onSkip: () => void;
+  onBack: () => void;
+}
+
+/** Asks whether the budget's earlier payments should be recorded on the debt it gets linked to. */
+function BackfillPanel({ summary, debtName, busy, onConfirm, onSkip, onBack }: BackfillPanelProps) {
+  const { t } = useI18n();
+  // Full figures whatever the number format: these become records on the debt
+  const { formatNumber } = useNumberFormat();
+  const formatCOP = (amount: number) => `$${formatNumber(amount)}`;
+  const [y, m, d] = (summary.firstDate ?? '').split('-');
+  const from = `${parseInt(d)} ${t.months.shortLower[m] ?? m} ${y}`;
+  const rows = [
+    { label: t.debts.colPrincipal, value: summary.principal },
+    { label: t.debts.colInterest, value: summary.interest },
+    ...(summary.fees > 0 ? [{ label: t.debts.splitFees, value: summary.fees }] : []),
+  ];
+
+  return (
+    <section aria-labelledby="b-backfill-title"
+      className="space-y-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] p-4">
+      <h3 id="b-backfill-title" className="text-sm font-semibold text-[var(--text-primary)]">{t.budgets.backfillTitle}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{t.budgets.backfillBody(summary.count, debtName, from)}</p>
+      <dl className="space-y-1 text-sm tabular-nums">
+        {rows.map(row => (
+          <div key={row.label} className="flex justify-between gap-4 text-[var(--text-secondary)]">
+            <dt>{row.label}</dt>
+            <dd>{formatCOP(row.value)}</dd>
+          </div>
+        ))}
+        <div className="flex justify-between gap-4 border-t border-[var(--border-subtle)] pt-1 font-semibold text-[var(--text-primary)]">
+          <dt>{t.budgets.backfillTotal}</dt>
+          <dd>{formatCOP(summary.total)}</dd>
+        </div>
+      </dl>
+      <p className="text-[11px] text-[var(--text-muted)]">{t.budgets.backfillEstimate}</p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button type="button" className="flex-1" onClick={onConfirm} disabled={busy}>
+          {busy ? t.common.saving : t.budgets.backfillConfirm}
+        </Button>
+        <Button type="button" variant="outline" className="flex-1" onClick={onSkip} disabled={busy}>
+          {t.budgets.backfillSkip}
+        </Button>
+      </div>
+      <button type="button" className="text-xs text-[var(--text-muted)] hover:underline" onClick={onBack} disabled={busy}>
+        {t.common.back}
+      </button>
+    </section>
+  );
+}
+
 export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, onDone, trigger }: BudgetFormDialogProps) {
   const { t } = useI18n();
-  const { insertBudget, updateBudget } = useBudgetMutations(householdId, userId);
+  const { insertBudget, updateBudget, previewDebtBackfill, applyDebtBackfill } = useBudgetMutations(householdId, userId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BudgetFormState>(initial ?? defaultForm());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Earlier payments found when the budget gets linked to a debt; shown before saving. */
+  const [backfill, setBackfill] = useState<BackfillSummary | null>(null);
 
   function set<K extends keyof BudgetFormState>(key: K, value: BudgetFormState[K]) {
     setForm(f => ({ ...f, [key]: value }));
+    setBackfill(null);
   }
 
   function handleOpenChange(v: boolean) {
     setOpen(v);
     if (v) setForm(initial ?? defaultForm());
     setError(null);
+    setBackfill(null);
+  }
+
+  /** Parsed default amount, or null after showing the validation error. */
+  function validate(): number | null {
+    const amount = parseInt(form.default_amount.replace(/\D/g, ''), 10);
+    if (isNaN(amount) || amount < 0) { setError(t.budgets.validationAmount); return null; }
+    if (!form.name.trim()) { setError(t.budgets.validationName); return null; }
+    if (form.end_month && form.end_month < form.start_month) { setError(t.budgets.validationEndMonth); return null; }
+    return amount;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const amount = validate();
+    if (amount === null) return;
 
-    const amount = parseInt(form.default_amount.replace(/\D/g, ''), 10);
-    if (isNaN(amount) || amount < 0) { setError(t.budgets.validationAmount); return; }
-    if (!form.name.trim()) { setError(t.budgets.validationName); return; }
-    if (form.end_month && form.end_month < form.start_month) { setError(t.budgets.validationEndMonth); return; }
+    const linksNewDebt = mode === 'edit' && budgetId && form.debt_id && form.debt_id !== initial?.debt_id;
+    if (linksNewDebt) {
+      setIsLoading(true);
+      try {
+        const summary = await previewDebtBackfill(budgetId, form.debt_id);
+        if (summary.count > 0) { setBackfill(summary); return; }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t.common.unexpectedError);
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    await save(amount, false);
+  }
 
+  function saveFromPanel(recordPayments: boolean) {
+    setError(null);
+    const amount = validate();
+    if (amount !== null) void save(amount, recordPayments);
+  }
+
+  async function save(amount: number, recordPayments: boolean) {
     setIsLoading(true);
     try {
       if (mode === 'create') {
@@ -96,6 +186,8 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           debt_id: form.debt_id || null,
         });
       } else if (mode === 'edit' && budgetId) {
+        // Payments first: if saving the link fails, a retry finds them already recorded
+        if (recordPayments && form.debt_id) await applyDebtBackfill(budgetId, form.debt_id);
         await updateBudget(budgetId, {
           name: form.name.trim(),
           description: form.description.trim() || undefined,
@@ -223,14 +315,25 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
 
           {error && <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">{error}</p>}
 
-          <div className="flex gap-2 pt-1">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              {t.common.cancel}
-            </Button>
-            <Button type="submit" className="flex-1" disabled={isLoading}>
-              {isLoading ? t.common.saving : mode === 'create' ? t.common.create : t.common.save}
-            </Button>
-          </div>
+          {backfill ? (
+            <BackfillPanel
+              summary={backfill}
+              debtName={debts.find(d => d.id === form.debt_id)?.name ?? ''}
+              busy={isLoading}
+              onConfirm={() => saveFromPanel(true)}
+              onSkip={() => saveFromPanel(false)}
+              onBack={() => setBackfill(null)}
+            />
+          ) : (
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
+                {t.common.cancel}
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isLoading}>
+                {isLoading ? t.common.saving : mode === 'create' ? t.common.create : t.common.save}
+              </Button>
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>

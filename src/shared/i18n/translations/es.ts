@@ -428,6 +428,13 @@ export const es = {
     linkDebt: 'Vincular a deuda (opcional)',
     noLink: '— Sin vincular —',
     debtLinkHint: 'Al registrar un gasto aquí, se abona automáticamente a la deuda vinculada.',
+    backfillTitle: 'Pagos anteriores encontrados',
+    backfillBody: (count: number, debt: string, from: string) =>
+      `Este presupuesto tiene ${count} ${count === 1 ? 'pago' : 'pagos'} desde el ${from}. Si los registras, se abonan a "${debt}" así:`,
+    backfillTotal: 'Total',
+    backfillEstimate: 'El desglose es un estimado con la tasa de la deuda. Si no coincide con tu extracto, ajusta el saldo desde la deuda.',
+    backfillConfirm: 'Guardar y registrar pagos',
+    backfillSkip: 'Guardar sin registrar',
     validationAmount: 'El monto debe ser un número válido en COP',
     validationName: 'El nombre es obligatorio',
     validationEndMonth: 'El mes de fin debe ser igual o posterior al mes de inicio',

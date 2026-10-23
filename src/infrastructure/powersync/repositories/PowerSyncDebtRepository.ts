@@ -4,10 +4,12 @@
  * snake_case columns (SQLite) ↔ camelCase domain types (TypeScript).
  */
 
+import type { LockContext } from '@powersync/web';
 import { db } from '../client';
 import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import type { IDebtRepository } from '@/domain/debt/IDebtRepository';
-import { splitPayment, type PaymentSplit } from '@/domain/debt/amortization';
+import { splitPayment, type LoanTerms, type PaymentSplit } from '@/domain/debt/amortization';
+import { planBackfill, type BackfillEntry, type DebtMovement } from '@/domain/debt/backfill';
 import type {
   Debt, DebtTransaction, DebtTransactionType, DebtTransactionSource, DebtKind, AmortizationMethod,
 } from '@/domain/debt/Debt';
@@ -277,13 +279,17 @@ export interface InsertDebtTransactionPayload {
   expense_id?: string;
 }
 
+/** Reads and writes on the database or inside an open write transaction. */
+type Executor = Pick<LockContext, 'execute' | 'getAll' | 'getOptional'>;
+
 export async function insertDebtTransaction(
   payload: InsertDebtTransactionPayload,
   userId: string,
+  executor: Executor = db,
 ): Promise<string> {
   assertAuth(payload.household_id, userId);
   const id = newId();
-  await db.execute(
+  await executor.execute(
     `INSERT INTO debt_transactions
        (id, household_id, debt_id, amount, interest_amount, fees_amount, original_amount,
         original_currency, exchange_rate, type, note, date, source, expense_id, created_by, created_at)
@@ -318,8 +324,25 @@ interface DebtTermsRow {
   term_months: number | null;
   installment_amount: number | null;
   monthly_fees: number;
-  /** credits − debits (principal) */
-  delta: number;
+}
+
+const DEBT_TERMS_SELECT = `d.currency, d.initial_amount,
+            COALESCE(d.interest_rate, 0) AS interest_rate,
+            COALESCE(d.amortization, 'none') AS amortization,
+            d.term_months, d.installment_amount,
+            COALESCE(d.monthly_fees, 0) AS monthly_fees`;
+
+/** Loan terms only apply to COP debts; anything else is paid straight to principal. */
+function toLoanTerms(row: DebtTermsRow): LoanTerms {
+  const cop = row.currency === 'COP';
+  return {
+    initialAmount: row.initial_amount,
+    interestRate: cop ? row.interest_rate : 0,
+    amortization: row.amortization as AmortizationMethod,
+    termMonths: row.term_months,
+    installmentAmount: row.installment_amount,
+    monthlyFees: cop ? row.monthly_fees : 0,
+  };
 }
 
 /**
@@ -327,12 +350,8 @@ interface DebtTermsRow {
  * current balance and loan terms. Used when the caller does not provide one.
  */
 export async function suggestDebtPaymentSplit(debtId: string, total: number): Promise<PaymentSplit> {
-  const row = await db.getOptional<DebtTermsRow>(
-    `SELECT d.currency, d.initial_amount,
-            COALESCE(d.interest_rate, 0) AS interest_rate,
-            COALESCE(d.amortization, 'none') AS amortization,
-            d.term_months, d.installment_amount,
-            COALESCE(d.monthly_fees, 0) AS monthly_fees,
+  const row = await db.getOptional<DebtTermsRow & { delta: number }>(
+    `SELECT ${DEBT_TERMS_SELECT},
             COALESCE((
               SELECT SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE -t.amount END)
               FROM debt_transactions t
@@ -341,15 +360,102 @@ export async function suggestDebtPaymentSplit(debtId: string, total: number): Pr
      FROM debts d WHERE d.id = ?`,
     [debtId],
   );
-  // Loan terms only apply to COP debts; anything else is paid straight to principal.
-  if (!row || row.currency !== 'COP') return { principal: total, interest: 0, fees: 0 };
-  return splitPayment(total, row.initial_amount + row.delta, {
-    initialAmount: row.initial_amount,
-    interestRate: row.interest_rate,
-    amortization: row.amortization as AmortizationMethod,
-    termMonths: row.term_months,
-    installmentAmount: row.installment_amount,
-    monthlyFees: row.monthly_fees,
+  if (!row) return { principal: total, interest: 0, fees: 0 };
+  return splitPayment(total, row.initial_amount + row.delta, toLoanTerms(row));
+}
+
+interface PastExpenseRow {
+  expense_id: string;
+  date: string;
+  /** Net of reversals */
+  total: number;
+  note: string | null;
+}
+
+async function loadBackfill(executor: Executor, budgetId: string, debtId: string) {
+  const debt = await executor.getOptional<DebtTermsRow & { disbursed_at: string | null }>(
+    `SELECT ${DEBT_TERMS_SELECT}, d.disbursed_at
+     FROM debts d WHERE d.id = ? AND d.deleted_at IS NULL`,
+    [debtId],
+  );
+  if (!debt) return { entries: [] as BackfillEntry[], notes: new Map<string, string | null>() };
+
+  const movements = await executor.getAll<DebtMovement>(
+    `SELECT type, amount, date FROM debt_transactions WHERE debt_id = ? AND deleted_at IS NULL`,
+    [debtId],
+  );
+  // An expense already applied to this debt (even if that payment was removed
+  // later) or to another live debt is never applied again.
+  const expenses = await executor.getAll<PastExpenseRow>(
+    `SELECT expense_id, date, total, note FROM (
+       SELECT e.id AS expense_id, substr(e.timestamp, 1, 10) AS date, e.note, e.timestamp,
+              e.amount + COALESCE((
+                SELECT SUM(r.amount) FROM expenses r
+                WHERE r.linked_expense_id = e.id AND r.deleted_at IS NULL
+              ), 0) AS total
+       FROM expenses e
+       WHERE e.budget_id = ? AND e.deleted_at IS NULL AND e.amount > 0
+         AND substr(e.timestamp, 1, 10) >= ?
+         AND NOT EXISTS (
+           SELECT 1 FROM debt_transactions t JOIN debts d ON d.id = t.debt_id
+           WHERE t.expense_id = e.id
+             AND (t.debt_id = ? OR (t.deleted_at IS NULL AND d.deleted_at IS NULL))
+         )
+     ) WHERE total > 0
+     ORDER BY timestamp`,
+    [budgetId, debt.disbursed_at ?? '', debtId],
+  );
+
+  const entries = planBackfill(
+    toLoanTerms(debt),
+    movements,
+    expenses.map(e => ({ expenseId: e.expense_id, date: e.date, total: e.total })),
+  );
+  return { entries, notes: new Map(expenses.map(e => [e.expense_id, e.note])) };
+}
+
+/**
+ * Payments a budget's past expenses would make on a debt it gets linked to:
+ * expenses dated from the debt start that are not applied to it yet, split
+ * in date order from the balance at each date.
+ */
+export async function planDebtBackfill(budgetId: string, debtId: string): Promise<BackfillEntry[]> {
+  return (await loadBackfill(db, budgetId, debtId)).entries;
+}
+
+/**
+ * Records the backfill of a budget on a debt. It is planned again inside the
+ * write, so running it twice never applies an expense twice.
+ * Returns how many payments were recorded.
+ */
+export async function applyDebtBackfill(
+  householdId: string,
+  budgetId: string,
+  debtId: string,
+  userId: string,
+): Promise<number> {
+  assertAuth(householdId, userId);
+  return db.writeTransaction(async tx => {
+    const { entries, notes } = await loadBackfill(tx, budgetId, debtId);
+    for (const entry of entries) {
+      await insertDebtTransaction(
+        {
+          household_id: householdId,
+          debt_id: debtId,
+          amount: entry.principal,
+          interest_amount: entry.interest,
+          fees_amount: entry.fees,
+          type: 'debit',
+          source: 'expense',
+          expense_id: entry.expenseId,
+          date: entry.date,
+          note: notes.get(entry.expenseId) ?? undefined,
+        },
+        userId,
+        tx,
+      );
+    }
+    return entries.length;
   });
 }
 
