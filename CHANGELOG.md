@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.17.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.17.0...littleflower-v0.17.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **brand:** light app icon with a gold coin heart ([#81](https://github.com/ElArabeLoco/LittleFlower/issues/81)) ([1115499](https://github.com/ElArabeLoco/LittleFlower/commit/11154999f2d39a14f050d6d14d750910b5b0810a))
+
 ## [0.17.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.16.0...littleflower-v0.17.0) (2026-10-24)
 
 
