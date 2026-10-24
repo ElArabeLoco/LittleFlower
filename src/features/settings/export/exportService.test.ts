@@ -1,0 +1,98 @@
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@/infrastructure/powersync/client', () => ({
+  db: { getAll: vi.fn() },
+}));
+
+import { buildDeudasSheet, buildIngresosSheet } from './exportService';
+import type { FlorecitaExport } from './types';
+
+function backup(overrides: Partial<FlorecitaExport>): FlorecitaExport {
+  return {
+    _format: 'florecita-backup',
+    _v: 1,
+    _exported_at: '2026-10-23T00:00:00Z',
+    _app_version: 'test',
+    _household_id: 'hh-1',
+    households: [],
+    users: [{ id: 'u1', name: 'Jaime' }],
+    budgets: [],
+    budget_months: [],
+    expenses: [],
+    incomes: [],
+    income_months: [],
+    exchange_rates: [],
+    debts: [],
+    debt_transactions: [],
+    ...overrides,
+  };
+}
+
+const members = [
+  { id: 'm-luis', name: 'Luis', deleted_at: null },
+  { id: 'm-ana', name: 'Ana', deleted_at: null },
+  { id: 'm-gone', name: 'Eva', deleted_at: '2026-09-01T00:00:00Z' },
+];
+
+const income = (id: string) => ({ id, name: `Ingreso ${id}`, person: 'u1', currency: 'COP' });
+const debt = (id: string) => ({
+  id, name: `Deuda ${id}`, initial_amount: 1_000, currency: 'COP', disbursed_at: '2026-01-01', description: null,
+});
+const holder = (subject_type: string, subject_id: string, member_id: string) => ({
+  id: `${subject_type}:${subject_id}:${member_id}`, subject_type, subject_id, member_id,
+});
+
+describe('buildIngresosSheet — Titulares column', () => {
+  const sheet = buildIngresosSheet(backup({
+    incomes: [income('i1'), income('i2'), income('i3'), income('i4')],
+    household_members: members,
+    holders: [
+      holder('income', 'i1', 'm-luis'),
+      holder('income', 'i1', 'm-ana'),
+      holder('income', 'i2', 'm-ana'),
+      holder('income', 'i3', 'm-gone'),
+      holder('debt', 'i4', 'm-ana'),
+    ],
+  }));
+
+  it('replaces Persona with Titulares', () => {
+    expect(sheet[1].slice(0, 3)).toEqual(['Fuente', 'Titulares', 'Moneda']);
+  });
+
+  it('lists active holder names, alphabetical, or Hogar when there are none', () => {
+    const byName = Object.fromEntries(sheet.slice(2, -1).map(row => [row[0], row[1]]));
+    expect(byName).toEqual({
+      'Ingreso i1': 'Ana, Luis',
+      'Ingreso i2': 'Ana',
+      'Ingreso i3': 'Hogar', // its only holder is a deleted member
+      'Ingreso i4': 'Hogar', // a debt holder with the same id is not an income holder
+    });
+  });
+
+  it('works on backups made before members existed', () => {
+    const old = buildIngresosSheet(backup({ incomes: [income('i1')] }));
+    expect(old[2][1]).toBe('Hogar');
+  });
+});
+
+describe('buildDeudasSheet — Titulares in the debt header', () => {
+  const sheet = buildDeudasSheet(backup({
+    debts: [debt('d1'), debt('d2'), debt('d3')],
+    household_members: members,
+    holders: [
+      holder('debt', 'd1', 'm-luis'),
+      holder('debt', 'd1', 'm-ana'),
+      holder('debt', 'd2', 'm-gone'),
+    ],
+  }));
+
+  const headers = sheet.filter(row => String(row[0]).startsWith('DEUDA:'));
+
+  it('adds the holders to each debt header row', () => {
+    expect(headers.map(row => [row[0], row[4]])).toEqual([
+      ['DEUDA: Deuda d1', 'Titulares: Ana, Luis'],
+      ['DEUDA: Deuda d2', 'Titulares: Hogar'],
+      ['DEUDA: Deuda d3', 'Titulares: Hogar'],
+    ]);
+  });
+});

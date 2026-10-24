@@ -3,6 +3,11 @@
  * Used by repository files — not exported outside infrastructure/.
  */
 
+import type { LockContext } from '@powersync/web';
+
+/** Reads and writes on the database or inside an open write transaction. */
+export type Executor = Pick<LockContext, 'execute' | 'getAll' | 'getOptional'>;
+
 export function newId(): string {
   return crypto.randomUUID();
 }

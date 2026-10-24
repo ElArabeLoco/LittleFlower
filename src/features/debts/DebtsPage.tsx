@@ -6,6 +6,8 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useDebtMutations } from '@/application/useDebtMutations';
+import { useHoldersBySubject } from '@/application/useHolders';
+import { useHouseholdMembers } from '@/application/useHouseholdMembers';
 import { useDebtsData } from './useDebtsData';
 import { DebtFormDialog } from './DebtFormDialog';
 import { DebtCard } from './DebtCard';
@@ -19,6 +21,8 @@ export function DebtsPage() {
 
   const { debts, txByDebt, currentMonthRate, totalBalance, activeDebts } = useDebtsData();
   const { softDeleteDebt } = useDebtMutations(householdId, userId);
+  const holdersByDebt = useHoldersBySubject('debt');
+  const { hasMembers } = useHouseholdMembers();
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(t.debts.confirmDelete(name))) return;
@@ -78,6 +82,8 @@ export function DebtsPage() {
               householdId={householdId}
               userId={userId}
               currentMonthRate={currentMonthRate}
+              holders={holdersByDebt.get(debt.id) ?? []}
+              hasMembers={hasMembers}
               formatCOP={formatCOP}
               onDelete={handleDelete}
             />

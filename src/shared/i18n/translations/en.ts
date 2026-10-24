@@ -498,7 +498,7 @@ export const en: Translations = {
     newIncome: 'New income source',
     editIncome: 'Edit income',
     nameLabel: 'Name *',
-    namePlaceholder: 'E.g.: Salary',
+    namePlaceholder: 'E.g.: Salary, Apartment rent',
     categoryLabel: 'Category',
     defaultAmount: 'Default amount',
     currencyLabel: 'Currency',
@@ -675,6 +675,90 @@ export const en: Translations = {
     debtsDesc: 'Track your debts. Link budgets for automatic payments.',
     transactionsTitle: 'Transactions',
     transactionsDesc: 'Monthly expense ledger organized by payment method.',
+    membersTitle: 'Members',
+    membersDesc: 'The people whose name the incomes and debts are in. They do not need a Florecita account.',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Members
+  // ---------------------------------------------------------------------------
+  members: {
+    title: 'Members',
+    subtitle: 'The household economy',
+    addShort: 'Add',
+    addLong: 'Add member',
+    intro: 'The people whose name the household incomes and debts are in. They do not need a Florecita account.',
+    count: (n: number) => (n === 1 ? '1 member' : `${n} members`),
+    incomeCount: (n: number) => (n === 1 ? '1 income' : `${n} incomes`),
+    debtCount: (n: number) => (n === 1 ? '1 debt' : `${n} debts`),
+    holderOf: (parts: string) => `Holder of ${parts}`,
+    and: 'and',
+    noHoldings: 'No incomes or debts in their name',
+    editAction: 'Edit',
+    deleteAction: 'Delete',
+    editAria: (name: string) => `Edit ${name}`,
+    deleteAria: (name: string) => `Delete ${name}`,
+    noteTitle: 'What about accounts?',
+    noteBody:
+      'People who sign in are managed in Profile › Household. A member does not need an account, and an account does not create a member.',
+    emptyTitle: 'No members yet',
+    emptyBody:
+      'Add them to say whose name each income and debt is in. It is optional: anything without a holder still belongs to the household.',
+    suggestionsTitle: 'Suggestions from household accounts',
+    suggestionAdd: (name: string) => `Add ${name}`,
+    suggestionsHint: 'They use each account name. You can change it later.',
+    tones: {
+      petal: 'Petal',
+      iris: 'Iris',
+      leaf: 'Leaf',
+      polen: 'Pollen',
+      sky: 'Sky',
+      mist: 'Mist',
+    },
+    form: {
+      createTitle: 'New member',
+      editTitle: 'Edit member',
+      nameLabel: 'Name *',
+      namePlaceholder: 'E.g. Sophie',
+      nameRequired: 'Name is required',
+      duplicate: (name: string) => `There is already a member named ${name}.`,
+      colorLabel: 'Color',
+      colorHintCreate: 'We suggest the first free color. It only helps tell people apart in lists and cards.',
+      colorHintEdit: 'The color only helps tell people apart in lists and cards.',
+      previewLabel: 'How it will look',
+      previewFallback: 'Name',
+    },
+    delete: {
+      title: (name: string) => `Delete ${name}?`,
+      holderOfHeading: (name: string) => `${name} is the holder of`,
+      sharedIncome: (others: string) => `(shared with ${others})`,
+      sharedDebt: (others: string) => `(shared with ${others})`,
+      noHoldings: (name: string) => `${name} is not the holder of any income or debt.`,
+      consequence: (name: string) =>
+        `Those incomes and debts are not deleted and their amounts do not change. They just stop showing ${name}: shared ones stay in the other holders' names and the rest become the household's.`,
+      confirm: (name: string) => `Delete ${name}`,
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Holders — picker in forms and chips on cards
+  // ---------------------------------------------------------------------------
+  holders: {
+    legend: 'Holders (optional)',
+    summaryNone: {
+      income: 'No holder: the income belongs to the household.',
+      debt: 'No holder: the debt belongs to the household.',
+    },
+    summarySingle: (name: string) => `In the name of ${name}.`,
+    summaryShared: {
+      income: (list: string) => `Shared between ${list}.`,
+      debt: (list: string) => `Shared between ${list}.`,
+    },
+    noMembers: 'No members yet. You can save without holders and assign them once you create them in',
+    noMembersLink: 'Finances › Members',
+    sharedIncome: 'shared',
+    sharedDebt: 'shared',
+    household: 'Household',
   },
 
   // ---------------------------------------------------------------------------
@@ -705,6 +789,10 @@ export const en: Translations = {
     linkCopied: 'Link copied!',
     inviteFamily: 'Invite a family member',
     defaultHousehold: 'My household',
+    inviteFamilyHint: 'Gives access to the app. It does not create a member.',
+    membersLabel: 'Household economy members',
+    membersNone: 'No members yet',
+    membersManage: 'Manage',
     // Appearance
     appearanceTitle: 'Appearance',
     themeLabel: 'Theme',
@@ -930,6 +1018,8 @@ export const en: Translations = {
       },
       households: { created: 'Household created', updated: 'Household updated', deleted: 'Household deleted' },
       users: { created: 'Profile created', updated: 'Profile updated', deleted: 'Profile deleted' },
+      household_members: { created: 'Member created', updated: 'Member updated', deleted: 'Member deleted' },
+      holders: { created: 'Holder assigned', updated: 'Holder updated', deleted: 'Holder removed' },
       generic: { created: 'Record created', updated: 'Record updated', deleted: 'Record deleted' },
     },
   },

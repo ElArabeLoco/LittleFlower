@@ -235,6 +235,38 @@ const debt_transactions = new Table(
   },
 );
 
+const household_members = new Table(
+  {
+    household_id: column.text,
+    name: column.text,
+    tone: column.text, // 'petal' | 'iris' | 'leaf' | 'polen' | 'sky' | 'mist'
+    created_by: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+    last_edited_by: column.text, // nullable
+    last_edited_at: column.text, // nullable
+    deleted_at: column.text, // nullable — soft delete
+  },
+  { indexes: { idx_members_deleted: ['deleted_at'] } },
+);
+
+const holders = new Table(
+  {
+    household_id: column.text,
+    member_id: column.text,
+    subject_type: column.text, // 'income' | 'debt'
+    subject_id: column.text, // incomes.id | debts.id
+    created_by: column.text,
+    created_at: column.text,
+  },
+  {
+    indexes: {
+      idx_holders_subject: ['subject_type', 'subject_id'],
+      idx_holders_member: ['member_id'],
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Exported schema
 // ---------------------------------------------------------------------------
@@ -250,6 +282,8 @@ export const AppSchema = new Schema({
   exchange_rates,
   debts,
   debt_transactions,
+  household_members,
+  holders,
 });
 
 export type Database = (typeof AppSchema)['types'];

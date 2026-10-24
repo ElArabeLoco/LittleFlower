@@ -14,6 +14,10 @@ export interface FlorecitaExport {
   exchange_rates: Record<string, unknown>[];
   debts: Record<string, unknown>[];
   debt_transactions: Record<string, unknown>[];
+  /** Absent in backups made before members existed. */
+  household_members?: Record<string, unknown>[];
+  /** Absent in backups made before members existed. */
+  holders?: Record<string, unknown>[];
 }
 
 export interface ImportResult {

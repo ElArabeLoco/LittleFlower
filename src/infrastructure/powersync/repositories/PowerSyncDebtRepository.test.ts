@@ -11,7 +11,13 @@ vi.mock('@/infrastructure/powersync/client', () => ({
 }));
 
 import { db } from '@/infrastructure/powersync/client';
-import { planDebtBackfill, applyDebtBackfill } from './PowerSyncDebtRepository';
+import {
+  planDebtBackfill,
+  applyDebtBackfill,
+  insertDebt,
+  updateDebt,
+  type InsertDebtPayload,
+} from './PowerSyncDebtRepository';
 
 const mockGet = db.getOptional as Mock;
 const mockGetAll = db.getAll as Mock;
@@ -86,5 +92,88 @@ describe('applyDebtBackfill', () => {
     expect(params).toEqual(expect.arrayContaining([
       'hh-1', 'debt-1', 788_488, 100_000, 50_000, 'debit', 'Cuota enero', '2026-01-15', 'expense', 'e-jan', 'user-1',
     ]));
+  });
+});
+
+describe('debt holders', () => {
+  const payload: InsertDebtPayload = {
+    household_id: 'hh-1',
+    name: 'Hipoteca',
+    initial_amount: 100_000_000,
+    currency: 'COP',
+    disbursed_at: '2026-01-01',
+    created_by: 'user-1',
+  };
+
+  /** A write transaction whose reads answer from the given fixtures. */
+  function makeHolderTx(opts: { current?: string[]; householdId?: string | null } = {}) {
+    const { current = [], householdId = 'hh-1' } = opts;
+    const tx = {
+      execute: vi.fn().mockResolvedValue({}),
+      getAll: vi.fn(async () => current.map(member_id => ({ member_id }))),
+      getOptional: vi.fn(async (sql: string, params: unknown[]) => {
+        if (String(sql).includes('FROM debts')) return householdId ? { household_id: householdId } : null;
+        if (String(sql).includes('FROM holders')) return null;
+        return { id: params[0] };
+      }),
+    };
+    mockWriteTx.mockImplementation(async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx));
+    return tx;
+  }
+
+  const sqlOf = (fn: Mock, needle: string) =>
+    fn.mock.calls.filter(([sql]) => String(sql).includes(needle));
+
+  it('insertDebt writes straight to the database without holders', async () => {
+    await insertDebt(payload, 'user-1');
+    expect(sqlOf(mockExecute, 'INSERT INTO debts')).toHaveLength(1);
+    expect(mockWriteTx).not.toHaveBeenCalled();
+  });
+
+  it('insertDebt writes the debt and its holders in one transaction', async () => {
+    const tx = makeHolderTx();
+    const id = await insertDebt(payload, 'user-1', ['m-1', 'm-2']);
+
+    expect(mockExecute).not.toHaveBeenCalled();
+    expect(sqlOf(tx.execute, 'INSERT INTO debts')).toHaveLength(1);
+    expect(sqlOf(tx.execute, 'INSERT INTO holders').map(([, params]) => params.slice(0, 5))).toEqual([
+      [`debt:${id}:m-1`, 'hh-1', 'm-1', 'debt', id],
+      [`debt:${id}:m-2`, 'hh-1', 'm-2', 'debt', id],
+    ]);
+  });
+
+  it('updateDebt leaves holders alone when holderIds is undefined', async () => {
+    await updateDebt('d-1', { name: 'Nuevo' }, 'user-1');
+    expect(sqlOf(mockExecute, 'UPDATE debts')).toHaveLength(1);
+    expect(mockWriteTx).not.toHaveBeenCalled();
+  });
+
+  it('updateDebt does nothing for an empty patch without holders', async () => {
+    await updateDebt('d-1', {}, 'user-1');
+    expect(mockExecute).not.toHaveBeenCalled();
+    expect(mockWriteTx).not.toHaveBeenCalled();
+  });
+
+  it('updateDebt updates the debt and its holders in one transaction', async () => {
+    const tx = makeHolderTx({ current: ['m-1'] });
+    await updateDebt('d-1', { name: 'Nuevo' }, 'user-1', ['m-2']);
+
+    expect(sqlOf(tx.execute, 'UPDATE debts')).toHaveLength(1);
+    expect(sqlOf(tx.execute, 'INSERT INTO holders')).toHaveLength(1);
+    expect(sqlOf(tx.execute, 'DELETE FROM holders')[0][1]).toEqual(['debt', 'd-1', 'm-1']);
+  });
+
+  it('updateDebt still applies holders when the patch has no fields', async () => {
+    const tx = makeHolderTx({ current: ['m-1'] });
+    await updateDebt('d-1', {}, 'user-1', []);
+
+    expect(sqlOf(tx.execute, 'UPDATE debts')).toHaveLength(0);
+    expect(sqlOf(tx.execute, 'DELETE FROM holders')).toHaveLength(1);
+  });
+
+  it('updateDebt skips holders for a debt that no longer exists', async () => {
+    const tx = makeHolderTx({ householdId: null });
+    await updateDebt('d-1', {}, 'user-1', ['m-1']);
+    expect(tx.execute).not.toHaveBeenCalled();
   });
 });

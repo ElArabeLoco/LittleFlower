@@ -13,18 +13,19 @@ export type { InsertDebtPayload, InsertDebtTransactionPayload };
 
 export function useDebtMutations(householdId: string, userId: string) {
   const insertDebt = useCallback(
-    async (payload: Omit<InsertDebtPayload, 'household_id' | 'created_by'>) => {
+    async (payload: Omit<InsertDebtPayload, 'household_id' | 'created_by'>, holderIds?: string[]) => {
       return insertDebtMW(
         { ...payload, household_id: householdId, created_by: userId },
         userId,
+        holderIds,
       );
     },
     [householdId, userId],
   );
 
   const updateDebt = useCallback(
-    async (id: string, patch: Parameters<typeof updateDebtMW>[1]) => {
-      return updateDebtMW(id, patch, userId);
+    async (id: string, patch: Parameters<typeof updateDebtMW>[1], holderIds?: string[]) => {
+      return updateDebtMW(id, patch, userId, holderIds);
     },
     [userId],
   );

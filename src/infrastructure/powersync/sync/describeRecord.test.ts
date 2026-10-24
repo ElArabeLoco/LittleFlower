@@ -161,6 +161,40 @@ describe('describeCrudEntry() — tables', () => {
     expect(withoutNote.label).toBe('Hipoteca');
   });
 
+  it('household_members: the member name', () => {
+    const result = describeCrudEntry(
+      { op: 'PUT', table: 'household_members', id: 'm-1', opData: { name: ' Sofía ', tone: 'iris' } },
+      noNames,
+    );
+
+    expect(result).toEqual(change({ table: 'household_members', id: 'm-1', label: 'Sofía' }));
+  });
+
+  it('holders: the name of the income or debt they belong to', () => {
+    const income = describeCrudEntry(
+      { op: 'PUT', table: 'holders', id: 'h-1', opData: { subject_type: 'income', subject_id: 'i-1', member_id: 'm-1' } },
+      lookup,
+    );
+    const debt = describeCrudEntry(
+      { op: 'PUT', table: 'holders', id: 'h-2', opData: { subject_type: 'debt', subject_id: 'd-1', member_id: 'm-1' } },
+      lookup,
+    );
+
+    expect(income).toEqual(change({ table: 'holders', id: 'h-1', label: 'Salario Ana' }));
+    expect(debt).toEqual(change({ table: 'holders', id: 'h-2', label: 'Hipoteca' }));
+  });
+
+  it('holders: no label for an unknown subject type or a DELETE without data', () => {
+    const unknown = describeCrudEntry(
+      { op: 'PUT', table: 'holders', id: 'h-3', opData: { subject_type: 'asset', subject_id: 'i-1' } },
+      lookup,
+    );
+    const deleted = describeCrudEntry({ op: 'DELETE', table: 'holders', id: 'h-4' }, lookup);
+
+    expect(unknown.label).toBeNull();
+    expect(deleted).toEqual(change({ table: 'holders', op: 'delete', id: 'h-4' }));
+  });
+
   it.each(['households', 'users'])('%s: name only', (table) => {
     const result = describeCrudEntry({ op: 'PUT', table, id: 'h-1', opData: { name: 'Casa', join_code: '123456' } }, noNames);
 

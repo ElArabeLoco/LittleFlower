@@ -11,15 +11,15 @@ export type { InsertIncomePayload };
 
 export function useIncomeMutations(householdId: string, userId: string) {
   const insertIncome = useCallback(
-    async (payload: Omit<InsertIncomePayload, 'household_id'>) => {
-      return insertIncomeMW({ ...payload, household_id: householdId }, userId);
+    async (payload: Omit<InsertIncomePayload, 'household_id'>, holderIds?: string[]) => {
+      return insertIncomeMW({ ...payload, household_id: householdId }, userId, holderIds);
     },
     [householdId, userId],
   );
 
   const updateIncome = useCallback(
-    async (id: string, patch: Parameters<typeof updateIncomeMW>[1]) => {
-      return updateIncomeMW(id, patch, userId);
+    async (id: string, patch: Parameters<typeof updateIncomeMW>[1], holderIds?: string[]) => {
+      return updateIncomeMW(id, patch, userId, holderIds);
     },
     [userId],
   );

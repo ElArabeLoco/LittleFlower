@@ -35,4 +35,6 @@ export interface IncomeFormState {
   is_fixed: boolean;
   start_month: string;
   end_month: string;
+  /** Member ids the income is in the name of; empty = the whole household. */
+  holder_ids: string[];
 }

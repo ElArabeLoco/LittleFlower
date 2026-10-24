@@ -497,7 +497,7 @@ export const es = {
     newIncome: 'Nueva fuente de ingreso',
     editIncome: 'Editar ingreso',
     nameLabel: 'Nombre *',
-    namePlaceholder: 'Ej: Salario Jaime',
+    namePlaceholder: 'Ej: Salario, Arriendo apartamento',
     categoryLabel: 'Categoría',
     defaultAmount: 'Monto por defecto',
     currencyLabel: 'Moneda',
@@ -674,6 +674,90 @@ export const es = {
     debtsDesc: 'Registra y haz seguimiento de tus deudas. Vincula presupuestos para abonos automáticos.',
     transactionsTitle: 'Transacciones',
     transactionsDesc: 'Historial de gastos del mes organizado por forma de pago.',
+    membersTitle: 'Integrantes',
+    membersDesc: 'Las personas a cuyo nombre están los ingresos y las deudas. No necesitan cuenta en Florecita.',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Members (integrantes)
+  // ---------------------------------------------------------------------------
+  members: {
+    title: 'Integrantes',
+    subtitle: 'La economía del hogar',
+    addShort: 'Agregar',
+    addLong: 'Agregar integrante',
+    intro: 'Las personas a cuyo nombre están los ingresos y las deudas del hogar. No necesitan cuenta en Florecita.',
+    count: (n: number) => (n === 1 ? '1 integrante' : `${n} integrantes`),
+    incomeCount: (n: number) => (n === 1 ? '1 ingreso' : `${n} ingresos`),
+    debtCount: (n: number) => (n === 1 ? '1 deuda' : `${n} deudas`),
+    holderOf: (parts: string) => `Titular de ${parts}`,
+    and: 'y',
+    noHoldings: 'Sin ingresos ni deudas a su nombre',
+    editAction: 'Editar',
+    deleteAction: 'Eliminar',
+    editAria: (name: string) => `Editar a ${name}`,
+    deleteAria: (name: string) => `Eliminar a ${name}`,
+    noteTitle: '¿Y las cuentas?',
+    noteBody:
+      'Quienes inician sesión se gestionan en Perfil › Hogar. Un integrante no necesita cuenta, y una cuenta no crea un integrante.',
+    emptyTitle: 'Aún no hay integrantes',
+    emptyBody:
+      'Agrégalos para indicar de quién es cada ingreso y cada deuda. Es opcional: lo que no tenga titular sigue siendo del hogar.',
+    suggestionsTitle: 'Sugerencias desde las cuentas del hogar',
+    suggestionAdd: (name: string) => `Agregar a ${name}`,
+    suggestionsHint: 'Usan el nombre de cada cuenta. Puedes cambiarlo después.',
+    tones: {
+      petal: 'Pétalo',
+      iris: 'Iris',
+      leaf: 'Hoja',
+      polen: 'Polen',
+      sky: 'Cielo',
+      mist: 'Niebla',
+    },
+    form: {
+      createTitle: 'Nuevo integrante',
+      editTitle: 'Editar integrante',
+      nameLabel: 'Nombre *',
+      namePlaceholder: 'Ej: Sofía',
+      nameRequired: 'El nombre es obligatorio',
+      duplicate: (name: string) => `Ya hay un integrante llamado ${name}.`,
+      colorLabel: 'Color',
+      colorHintCreate: 'Te sugerimos el primer color libre. Solo ayuda a distinguirlo en listas y tarjetas.',
+      colorHintEdit: 'El color solo ayuda a distinguirlo en listas y tarjetas.',
+      previewLabel: 'Así se verá',
+      previewFallback: 'Nombre',
+    },
+    delete: {
+      title: (name: string) => `¿Eliminar a ${name}?`,
+      holderOfHeading: (name: string) => `${name} es titular de`,
+      sharedIncome: (others: string) => `(compartido con ${others})`,
+      sharedDebt: (others: string) => `(compartida con ${others})`,
+      noHoldings: (name: string) => `${name} no es titular de ningún ingreso ni deuda.`,
+      consequence: (name: string) =>
+        `Esos ingresos y deudas no se borran ni cambian sus montos. Solo dejan de mostrar a ${name}: lo compartido queda a nombre de los demás titulares y lo demás pasa a ser del hogar.`,
+      confirm: (name: string) => `Eliminar a ${name}`,
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Holders (titulares) — picker in forms and chips on cards
+  // ---------------------------------------------------------------------------
+  holders: {
+    legend: 'Titulares (opcional)',
+    summaryNone: {
+      income: 'Sin titular: el ingreso es del hogar.',
+      debt: 'Sin titular: la deuda es del hogar.',
+    },
+    summarySingle: (name: string) => `A nombre de ${name}.`,
+    summaryShared: {
+      income: (list: string) => `Compartido entre ${list}.`,
+      debt: (list: string) => `Compartida entre ${list}.`,
+    },
+    noMembers: 'Aún no hay integrantes. Puedes guardar sin titulares y asignarlos cuando los crees en',
+    noMembersLink: 'Finanzas › Integrantes',
+    sharedIncome: 'compartido',
+    sharedDebt: 'compartida',
+    household: 'Del hogar',
   },
 
   // ---------------------------------------------------------------------------
@@ -704,6 +788,10 @@ export const es = {
     linkCopied: '¡Enlace copiado!',
     inviteFamily: 'Invitar a un familiar',
     defaultHousehold: 'Mi hogar',
+    inviteFamilyHint: 'Da acceso a la app. No crea un integrante.',
+    membersLabel: 'Integrantes de la economía',
+    membersNone: 'Aún no hay integrantes',
+    membersManage: 'Gestionar',
     // Appearance
     appearanceTitle: 'Apariencia',
     themeLabel: 'Tema',
@@ -932,6 +1020,8 @@ export const es = {
       },
       households: { created: 'Hogar creado', updated: 'Hogar actualizado', deleted: 'Hogar eliminado' },
       users: { created: 'Perfil creado', updated: 'Perfil actualizado', deleted: 'Perfil eliminado' },
+      household_members: { created: 'Integrante creado', updated: 'Integrante actualizado', deleted: 'Integrante eliminado' },
+      holders: { created: 'Titular asignado', updated: 'Titular actualizado', deleted: 'Titular quitado' },
       generic: { created: 'Registro creado', updated: 'Registro actualizado', deleted: 'Registro eliminado' },
     },
   },

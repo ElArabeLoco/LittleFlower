@@ -55,3 +55,137 @@ describe('importFromLF — debts from backups that predate loan terms', () => {
     });
   });
 });
+
+/** Every INSERT written for `table`: column → value. */
+function insertedAll(table: string): Record<string, unknown>[] {
+  return mockExecute.mock.calls
+    .filter(([sql]) => String(sql).startsWith(`INSERT INTO ${table} `))
+    .map(([sql, params]) => {
+      const cols = String(sql).match(/\(([^)]+)\)/)![1].split(', ');
+      return Object.fromEntries(cols.map((c, i) => [c, (params as unknown[])[i]]));
+    });
+}
+
+/** Makes the local tables answer id lookups, e.g. { household_members: ['m-local'] }. */
+function localRows(tables: Record<string, string[]>) {
+  (db.getAll as Mock).mockImplementation(async (sql: string, params: unknown[] = []) => {
+    const table = /FROM (\w+)/.exec(String(sql))?.[1] ?? '';
+    const known = tables[table] ?? [];
+    return params.filter(id => known.includes(id as string)).map(id => ({ id }));
+  });
+}
+
+const member = {
+  id: 'm1', household_id: 'old-hh', name: 'Sofía', tone: 'iris',
+  created_by: 'u1', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+  last_edited_by: 'u1', last_edited_at: '2026-01-01T00:00:00Z', deleted_at: null,
+};
+
+describe('importFromLF — members and holders', () => {
+  it('still imports a backup without the new arrays', async () => {
+    const result = await importFromLF(backupFile({
+      incomes: [{ id: 'i1', name: 'Salario', person: 'u1', category: 'Salario', default_amount: 1, currency: 'COP', start_month: '2026-01', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(result.errors).toEqual([]);
+    expect(result.imported).toBe(1);
+    expect(insertedAll('household_members')).toEqual([]);
+    expect(insertedAll('holders')).toEqual([]);
+  });
+
+  it('imports members and holders into the current household', async () => {
+    const result = await importFromLF(backupFile({
+      incomes: [{ id: 'i1', name: 'Salario', person: 'u1', category: 'Salario', default_amount: 1, currency: 'COP', start_month: '2026-01', created_by: 'u1', created_at: 'x' }],
+      debts: [{ id: 'd1', name: 'Hipoteca', initial_amount: 1, currency: 'COP', disbursed_at: '2026-01-01' }],
+      household_members: [member],
+      holders: [
+        { id: 'income:i1:m1', household_id: 'old-hh', member_id: 'm1', subject_type: 'income', subject_id: 'i1', created_by: 'u1', created_at: 'x' },
+        { id: 'debt:d1:m1', household_id: 'old-hh', member_id: 'm1', subject_type: 'debt', subject_id: 'd1', created_by: 'u1', created_at: 'x' },
+      ],
+    }), 'hh-1');
+
+    expect(result.errors).toEqual([]);
+    expect(insertedAll('household_members')).toEqual([
+      expect.objectContaining({ id: 'm1', household_id: 'hh-1', name: 'Sofía', tone: 'iris', deleted_at: null }),
+    ]);
+    expect(insertedAll('holders')).toEqual([
+      expect.objectContaining({ id: 'income:i1:m1', household_id: 'hh-1', member_id: 'm1', subject_type: 'income', subject_id: 'i1' }),
+      expect.objectContaining({ id: 'debt:d1:m1', household_id: 'hh-1', member_id: 'm1', subject_type: 'debt', subject_id: 'd1' }),
+    ]);
+    expect(result.imported).toBe(5);
+    expect(result.skipped).toBe(0);
+  });
+
+  it('writes members before holders and after incomes and debts', async () => {
+    await importFromLF(backupFile({
+      incomes: [{ id: 'i1', name: 'Salario' }],
+      household_members: [member],
+      holders: [{ id: 'income:i1:m1', member_id: 'm1', subject_type: 'income', subject_id: 'i1', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    const tables = mockExecute.mock.calls.map(([sql]) => /INSERT INTO (\w+)/.exec(String(sql))![1]);
+    expect(tables).toEqual(['incomes', 'household_members', 'holders']);
+  });
+
+  it('defaults an unknown tone to petal', async () => {
+    await importFromLF(backupFile({ household_members: [{ ...member, tone: undefined }] }), 'hh-1');
+
+    expect(insertedAll('household_members')[0]).toMatchObject({ tone: 'petal' });
+  });
+
+  it('skips holders whose member exists neither in the file nor locally', async () => {
+    const result = await importFromLF(backupFile({
+      incomes: [{ id: 'i1', name: 'Salario' }],
+      holders: [{ id: 'income:i1:ghost', member_id: 'ghost', subject_type: 'income', subject_id: 'i1', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(insertedAll('holders')).toEqual([]);
+    expect(result.skipped).toBe(1);
+    expect(result.errors).toEqual([]);
+  });
+
+  it('skips holders whose income or debt exists neither in the file nor locally', async () => {
+    const result = await importFromLF(backupFile({
+      household_members: [member],
+      holders: [
+        { id: 'income:i404:m1', member_id: 'm1', subject_type: 'income', subject_id: 'i404', created_by: 'u1', created_at: 'x' },
+        { id: 'debt:d404:m1', member_id: 'm1', subject_type: 'debt', subject_id: 'd404', created_by: 'u1', created_at: 'x' },
+      ],
+    }), 'hh-1');
+
+    expect(insertedAll('holders')).toEqual([]);
+    expect(result.skipped).toBe(2);
+  });
+
+  it('skips holders of an unknown subject type', async () => {
+    const result = await importFromLF(backupFile({
+      household_members: [member],
+      holders: [{ id: 'asset:a1:m1', member_id: 'm1', subject_type: 'asset', subject_id: 'a1', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(insertedAll('holders')).toEqual([]);
+    expect(result.skipped).toBe(1);
+  });
+
+  it('keeps holders whose member and subject already exist locally', async () => {
+    localRows({ household_members: ['m-local'], incomes: ['i-local'] });
+
+    const result = await importFromLF(backupFile({
+      holders: [{ id: 'income:i-local:m-local', member_id: 'm-local', subject_type: 'income', subject_id: 'i-local', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(insertedAll('holders')).toHaveLength(1);
+    expect(result.skipped).toBe(0);
+  });
+
+  it('skips a holder row that already exists, like any other row', async () => {
+    localRows({ household_members: ['m1'], incomes: ['i1'], holders: ['income:i1:m1'] });
+
+    const result = await importFromLF(backupFile({
+      holders: [{ id: 'income:i1:m1', member_id: 'm1', subject_type: 'income', subject_id: 'i1', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(insertedAll('holders')).toEqual([]);
+    expect(result.skipped).toBe(1);
+  });
+});

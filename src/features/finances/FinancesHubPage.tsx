@@ -6,9 +6,10 @@
  *   - Presupuestos    → /settings/budgets
  *   - Deudas          → /debts
  *   - Transacciones   → /transactions
+ *   - Integrantes     → /members
  */
 
-import { TrendingUp, LayoutList, CreditCard, Receipt } from 'lucide-react';
+import { TrendingUp, LayoutList, CreditCard, Receipt, Users } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { HubLinkCard } from '@/shared/ui/HubLinkCard';
@@ -56,6 +57,13 @@ export function FinancesHubPage() {
             description={t.finances.transactionsDesc}
             icon={Receipt}
             tone="iris"
+          />
+          <HubLinkCard
+            to="/members"
+            title={t.finances.membersTitle}
+            description={t.finances.membersDesc}
+            icon={Users}
+            tone="sky"
           />
         </div>
       </main>

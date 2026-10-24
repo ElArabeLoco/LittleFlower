@@ -89,6 +89,8 @@ describe('TRACKED_TABLES', () => {
       'exchange_rates',
       'debts',
       'debt_transactions',
+      'household_members',
+      'holders',
     ]);
   });
 });

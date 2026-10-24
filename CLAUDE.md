@@ -73,6 +73,7 @@ queries/
   useExchangeRateQueries.ts
   useDebtQueries.ts
   useHouseholdQueries.ts
+  useMemberQueries.ts
   types.ts      ← canonical SQLite row types (snake_case)
   index.ts      ← barrel export
 ```
@@ -86,6 +87,11 @@ useIncomeSummary.ts     ← income total with TRM conversion
 useDebtSummary.ts       ← debt balances (management + dashboard variants)
 useMonthViewData.ts     ← all data for MonthViewPage
 useYearViewData.ts      ← all data for YearView (spreadsheet)
+useHouseholdMembers.ts  ← active members + how many incomes/debts each holds
+useHolders.ts           ← holders of every income or debt, by subject id
+useMemberHoldings.ts    ← what one member holds, with co-holders (delete dialog)
+useMemberSuggestions.ts ← account names offered as member suggestions
+useMemberMutations.ts   ← create / rename / recolor / delete a member
 ```
 
 ### Lifecycle
@@ -99,9 +105,10 @@ useYearViewData.ts      ← all data for YearView (spreadsheet)
 
 1. Migration SQL in Supabase (table + RLS policy with `household_id`)
 2. Table entry in `schema.ts`
-3. **Sync Rules in PowerSync Cloud dashboard** → `SELECT * FROM <table> WHERE household_id = bucket.household_id` — without this, data never reaches the client
-4. Repository in `src/infrastructure/powersync/repositories/`
-5. Mutations in `mutationWrappers.ts`
+3. `ALTER PUBLICATION powersync ADD TABLE <table>` — the publication lists its tables explicitly
+4. **Sync Rules in PowerSync Cloud dashboard** → `SELECT * FROM <table> WHERE household_id = bucket.household_id` — without this, data never reaches the client
+5. Repository in `src/infrastructure/powersync/repositories/`
+6. Mutations in `mutationWrappers.ts`
 
 ### Gotcha: `rowsAffected` unreliable on PowerSync views
 
@@ -138,7 +145,16 @@ Income (1) ──── (N) IncomeMonth
 BudgetMonth (1) ── (N) Expense
 ExchangeRate   ← per month, USD→COP TRM
 Household      ← 6-digit join code for onboarding
+HouseholdMember (1) ──── (N) Holder ──── (1) Income | Debt
 ```
+
+### Members and holders
+
+- A **HouseholdMember** is a person of the household economy. It is not an app account: no login needed, and a login creates no member. Soft delete only (`deleted_at`).
+- A **Holder** says an income or a debt is in a member's name. Zero or more per record; none = the whole household. Rows are immutable (INSERT / hard DELETE) with the deterministic id `<type>:<subjectId>:<memberId>`.
+- A Postgres rejection blocks the PowerSync upload queue forever, so these tables have no UNIQUE on names and no FK from holders to incomes/debts; `setHolders` checks existence before every INSERT.
+- Reads join `household_members` with `deleted_at IS NULL`: holder rows of deleted members are kept but never shown.
+- `incomes.person` is legacy (the account that created the income) and is not a holder.
 
 ### Expense rules
 
