@@ -160,7 +160,42 @@ describe('importFromLF — members and holders', () => {
   it('skips holders of an unknown subject type', async () => {
     const result = await importFromLF(backupFile({
       household_members: [member],
+      holders: [{ id: 'budget:b1:m1', member_id: 'm1', subject_type: 'budget', subject_id: 'b1', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(insertedAll('holders')).toEqual([]);
+    expect(result.skipped).toBe(1);
+  });
+
+  it('imports assets with their holders, assets before holders', async () => {
+    const result = await importFromLF(backupFile({
+      household_members: [member],
+      assets: [{
+        id: 'a1', household_id: 'old-hh', name: 'Apartamento', kind: 'real_estate', value: 450_000_000, currency: 'COP',
+        created_by: 'u1', created_at: 'x', updated_at: 'x',
+      }],
       holders: [{ id: 'asset:a1:m1', member_id: 'm1', subject_type: 'asset', subject_id: 'a1', created_by: 'u1', created_at: 'x' }],
+    }), 'hh-1');
+
+    expect(inserted('assets')).toMatchObject({ id: 'a1', household_id: 'hh-1', value: 450_000_000, kind: 'real_estate' });
+    expect(insertedAll('holders')).toHaveLength(1);
+    const tables = mockExecute.mock.calls.map(([sql]) => /INSERT INTO (\w+)/.exec(String(sql))?.[1]);
+    expect(tables.indexOf('assets')).toBeLessThan(tables.indexOf('holders'));
+    expect(result.skipped).toBe(0);
+  });
+
+  it('fills asset defaults for missing NOT NULL columns', async () => {
+    await importFromLF(backupFile({
+      assets: [{ id: 'a1', name: 'Carro', created_by: 'u1', created_at: 'x', updated_at: 'x' }],
+    }), 'hh-1');
+
+    expect(inserted('assets')).toMatchObject({ kind: 'other', value: 0, currency: 'COP' });
+  });
+
+  it('skips holders whose asset exists neither in the file nor locally', async () => {
+    const result = await importFromLF(backupFile({
+      household_members: [member],
+      holders: [{ id: 'asset:a404:m1', member_id: 'm1', subject_type: 'asset', subject_id: 'a404', created_by: 'u1', created_at: 'x' }],
     }), 'hh-1');
 
     expect(insertedAll('holders')).toEqual([]);

@@ -91,6 +91,7 @@ describe('TRACKED_TABLES', () => {
       'debt_transactions',
       'household_members',
       'holders',
+      'assets',
     ]);
   });
 });

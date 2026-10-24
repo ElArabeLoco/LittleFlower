@@ -18,6 +18,8 @@ export interface FlorecitaExport {
   household_members?: Record<string, unknown>[];
   /** Absent in backups made before members existed. */
   holders?: Record<string, unknown>[];
+  /** Absent in backups made before assets existed. */
+  assets?: Record<string, unknown>[];
 }
 
 export interface ImportResult {

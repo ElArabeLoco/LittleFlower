@@ -7,6 +7,7 @@ const NAMES: Record<string, Record<string, string>> = {
   budgets: { 'b-1': 'Arriendo' },
   incomes: { 'i-1': 'Salario Ana' },
   debts: { 'd-1': 'Hipoteca' },
+  assets: { 'a-1': 'Apartamento' },
 };
 
 const lookup: NameLookup = (table, id) => (typeof id === 'string' ? NAMES[table]?.[id] ?? null : null);
@@ -145,6 +146,20 @@ describe('describeCrudEntry() — tables', () => {
     expect(result).toEqual(change({ table: 'debts', id: 'd-1', label: 'Hipoteca', amount: 50_000_000, currency: 'COP' }));
   });
 
+  it('assets: name, value and currency; own-name fallback for partial patches', () => {
+    const created = describeCrudEntry(
+      { op: 'PUT', table: 'assets', id: 'a-2', opData: { name: 'CDT', value: 20_000_000, currency: 'COP' } },
+      noNames,
+    );
+    const patched = describeCrudEntry(
+      { op: 'PATCH', table: 'assets', id: 'a-1', opData: { value: 480_000_000 } },
+      lookup,
+    );
+
+    expect(created).toEqual(change({ table: 'assets', id: 'a-2', label: 'CDT', amount: 20_000_000, currency: 'COP' }));
+    expect(patched).toEqual(change({ table: 'assets', op: 'update', id: 'a-1', label: 'Apartamento', amount: 480_000_000 }));
+  });
+
   it('debt_transactions: note first, then the related debt name; amount in COP', () => {
     const withNote = describeCrudEntry(
       { op: 'PUT', table: 'debt_transactions', id: 'dt-1', opData: { debt_id: 'd-1', amount: 300_000, note: 'Abono' } },
@@ -180,13 +195,19 @@ describe('describeCrudEntry() — tables', () => {
       lookup,
     );
 
+    const asset = describeCrudEntry(
+      { op: 'PUT', table: 'holders', id: 'h-5', opData: { subject_type: 'asset', subject_id: 'a-1', member_id: 'm-1' } },
+      lookup,
+    );
+
     expect(income).toEqual(change({ table: 'holders', id: 'h-1', label: 'Salario Ana' }));
     expect(debt).toEqual(change({ table: 'holders', id: 'h-2', label: 'Hipoteca' }));
+    expect(asset).toEqual(change({ table: 'holders', id: 'h-5', label: 'Apartamento' }));
   });
 
   it('holders: no label for an unknown subject type or a DELETE without data', () => {
     const unknown = describeCrudEntry(
-      { op: 'PUT', table: 'holders', id: 'h-3', opData: { subject_type: 'asset', subject_id: 'i-1' } },
+      { op: 'PUT', table: 'holders', id: 'h-3', opData: { subject_type: 'budget', subject_id: 'b-1' } },
       lookup,
     );
     const deleted = describeCrudEntry({ op: 'DELETE', table: 'holders', id: 'h-4' }, lookup);
@@ -297,6 +318,7 @@ describe('describedFields()', () => {
     exchange_rates: { id: 'fx-1', household_id: 'h', from_currency: 'USD', to_currency: 'COP', month: '2026-03', rate: 4_150.5, source: 'manual', updated_at: 't', last_edited_by: 'u', last_edited_at: 't' },
     debts: { id: 'd-1', household_id: 'h', name: 'Hipoteca', description: null, initial_amount: 50_000_000, currency: 'COP', disbursed_at: '2026-01-01', created_by: 'u', created_at: 't', deleted_at: null, updated_at: 't', last_edited_by: 'u', last_edited_at: 't' },
     debt_transactions: { id: 'dt-1', household_id: 'h', debt_id: 'd-1', amount: 300_000, original_amount: null, original_currency: null, exchange_rate: null, type: 'debit', note: null, date: '2026-03-01', source: 'manual', expense_id: null, created_by: 'u', created_at: 't', deleted_at: null },
+    assets: { id: 'a-1', household_id: 'h', name: 'Apartamento', kind: 'real_estate', value: 450_000_000, currency: 'COP', created_by: 'u', created_at: 't', updated_at: 't', last_edited_by: 'u', last_edited_at: 't', deleted_at: null },
     households: { id: 'h', name: 'Casa', join_code: '123456', created_at: 't' },
     users: { id: 'u', household_id: 'h', name: 'Ana', email: 'a@x.co', color: '#fff', role: 'admin', created_at: 't' },
   };

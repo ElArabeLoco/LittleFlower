@@ -1,7 +1,7 @@
 /**
  * DeleteMemberDialog — confirms removing a member and says what changes.
  *
- * Deleting a member never deletes incomes or debts: they only stop showing
+ * Deleting a member never deletes incomes, debts or assets: they only stop showing
  * the member as holder.
  */
 
@@ -16,7 +16,7 @@ import { formatList } from './formatList';
 export interface DeleteHolding {
   id: string;
   name: string;
-  /** Names of the other active holders of the same income / debt. */
+  /** Names of the other active holders of the same income / debt / asset. */
   coHolders: string[];
 }
 
@@ -24,7 +24,7 @@ export interface DeleteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   member: MemberRef | null;
-  holdings: { incomes: DeleteHolding[]; debts: DeleteHolding[] };
+  holdings: { incomes: DeleteHolding[]; debts: DeleteHolding[]; assets: DeleteHolding[] };
   onConfirm: () => Promise<void>;
 }
 
@@ -35,7 +35,7 @@ export function DeleteMemberDialog({ open, onOpenChange, member, holdings, onCon
 
   if (!member) return null;
 
-  const hasHoldings = holdings.incomes.length > 0 || holdings.debts.length > 0;
+  const hasHoldings = holdings.incomes.length > 0 || holdings.debts.length > 0 || holdings.assets.length > 0;
 
   function describe(items: DeleteHolding[], shared: (others: string) => string): string {
     return items
@@ -90,6 +90,15 @@ export function DeleteMemberDialog({ open, onOpenChange, member, holdings, onCon
                   </strong>
                   {': '}
                   {describe(holdings.debts, t.members.delete.sharedDebt)}
+                </p>
+              )}
+              {holdings.assets.length > 0 && (
+                <p className="leading-relaxed text-[var(--text-secondary)]">
+                  <strong className="font-semibold text-[var(--text-primary)]">
+                    {t.members.assetCount(holdings.assets.length)}
+                  </strong>
+                  {': '}
+                  {describe(holdings.assets, t.members.delete.sharedAsset)}
                 </p>
               )}
             </div>

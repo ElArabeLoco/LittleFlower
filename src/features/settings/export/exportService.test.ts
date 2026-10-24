@@ -4,7 +4,7 @@ vi.mock('@/infrastructure/powersync/client', () => ({
   db: { getAll: vi.fn() },
 }));
 
-import { buildDeudasSheet, buildIngresosSheet } from './exportService';
+import { buildActivosSheet, buildDeudasSheet, buildIngresosSheet } from './exportService';
 import type { FlorecitaExport } from './types';
 
 function backup(overrides: Partial<FlorecitaExport>): FlorecitaExport {
@@ -94,5 +94,35 @@ describe('buildDeudasSheet — Titulares in the debt header', () => {
       ['DEUDA: Deuda d2', 'Titulares: Hogar'],
       ['DEUDA: Deuda d3', 'Titulares: Hogar'],
     ]);
+  });
+});
+
+describe('buildActivosSheet', () => {
+  const asset = (id: string, extra: Record<string, unknown> = {}) => ({
+    id, name: `Activo ${id}`, kind: 'savings', value: 1_000, currency: 'COP', deleted_at: null, ...extra,
+  });
+
+  it('lists active assets alphabetically with type, value, currency and holders', () => {
+    const sheet = buildActivosSheet(backup({
+      assets: [
+        asset('b', { kind: 'vehicle', value: 80_000_000 }),
+        asset('a', { kind: 'real_estate', value: 450_000_000 }),
+        asset('c', { kind: 'savings', value: 5_000, currency: 'USD' }),
+        asset('gone', { deleted_at: '2026-09-01T00:00:00Z' }),
+      ],
+      household_members: members,
+      holders: [holder('asset', 'a', 'm-luis'), holder('asset', 'a', 'm-ana'), holder('debt', 'b', 'm-ana')],
+    }));
+
+    expect(sheet[1]).toEqual(['Nombre', 'Tipo', 'Valor', 'Moneda', 'Titulares']);
+    expect(sheet.slice(2)).toEqual([
+      ['Activo a', 'Inmueble', 450_000_000, 'COP', 'Ana, Luis'],
+      ['Activo b', 'Vehículo', 80_000_000, 'COP', 'Hogar'],
+      ['Activo c', 'Ahorros', 5_000, 'USD', 'Hogar'],
+    ]);
+  });
+
+  it('works on backups made before assets existed', () => {
+    expect(buildActivosSheet(backup({})).slice(2)).toEqual([['Sin activos registrados']]);
   });
 });

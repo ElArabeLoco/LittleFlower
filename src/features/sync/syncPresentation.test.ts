@@ -109,6 +109,8 @@ describe('describeChangeText()', () => {
     expect(describeChangeText(change({ table: 'holders' }), es).title).toBe('Titular asignado');
     expect(describeChangeText(change({ table: 'holders', op: 'delete' }), es).title).toBe('Titular quitado');
     expect(describeChangeText(change({ table: 'holders', op: 'delete' }), en).title).toBe('Holder removed');
+    expect(describeChangeText(change({ table: 'assets' }), es).title).toBe('Activo creado');
+    expect(describeChangeText(change({ table: 'assets', op: 'delete' }), en).title).toBe('Asset deleted');
   });
 
   it('adds the month to the label', () => {

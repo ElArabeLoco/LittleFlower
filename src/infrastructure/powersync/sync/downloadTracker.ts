@@ -60,7 +60,7 @@ const MAX_CHANGES_PER_EVENT = 50;
 const SAFE_TABLE_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 /** onChange reports PowerSync's internal table names. */
 const INTERNAL_TABLE_PREFIX = /^ps_data(?:_local)?__/;
-const LABEL_TABLES: readonly LabelTable[] = ['budgets', 'incomes', 'debts'];
+const LABEL_TABLES: readonly LabelTable[] = ['budgets', 'incomes', 'debts', 'assets'];
 
 type Row = Record<string, unknown>;
 
@@ -230,7 +230,7 @@ export function startDownloadTracking({
     return ids;
   }
 
-  /** Rebuilds budget / income / debt names from the current snapshots. */
+  /** Rebuilds budget / income / debt / asset names from the current snapshots. */
   function refreshLabels(): void {
     for (const table of LABEL_TABLES) {
       const snapshot = snapshots.get(table);
