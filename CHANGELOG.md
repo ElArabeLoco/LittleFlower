@@ -11,6 +11,18 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.17.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.16.0...littleflower-v0.17.0) (2026-10-24)
+
+
+### Features
+
+* **assets:** assets with holders and a net worth view, unified and per member ([#78](https://github.com/ElArabeLoco/LittleFlower/issues/78)) ([9d5b45c](https://github.com/ElArabeLoco/LittleFlower/commit/9d5b45c1754ccfc5b65ac9f20f4c30c0f5d664dd))
+
+
+### Bug Fixes
+
+* **assets:** update asset values by hand, with history and a value changes report ([#80](https://github.com/ElArabeLoco/LittleFlower/issues/80)) ([82e971e](https://github.com/ElArabeLoco/LittleFlower/commit/82e971e40897b411612f3adcc3c670c83e18583a))
+
 ## [0.16.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.15.0...littleflower-v0.16.0) (2026-10-24)
 
 
