@@ -166,10 +166,6 @@
 .dash-slot[data-width='third'] { grid-column: span 2; }
 .dash-slot[data-width='full'] { grid-column: span 6; }
 .dash-add { grid-column: span 2; }
-/* A widget with nothing to show takes no room. */
-.dash-slot:not(:has(.dash-card)) { display: none; }
-/* In edit mode the placeholder stands in only for a widget that renders nothing. */
-.dash-slot:has(.dash-card:not(.dash-ghost)) .dash-ghost { display: none; }
 
 @media (max-width: 1023px) {
   .dash-slot[data-width='third'], .dash-add { grid-column: span 3; }

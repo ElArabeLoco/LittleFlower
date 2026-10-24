@@ -93,6 +93,7 @@ describe('TRACKED_TABLES', () => {
       'holders',
       'assets',
       'asset_valuations',
+      'dashboard_layouts',
     ]);
   });
 });

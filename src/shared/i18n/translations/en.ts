@@ -280,6 +280,53 @@ export const en: Translations = {
     allPaidThisMonth: 'All paid this month',
     noPendingItems: 'No pending budget items',
     pendingRestoreAll: 'Restore all',
+    kpisTitle: 'This month at a glance',
+    pendingDesc: 'This month’s items not paid yet',
+    kpisDesc: 'Real balance, available, budgeted, spent and left to spend',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Dashboard edit mode (configurable layout)
+  // ---------------------------------------------------------------------------
+  dashboardLayout: {
+    customize: 'Customize',
+    add: 'Add',
+    done: 'Done',
+    reset: 'Reset',
+    editing: 'Editing',
+    hint: 'Drag from “Move”, or use the arrow keys. Pick a width or remove widgets. It saves by itself and only changes your view.',
+    hintPhone: 'Drag from “Move”. On a phone every widget is full width.',
+    move: 'Move',
+    moving: 'Moving',
+    moveLabel: (title: string) => `Move ${title}. Drag it, or use the arrow keys to change its position.`,
+    remove: 'Remove',
+    removeLabel: (title: string) => `Remove ${title}`,
+    widthGroup: (title: string) => `Width of ${title}`,
+    widths: { third: '1/3', half: '1/2', full: 'Full' },
+    widthNames: { third: 'a third of the width', half: 'half the width', full: 'the full width' },
+    dropHere: 'Drop here',
+    noDataNow: 'No data for now. You can still move or remove it.',
+    addWidget: 'Add widget',
+    available: (n: number) =>
+      n === 0
+        ? 'Every catalog widget is already on your dashboard'
+        : n === 1 ? '1 widget available in the catalog' : `${n} widgets available in the catalog`,
+    catalogTitle: 'Widget catalog',
+    catalogCount: (shown: number, total: number) => `${shown} of ${total} on your dashboard`,
+    close: 'Close',
+    inDashboard: 'On your dashboard',
+    addLabel: (title: string) => `Add ${title}`,
+    groups: { summary: 'Summary', month: 'This month’s spending', burnUp: 'Monthly burn-up', debts: 'Debts', history: 'History' },
+    emptyTitle: 'Your dashboard has no widgets',
+    emptyText: 'Add them from the catalog whenever you like.',
+    openCatalog: 'Open catalog',
+    removed: (title: string) => `You removed “${title}”.`,
+    added: (title: string) => `You added “${title}” at the end.`,
+    resetDone: 'Back to the original layout.',
+    undo: 'Undo',
+    lifted: (title: string) => `You picked up “${title}”. Drop it anywhere, or press Esc to leave it where it was.`,
+    placed: (title: string, position: number, total: number) => `“${title}” is now in position ${position} of ${total}.`,
+    returned: (title: string) => `“${title}” went back to its place.`,
   },
 
   // ---------------------------------------------------------------------------

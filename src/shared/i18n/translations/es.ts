@@ -279,6 +279,53 @@ export const es = {
     allPaidThisMonth: 'Todo al día este mes',
     noPendingItems: 'Sin rubros pendientes de pago',
     pendingRestoreAll: 'Restaurar todos',
+    kpisTitle: 'Resumen del mes',
+    pendingDesc: 'Rubros del mes que aún no se pagan',
+    kpisDesc: 'Balance real, disponible, presupuestado, gastado y por gastar',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Dashboard edit mode (configurable layout)
+  // ---------------------------------------------------------------------------
+  dashboardLayout: {
+    customize: 'Personalizar',
+    add: 'Agregar',
+    done: 'Listo',
+    reset: 'Restablecer',
+    editing: 'Editando',
+    hint: 'Arrastra desde «Mover» o, con el teclado, usa las flechas. Elige el ancho o quita widgets. Se guarda solo y solo cambia tu vista.',
+    hintPhone: 'Arrastra desde «Mover». En el teléfono todo va a lo ancho.',
+    move: 'Mover',
+    moving: 'Moviendo',
+    moveLabel: (title: string) => `Mover ${title}. Arrástralo, o usa las flechas para cambiar su posición.`,
+    remove: 'Quitar',
+    removeLabel: (title: string) => `Quitar ${title}`,
+    widthGroup: (title: string) => `Ancho de ${title}`,
+    widths: { third: '1/3', half: '1/2', full: 'Todo' },
+    widthNames: { third: 'un tercio del ancho', half: 'la mitad del ancho', full: 'todo el ancho' },
+    dropHere: 'Suelta aquí',
+    noDataNow: 'Sin datos por ahora. Igual lo puedes mover o quitar.',
+    addWidget: 'Agregar widget',
+    available: (n: number) =>
+      n === 0
+        ? 'Todos los widgets del catálogo ya están en tu dashboard'
+        : n === 1 ? '1 widget disponible en el catálogo' : `${n} widgets disponibles en el catálogo`,
+    catalogTitle: 'Catálogo de widgets',
+    catalogCount: (shown: number, total: number) => `${shown} de ${total} en tu dashboard`,
+    close: 'Cerrar',
+    inDashboard: 'En tu dashboard',
+    addLabel: (title: string) => `Agregar ${title}`,
+    groups: { summary: 'Resumen', month: 'Gasto del mes', burnUp: 'Burn-up del mes', debts: 'Deudas', history: 'Históricos' },
+    emptyTitle: 'Tu dashboard no tiene widgets',
+    emptyText: 'Agrégalos desde el catálogo cuando quieras.',
+    openCatalog: 'Abrir catálogo',
+    removed: (title: string) => `Quitaste «${title}».`,
+    added: (title: string) => `Agregaste «${title}» al final.`,
+    resetDone: 'Volviste al diseño original.',
+    undo: 'Deshacer',
+    lifted: (title: string) => `Levantaste «${title}». Suéltalo donde quieras o pulsa Esc para dejarlo donde estaba.`,
+    placed: (title: string, position: number, total: number) => `«${title}» quedó en la posición ${position} de ${total}.`,
+    returned: (title: string) => `«${title}» volvió a su lugar.`,
   },
 
   // ---------------------------------------------------------------------------
