@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.16.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.15.0...littleflower-v0.16.0) (2026-10-24)
+
+
+### Features
+
+* **members:** household members and shared holders for incomes and debts ([#76](https://github.com/ElArabeLoco/LittleFlower/issues/76)) ([3072d8d](https://github.com/ElArabeLoco/LittleFlower/commit/3072d8d264c02440c73de087f8e68ad9818b1dda))
+
 ## [0.15.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.14.0...littleflower-v0.15.0) (2026-10-23)
 
 
