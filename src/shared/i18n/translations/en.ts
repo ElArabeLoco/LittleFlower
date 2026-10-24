@@ -1170,6 +1170,7 @@ export const en: Translations = {
       },
       household_members: { created: 'Member created', updated: 'Member updated', deleted: 'Member deleted' },
       holders: { created: 'Holder assigned', updated: 'Holder updated', deleted: 'Holder removed' },
+      dashboard_layouts: { created: 'Dashboard layout saved', updated: 'Dashboard layout updated', deleted: 'Dashboard layout deleted' },
       generic: { created: 'Record created', updated: 'Record updated', deleted: 'Record deleted' },
     },
   },

@@ -79,3 +79,8 @@ export {
   type InsertAssetPayload,
   type AssetValuationPayload,
 } from './repositories/PowerSyncAssetRepository';
+
+export {
+  saveDashboardLayout,
+  type SaveDashboardLayoutPayload,
+} from './repositories/PowerSyncDashboardLayoutRepository';

@@ -1172,6 +1172,7 @@ export const es = {
       },
       household_members: { created: 'Integrante creado', updated: 'Integrante actualizado', deleted: 'Integrante eliminado' },
       holders: { created: 'Titular asignado', updated: 'Titular actualizado', deleted: 'Titular quitado' },
+      dashboard_layouts: { created: 'Diseño del dashboard guardado', updated: 'Diseño del dashboard actualizado', deleted: 'Diseño del dashboard eliminado' },
       generic: { created: 'Registro creado', updated: 'Registro actualizado', deleted: 'Registro eliminado' },
     },
   },

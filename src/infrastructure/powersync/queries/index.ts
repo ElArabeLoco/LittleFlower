@@ -8,3 +8,4 @@ export * from './useHouseholdQueries';
 export * from './useSyncQueries';
 export * from './useMemberQueries';
 export * from './useAssetQueries';
+export * from './useDashboardLayoutQueries';

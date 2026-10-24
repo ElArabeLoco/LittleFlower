@@ -119,6 +119,12 @@ export interface UserRow {
   color: string | null;
 }
 
+export interface DashboardLayoutRow {
+  id: string;
+  /** Raw JSON; read it with parseLayout(). */
+  layout: string;
+}
+
 export interface MemberRow {
   id: string;
   name: string;
