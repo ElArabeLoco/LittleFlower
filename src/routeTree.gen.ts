@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as NetWorthRouteImport } from './routes/net-worth'
 import { Route as MonthRouteImport } from './routes/month'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as LoginRouteImport } from './routes/login'
@@ -21,6 +22,7 @@ import { Route as FinancesRouteImport } from './routes/finances'
 import { Route as DebtsRouteImport } from './routes/debts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BudgetRouteImport } from './routes/budget'
+import { Route as AssetsRouteImport } from './routes/assets'
 import { Route as AnualRouteImport } from './routes/anual'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
@@ -35,6 +37,11 @@ const TransactionsRoute = TransactionsRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NetWorthRoute = NetWorthRouteImport.update({
+  id: '/net-worth',
+  path: '/net-worth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonthRoute = MonthRouteImport.update({
@@ -87,6 +94,11 @@ const BudgetRoute = BudgetRouteImport.update({
   path: '/budget',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssetsRoute = AssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnualRoute = AnualRouteImport.update({
   id: '/anual',
   path: '/anual',
@@ -116,6 +128,7 @@ const DebtsDebtIdRoute = DebtsDebtIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
+  '/assets': typeof AssetsRoute
   '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
   '/debts': typeof DebtsRoute
@@ -126,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/members': typeof MembersRoute
   '/month': typeof MonthRoute
+  '/net-worth': typeof NetWorthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
   '/debts/$debtId': typeof DebtsDebtIdRoute
@@ -135,6 +149,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
+  '/assets': typeof AssetsRoute
   '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
   '/debts': typeof DebtsRoute
@@ -145,6 +160,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/members': typeof MembersRoute
   '/month': typeof MonthRoute
+  '/net-worth': typeof NetWorthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
   '/debts/$debtId': typeof DebtsDebtIdRoute
@@ -155,6 +171,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/anual': typeof AnualRoute
+  '/assets': typeof AssetsRoute
   '/budget': typeof BudgetRoute
   '/dashboard': typeof DashboardRoute
   '/debts': typeof DebtsRoute
@@ -165,6 +182,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/members': typeof MembersRoute
   '/month': typeof MonthRoute
+  '/net-worth': typeof NetWorthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
   '/debts_/$debtId': typeof DebtsDebtIdRoute
@@ -176,6 +194,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/anual'
+    | '/assets'
     | '/budget'
     | '/dashboard'
     | '/debts'
@@ -186,6 +205,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/members'
     | '/month'
+    | '/net-worth'
     | '/onboarding'
     | '/transactions'
     | '/debts/$debtId'
@@ -195,6 +215,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/anual'
+    | '/assets'
     | '/budget'
     | '/dashboard'
     | '/debts'
@@ -205,6 +226,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/members'
     | '/month'
+    | '/net-worth'
     | '/onboarding'
     | '/transactions'
     | '/debts/$debtId'
@@ -214,6 +236,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/anual'
+    | '/assets'
     | '/budget'
     | '/dashboard'
     | '/debts'
@@ -224,6 +247,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/members'
     | '/month'
+    | '/net-worth'
     | '/onboarding'
     | '/transactions'
     | '/debts_/$debtId'
@@ -234,6 +258,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnualRoute: typeof AnualRoute
+  AssetsRoute: typeof AssetsRoute
   BudgetRoute: typeof BudgetRoute
   DashboardRoute: typeof DashboardRoute
   DebtsRoute: typeof DebtsRoute
@@ -244,6 +269,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MembersRoute: typeof MembersRoute
   MonthRoute: typeof MonthRoute
+  NetWorthRoute: typeof NetWorthRoute
   OnboardingRoute: typeof OnboardingRoute
   TransactionsRoute: typeof TransactionsRoute
   DebtsDebtIdRoute: typeof DebtsDebtIdRoute
@@ -265,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/net-worth': {
+      id: '/net-worth'
+      path: '/net-worth'
+      fullPath: '/net-worth'
+      preLoaderRoute: typeof NetWorthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/month': {
@@ -337,6 +370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BudgetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assets': {
+      id: '/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AssetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/anual': {
       id: '/anual'
       path: '/anual'
@@ -378,6 +418,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnualRoute: AnualRoute,
+  AssetsRoute: AssetsRoute,
   BudgetRoute: BudgetRoute,
   DashboardRoute: DashboardRoute,
   DebtsRoute: DebtsRoute,
@@ -388,6 +429,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MembersRoute: MembersRoute,
   MonthRoute: MonthRoute,
+  NetWorthRoute: NetWorthRoute,
   OnboardingRoute: OnboardingRoute,
   TransactionsRoute: TransactionsRoute,
   DebtsDebtIdRoute: DebtsDebtIdRoute,

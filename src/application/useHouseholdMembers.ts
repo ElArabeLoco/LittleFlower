@@ -8,19 +8,20 @@ import {
 export interface MemberHoldingCounts {
   incomes: number;
   debts: number;
+  assets: number;
 }
 
 export interface HouseholdMembersData {
   /** Active members, alphabetical. */
   members: MemberRef[];
-  /** How many active incomes and debts each member holds (by member id). */
+  /** How many active incomes, debts and assets each member holds (by member id). */
   countsByMember: Map<string, MemberHoldingCounts>;
   hasMembers: boolean;
   /** The first palette tone no active member uses: the default for a new member. */
   suggestedTone: MemberTone;
 }
 
-/** The household's active members and how many incomes / debts each holds. */
+/** The household's active members and how many incomes / debts / assets each holds. */
 export function useHouseholdMembers(): HouseholdMembersData {
   const { data: memberRows = [] } = useHouseholdMembersQuery();
   const { data: countRows = [] } = useMemberHoldingCountsQuery();
@@ -34,9 +35,10 @@ export function useHouseholdMembers(): HouseholdMembersData {
 
     const countsByMember = new Map<string, MemberHoldingCounts>();
     for (const row of countRows) {
-      const counts = countsByMember.get(row.member_id) ?? { incomes: 0, debts: 0 };
+      const counts = countsByMember.get(row.member_id) ?? { incomes: 0, debts: 0, assets: 0 };
       if (row.subject_type === 'income') counts.incomes += row.n;
       if (row.subject_type === 'debt') counts.debts += row.n;
+      if (row.subject_type === 'asset') counts.assets += row.n;
       countsByMember.set(row.member_id, counts);
     }
 

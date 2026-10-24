@@ -9,7 +9,7 @@
  *     the import works both as a restore (same household) and a migration
  *     (new household).
  *   - Skips households and users tables — managed by Supabase Auth.
- *   - Holders whose member or income / debt cannot be found are skipped.
+ *   - Holders whose member or income / debt / asset cannot be found are skipped.
  *   - For each row: checks if ID already exists, skips if so (idempotent).
  *   - PowerSync queues the new records and syncs them to Supabase when online.
  */
@@ -70,6 +70,10 @@ const TABLE_COLUMNS: Record<string, string[]> = {
     'id', 'household_id', 'member_id', 'subject_type', 'subject_id',
     'created_by', 'created_at',
   ],
+  assets: [
+    'id', 'household_id', 'name', 'kind', 'value', 'currency', 'created_by', 'created_at',
+    'updated_at', 'last_edited_by', 'last_edited_at', 'deleted_at',
+  ],
 };
 
 // Defaults for NOT NULL columns missing from older backups (or from rows
@@ -78,6 +82,7 @@ const COLUMN_DEFAULTS: Record<string, Record<string, unknown>> = {
   debts: { kind: 'personal', interest_rate: 0, amortization: 'none', monthly_fees: 0 },
   debt_transactions: { interest_amount: 0, fees_amount: 0 },
   household_members: { tone: 'petal' },
+  assets: { kind: 'other', value: 0, currency: 'COP' },
 };
 
 // Import order respects FK dependencies
@@ -86,12 +91,13 @@ const IMPORT_ORDER = [
   'incomes',
   'debts',
   'household_members',
+  'assets',
   'budget_months',
   'income_months',
   'exchange_rates',
   'expenses',
   'debt_transactions',
-  'holders', // last: points at members, incomes and debts
+  'holders', // last: points at members, incomes, debts and assets
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -153,9 +159,10 @@ async function importTable(
 // ---------------------------------------------------------------------------
 
 /** Table of each holder subject type; anything else is not importable. */
-const HOLDER_SUBJECT_TABLES: Record<string, 'incomes' | 'debts'> = {
+const HOLDER_SUBJECT_TABLES: Record<string, 'incomes' | 'debts' | 'assets'> = {
   income: 'incomes',
   debt: 'debts',
+  asset: 'assets',
 };
 
 function idsOf(rows: Record<string, unknown>[] | undefined): Set<string> {
@@ -180,7 +187,7 @@ async function localIds(table: string, ids: Set<string>): Promise<Set<string>> {
  * Splits holders into the ones that can be imported and the orphans.
  *
  * A holder is an orphan when its subject type is unknown, or when its member
- * or its income / debt is neither in the file nor already in this device.
+ * or its income / debt / asset is neither in the file nor already in this device.
  * Uploading one would break the sync queue for good, so they are skipped.
  */
 async function splitOrphanHolders(
@@ -188,11 +195,11 @@ async function splitOrphanHolders(
   data: Partial<FlorecitaExport>,
 ): Promise<{ valid: Record<string, unknown>[]; orphans: number }> {
   const fileMembers = idsOf(data.household_members);
-  const fileSubjects = { incomes: idsOf(data.incomes), debts: idsOf(data.debts) };
+  const fileSubjects = { incomes: idsOf(data.incomes), debts: idsOf(data.debts), assets: idsOf(data.assets) };
 
   // Ids the file does not carry: the local tables may still know them.
   const missingMembers = new Set<string>();
-  const missingSubjects = { incomes: new Set<string>(), debts: new Set<string>() };
+  const missingSubjects = { incomes: new Set<string>(), debts: new Set<string>(), assets: new Set<string>() };
   for (const holder of holders) {
     const table = HOLDER_SUBJECT_TABLES[String(holder.subject_type)];
     if (!table) continue;
@@ -206,6 +213,7 @@ async function splitOrphanHolders(
   const localSubjects = {
     incomes: await localIds('incomes', missingSubjects.incomes),
     debts: await localIds('debts', missingSubjects.debts),
+    assets: await localIds('assets', missingSubjects.assets),
   };
 
   const valid = holders.filter(holder => {

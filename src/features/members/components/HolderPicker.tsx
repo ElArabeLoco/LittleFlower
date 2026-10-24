@@ -1,5 +1,5 @@
 /**
- * HolderPicker — choose the holders (titulares) of an income or a debt.
+ * HolderPicker — choose the holders (titulares) of an income, a debt or an asset.
  *
  * One toggle per active member; none selected means the whole household.
  * Presentational: the form owns the selected ids.
@@ -8,7 +8,7 @@
 import { Check, Users } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
-import { describeHolders } from '@/domain/member/holders';
+import { describeHolders, type HoldableType } from '@/domain/member/holders';
 import { cn } from '@/shared/ui/cn';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { formatList } from '../formatList';
@@ -20,7 +20,7 @@ interface HolderPickerProps {
   /** Selected member ids. */
   value: string[];
   onChange: (memberIds: string[]) => void;
-  subject: 'income' | 'debt';
+  subject: HoldableType;
 }
 
 export function HolderPicker({ members, value, onChange, subject }: HolderPickerProps) {

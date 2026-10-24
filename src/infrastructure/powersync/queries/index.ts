@@ -7,3 +7,4 @@ export * from './useDebtQueries';
 export * from './useHouseholdQueries';
 export * from './useSyncQueries';
 export * from './useMemberQueries';
+export * from './useAssetQueries';

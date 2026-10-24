@@ -2,14 +2,16 @@
  * FinancesHubPage — /finances
  *
  * Hub de navegación para la configuración financiera:
+ *   - Patrimonio      → /net-worth
  *   - Ingresos        → /income
  *   - Presupuestos    → /settings/budgets
  *   - Deudas          → /debts
+ *   - Activos         → /assets
  *   - Transacciones   → /transactions
  *   - Integrantes     → /members
  */
 
-import { TrendingUp, LayoutList, CreditCard, Receipt, Users } from 'lucide-react';
+import { TrendingUp, LayoutList, CreditCard, Receipt, Users, PiggyBank, Scale } from 'lucide-react';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { HubLinkCard } from '@/shared/ui/HubLinkCard';
@@ -31,6 +33,13 @@ export function FinancesHubPage() {
             descriptions stay aligned across the cards of a row. */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <HubLinkCard
+            to="/net-worth"
+            title={t.finances.netWorthTitle}
+            description={t.finances.netWorthDesc}
+            icon={Scale}
+            tone="iris"
+          />
+          <HubLinkCard
             to="/income"
             title={t.finances.incomeTitle}
             description={t.finances.incomeDesc}
@@ -50,6 +59,13 @@ export function FinancesHubPage() {
             description={t.finances.debtsDesc}
             icon={CreditCard}
             tone="polen"
+          />
+          <HubLinkCard
+            to="/assets"
+            title={t.finances.assetsTitle}
+            description={t.finances.assetsDesc}
+            icon={PiggyBank}
+            tone="leaf"
           />
           <HubLinkCard
             to="/transactions"

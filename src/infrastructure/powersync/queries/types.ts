@@ -126,7 +126,7 @@ export interface MemberRow {
   tone: string;
 }
 
-/** One holder of an income or a debt, joined with its active member. */
+/** One holder of an income, a debt or an asset, joined with its active member. */
 export interface HolderRow {
   subject_id: string;
   member_id: string;
@@ -134,16 +134,16 @@ export interface HolderRow {
   tone: string;
 }
 
-/** How many active incomes / debts a member holds (one row per subject type). */
+/** How many active incomes / debts / assets a member holds (one row per subject type). */
 export interface MemberHoldingCountRow {
   member_id: string;
-  subject_type: string; // 'income' | 'debt'
+  subject_type: string; // 'income' | 'debt' | 'asset'
   n: number;
 }
 
-/** One income or debt held by a member. */
+/** One income, debt or asset held by a member. */
 export interface MemberHoldingRow {
-  subject_type: string; // 'income' | 'debt'
+  subject_type: string; // 'income' | 'debt' | 'asset'
   subject_id: string;
   name: string;
 }
@@ -151,4 +151,13 @@ export interface MemberHoldingRow {
 export interface HouseholdUserRow {
   id: string;
   name: string;
+}
+
+/** One active asset. Kind and currency are raw; read them with toAssetKind() / toAssetCurrency(). */
+export interface AssetRow {
+  id: string;
+  name: string;
+  kind: string;
+  value: number;
+  currency: string;
 }

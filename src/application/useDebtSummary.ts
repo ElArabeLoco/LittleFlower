@@ -19,6 +19,8 @@ export interface DebtManagementSummary {
   /** Lookup: debt_id → DebtTransactionRow[] (descending date). */
   txByDebt: Map<string, DebtTransactionRow[]>;
   currentMonthRate: number | null;
+  /** Outstanding balance of each active debt in COP (may be < 0 when overpaid). */
+  balanceByDebt: Map<string, number>;
   /** Total outstanding balance across all active debts, converted to COP. */
   totalBalance: number;
   /** Debts whose current balance is > 0 (still owed). */
@@ -53,29 +55,30 @@ export function useDebtManagementSummary(): DebtManagementSummary {
     [currentMonthRate],
   );
 
+  const balanceByDebt = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const debt of debts) {
+      const txs = txByDebt.get(debt.id) ?? [];
+      map.set(debt.id, computeDebtBalance(
+        getInitialCOP(debt),
+        txs.map(tx => ({ type: tx.type as 'debit' | 'credit', amount: tx.amount })),
+      ));
+    }
+    return map;
+  }, [debts, txByDebt, getInitialCOP]);
+
   const totalBalance = useMemo(() => {
-    return debts.reduce((sum, debt) => {
-      const txs = txByDebt.get(debt.id) ?? [];
-      const bal = computeDebtBalance(
-        getInitialCOP(debt),
-        txs.map(tx => ({ type: tx.type as 'debit' | 'credit', amount: tx.amount })),
-      );
-      return sum + Math.max(0, bal);
-    }, 0);
-  }, [debts, txByDebt, getInitialCOP]);
+    let sum = 0;
+    for (const bal of balanceByDebt.values()) sum += Math.max(0, bal);
+    return sum;
+  }, [balanceByDebt]);
 
-  const activeDebts = useMemo(() => {
-    return debts.filter(debt => {
-      const txs = txByDebt.get(debt.id) ?? [];
-      const bal = computeDebtBalance(
-        getInitialCOP(debt),
-        txs.map(tx => ({ type: tx.type as 'debit' | 'credit', amount: tx.amount })),
-      );
-      return bal > 0;
-    });
-  }, [debts, txByDebt, getInitialCOP]);
+  const activeDebts = useMemo(
+    () => debts.filter(debt => (balanceByDebt.get(debt.id) ?? 0) > 0),
+    [debts, balanceByDebt],
+  );
 
-  return { debts, txByDebt, currentMonthRate, totalBalance, activeDebts };
+  return { debts, txByDebt, currentMonthRate, balanceByDebt, totalBalance, activeDebts };
 }
 
 // ---------------------------------------------------------------------------

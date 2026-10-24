@@ -74,6 +74,7 @@ queries/
   useDebtQueries.ts
   useHouseholdQueries.ts
   useMemberQueries.ts
+  useAssetQueries.ts
   types.ts      ← canonical SQLite row types (snake_case)
   index.ts      ← barrel export
 ```
@@ -87,11 +88,14 @@ useIncomeSummary.ts     ← income total with TRM conversion
 useDebtSummary.ts       ← debt balances (management + dashboard variants)
 useMonthViewData.ts     ← all data for MonthViewPage
 useYearViewData.ts      ← all data for YearView (spreadsheet)
-useHouseholdMembers.ts  ← active members + how many incomes/debts each holds
-useHolders.ts           ← holders of every income or debt, by subject id
+useHouseholdMembers.ts  ← active members + how many incomes/debts/assets each holds
+useHolders.ts           ← holders of every income, debt or asset, by subject id
 useMemberHoldings.ts    ← what one member holds, with co-holders (delete dialog)
 useMemberSuggestions.ts ← account names offered as member suggestions
 useMemberMutations.ts   ← create / rename / recolor / delete a member
+useAssets.ts            ← active assets with holders and COP value (latest TRM)
+useAssetMutations.ts    ← create / edit / delete an asset with its holders
+useNetWorth.ts          ← assets vs debt balances: household, per member, no holder
 ```
 
 ### Lifecycle
@@ -145,16 +149,24 @@ Income (1) ──── (N) IncomeMonth
 BudgetMonth (1) ── (N) Expense
 ExchangeRate   ← per month, USD→COP TRM
 Household      ← 6-digit join code for onboarding
-HouseholdMember (1) ──── (N) Holder ──── (1) Income | Debt
+HouseholdMember (1) ──── (N) Holder ──── (1) Income | Debt | Asset
+Asset          ← name, kind, current value (COP or USD); no depreciation
 ```
 
 ### Members and holders
 
 - A **HouseholdMember** is a person of the household economy. It is not an app account: no login needed, and a login creates no member. Soft delete only (`deleted_at`).
-- A **Holder** says an income or a debt is in a member's name. Zero or more per record; none = the whole household. Rows are immutable (INSERT / hard DELETE) with the deterministic id `<type>:<subjectId>:<memberId>`.
-- A Postgres rejection blocks the PowerSync upload queue forever, so these tables have no UNIQUE on names and no FK from holders to incomes/debts; `setHolders` checks existence before every INSERT.
+- A **Holder** says an income, a debt or an asset is in a member's name. Zero or more per record; none = the whole household. Rows are immutable (INSERT / hard DELETE) with the deterministic id `<type>:<subjectId>:<memberId>`.
+- A Postgres rejection blocks the PowerSync upload queue forever, so these tables have no UNIQUE on names and no FK from holders to incomes/debts/assets; `setHolders` checks existence before every INSERT.
 - Reads join `household_members` with `deleted_at IS NULL`: holder rows of deleted members are kept but never shown.
 - `incomes.person` is legacy (the account that created the income) and is not a holder.
+
+### Assets and net worth
+
+- An **Asset** has a kind (`savings | investment | real_estate | vehicle | other`), an integer value in COP or USD and 0..N holders. No depreciation or history: the value is edited by hand. Soft delete only.
+- **Net worth** (`domain/netWorth/netWorth.ts`) = assets at current value − outstanding debt balances, both in COP (USD with the latest TRM; without a TRM the record is left out and flagged).
+- Debt balances come from `balanceByDebt` in `useDebtManagementSummary`, so "Deudas" on /net-worth equals "Total adeudado" on /debts.
+- Per member, a record with N holders counts value / N for each (integer split, remainder to the first holders). Records without active holders form the "Sin titular" group, so members + that group always add up to the household.
 
 ### Expense rules
 
@@ -168,7 +180,7 @@ Expenses are an **append-only ledger** — no edits, no deletes in the tradition
 
 - All amounts: **integer COP pesos** (no decimals, no float)
 - Expenses always in COP
-- Only income can be in a foreign currency (USD)
+- Income, debts and assets can be in USD; budgets and expenses never
 - ExchangeRate has `source: 'manual' | 'fallback'`
 - Fallback cascade: exact month match → most recent prior manual rate → null (excluded + error surfaced)
 

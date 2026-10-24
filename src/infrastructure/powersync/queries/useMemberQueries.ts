@@ -17,7 +17,7 @@ export function useHouseholdMembersQuery() {
 }
 
 /**
- * Holders of every income (or debt), joined with their ACTIVE members.
+ * Holders of every income (or debt, or asset), joined with their ACTIVE members.
  * Holder rows of deleted members are kept in the table but never read here.
  */
 export function useHoldersQuery(type: HoldableType) {
@@ -30,15 +30,17 @@ export function useHoldersQuery(type: HoldableType) {
   );
 }
 
-/** Per member and subject type, how many active incomes / debts it holds. */
+/** Per member and subject type, how many active incomes / debts / assets it holds. */
 export function useMemberHoldingCountsQuery() {
   return useQuery<MemberHoldingCountRow>(
     `SELECT h.member_id, h.subject_type, COUNT(*) AS n
      FROM holders h
      LEFT JOIN incomes i ON h.subject_type = 'income' AND i.id = h.subject_id
      LEFT JOIN debts d ON h.subject_type = 'debt' AND d.id = h.subject_id
+     LEFT JOIN assets a ON h.subject_type = 'asset' AND a.id = h.subject_id
      WHERE (i.id IS NOT NULL AND i.deleted_at IS NULL)
         OR (d.id IS NOT NULL AND d.deleted_at IS NULL)
+        OR (a.id IS NOT NULL AND a.deleted_at IS NULL)
      GROUP BY h.member_id, h.subject_type`,
   );
 }
@@ -47,11 +49,12 @@ export function useMemberHoldingCountsQuery() {
 export function useMemberHoldingsQuery(memberId: string) {
   return useQuery<MemberHoldingRow>(
     memberId
-      ? `SELECT h.subject_type, h.subject_id, COALESCE(i.name, d.name) AS name
+      ? `SELECT h.subject_type, h.subject_id, COALESCE(i.name, d.name, a.name) AS name
          FROM holders h
          LEFT JOIN incomes i ON h.subject_type = 'income' AND i.id = h.subject_id AND i.deleted_at IS NULL
          LEFT JOIN debts d ON h.subject_type = 'debt' AND d.id = h.subject_id AND d.deleted_at IS NULL
-         WHERE h.member_id = ? AND (i.id IS NOT NULL OR d.id IS NOT NULL)
+         LEFT JOIN assets a ON h.subject_type = 'asset' AND a.id = h.subject_id AND a.deleted_at IS NULL
+         WHERE h.member_id = ? AND (i.id IS NOT NULL OR d.id IS NOT NULL OR a.id IS NOT NULL)
          ORDER BY name COLLATE NOCASE`
       : `SELECT h.subject_type, h.subject_id, '' AS name FROM holders h WHERE 1=0`,
     memberId ? [memberId] : [],

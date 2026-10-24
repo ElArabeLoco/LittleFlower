@@ -7,6 +7,7 @@
 
 import { Info, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
+import type { MemberHoldingCounts } from '@/application/useHouseholdMembers';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { useI18n } from '@/shared/i18n/I18nContext';
@@ -15,8 +16,8 @@ import { memberSummary } from './memberSummary';
 
 export interface MembersViewProps {
   members: MemberRef[];
-  /** Active incomes and debts each member holds, by member id. */
-  countsByMember: Map<string, { incomes: number; debts: number }>;
+  /** Active incomes, debts and assets each member holds, by member id. */
+  countsByMember: Map<string, MemberHoldingCounts>;
   /** Account names offered as one-tap members (empty state only). */
   suggestions: string[];
   onAdd: () => void;

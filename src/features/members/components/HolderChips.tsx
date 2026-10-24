@@ -1,5 +1,6 @@
 import { House } from 'lucide-react';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
+import type { HoldableType } from '@/domain/member/holders';
 import { cn } from '@/shared/ui/cn';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { MemberAvatar } from './MemberAvatar';
@@ -29,12 +30,12 @@ interface HolderChipsProps {
   holders: MemberRef[];
   /** Whether the household has any active member. */
   hasMembers: boolean;
-  subject: 'income' | 'debt';
+  subject: HoldableType;
   className?: string;
 }
 
 /**
- * Holders of an income or a debt, for its card.
+ * Holders of an income, a debt or an asset, for its card.
  *
  *   holders             → one chip each, "shared" after them when there are 2+
  *   none, with members  → muted "Del hogar" (the record belongs to everyone)
@@ -67,7 +68,7 @@ export function HolderChips({ holders, hasMembers, subject, className }: HolderC
       ))}
       {holders.length > 1 && (
         <li className="text-xs font-medium text-[var(--text-muted)]">
-          {subject === 'income' ? t.holders.sharedIncome : t.holders.sharedDebt}
+          {{ income: t.holders.sharedIncome, debt: t.holders.sharedDebt, asset: t.holders.sharedAsset }[subject]}
         </li>
       )}
     </ul>

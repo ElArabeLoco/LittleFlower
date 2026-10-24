@@ -69,3 +69,10 @@ export {
   type InsertMemberPayload,
   type SetHoldersPayload,
 } from './repositories/PowerSyncMemberRepository';
+
+export {
+  insertAsset,
+  updateAsset,
+  softDeleteAsset,
+  type InsertAssetPayload,
+} from './repositories/PowerSyncAssetRepository';

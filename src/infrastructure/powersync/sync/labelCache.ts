@@ -1,5 +1,5 @@
 /**
- * Label cache — budget, income and debt names by id.
+ * Label cache — budget, income, debt and asset names by id.
  *
  * CRUD entries and changed rows often carry only a foreign key (an expense's
  * budget_id, an income month's income_id). The activity log resolves those
@@ -9,7 +9,7 @@
  * returns null and changes are simply described without a related name.
  */
 
-export type LabelTable = 'budgets' | 'incomes' | 'debts';
+export type LabelTable = 'budgets' | 'incomes' | 'debts' | 'assets';
 
 export interface LabelCache {
   getName(table: LabelTable, id: unknown): string | null;

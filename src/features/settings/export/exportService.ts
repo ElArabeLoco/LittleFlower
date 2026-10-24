@@ -6,11 +6,12 @@
  *
  * Three formats:
  *   - .lf   — Florecita proprietary JSON (full fidelity, importable)
- *   - .xlsx  — Excel / Numbers (5 sheets: Gastos, Ingresos, Deudas, Detalle, TRM);
- *             Ingresos and Deudas list the holders (Titulares) of each record
+ *   - .xlsx  — Excel / Numbers (6 sheets: Gastos, Ingresos, Deudas, Activos, Detalle, TRM);
+ *             Ingresos, Deudas and Activos list the holders (Titulares) of each record
  */
 
 import { db } from '@/infrastructure/powersync/client';
+import type { HoldableType } from '@/domain/member/holders';
 import type { FlorecitaExport } from './types';
 
 // ---------------------------------------------------------------------------
@@ -43,15 +44,15 @@ function num(v: unknown): number {
   return typeof v === 'number' ? v : 0;
 }
 
-/** Spreadsheet text for an income / debt without holders. */
+/** Spreadsheet text for an income / debt / asset without holders. */
 const HOUSEHOLD_HOLDERS = 'Hogar';
 
 /**
- * Active holder names per income or debt id, alphabetical. Holders of deleted
+ * Active holder names per income, debt or asset id, alphabetical. Holders of deleted
  * members are left out, like everywhere else in the app. Backups made before
  * members existed simply have none.
  */
-function holderNamesBySubject(data: FlorecitaExport, type: 'income' | 'debt'): Map<string, string[]> {
+function holderNamesBySubject(data: FlorecitaExport, type: HoldableType): Map<string, string[]> {
   const activeMembers = new Map<string, string>(
     (data.household_members ?? [])
       .filter(m => !m.deleted_at)
@@ -92,6 +93,7 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     debt_transactions,
     household_members,
     holders,
+    assets,
   ] = await Promise.all([
     db.getAll('SELECT * FROM households WHERE id = ?', [householdId]),
     db.getAll('SELECT * FROM users WHERE household_id = ?', [householdId]),
@@ -105,6 +107,7 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     db.getAll('SELECT * FROM debt_transactions WHERE household_id = ?', [householdId]),
     db.getAll('SELECT * FROM household_members WHERE household_id = ?', [householdId]),
     db.getAll('SELECT * FROM holders WHERE household_id = ?', [householdId]),
+    db.getAll('SELECT * FROM assets WHERE household_id = ?', [householdId]),
   ]);
 
   return {
@@ -125,6 +128,7 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     debt_transactions: debt_transactions as Record<string, unknown>[],
     household_members: household_members as Record<string, unknown>[],
     holders: holders as Record<string, unknown>[],
+    assets: assets as Record<string, unknown>[],
   };
 }
 
@@ -331,7 +335,43 @@ export function buildDeudasSheet(data: FlorecitaExport): Row[] {
   return rows;
 }
 
-/** Sheet 4 — Detalle Gastos: flat expense ledger */
+/** Spreadsheet name of each asset kind (the app's Spanish labels). */
+const ASSET_KIND_LABELS: Record<string, string> = {
+  savings: 'Ahorros',
+  investment: 'Inversión',
+  real_estate: 'Inmueble',
+  vehicle: 'Vehículo',
+  other: 'Otro',
+};
+
+/** Sheet 4 — Activos: one row per active asset, at its current value */
+export function buildActivosSheet(data: FlorecitaExport): Row[] {
+  const holdersByAsset = holderNamesBySubject(data, 'asset');
+  const activeAssets = (data.assets ?? [])
+    .filter(a => !a.deleted_at)
+    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+  const rows: Row[] = [
+    ['ACTIVOS', '', '', '', ''],
+    ['Nombre', 'Tipo', 'Valor', 'Moneda', 'Titulares'],
+  ];
+
+  for (const asset of activeAssets) {
+    rows.push([
+      asset.name as string,
+      ASSET_KIND_LABELS[asset.kind as string] ?? ASSET_KIND_LABELS.other,
+      num(asset.value),
+      (asset.currency as string) ?? 'COP',
+      holdersText(holdersByAsset.get(asset.id as string)),
+    ]);
+  }
+
+  if (activeAssets.length === 0) rows.push(['Sin activos registrados']);
+
+  return rows;
+}
+
+/** Sheet 5 — Detalle Gastos: flat expense ledger */
 function buildDetalleGastosSheet(data: FlorecitaExport): Row[] {
   const budgetMap = new Map<string, string>(
     (data.budgets as Record<string, unknown>[]).map(b => [b.id as string, b.name as string])
@@ -363,7 +403,7 @@ function buildDetalleGastosSheet(data: FlorecitaExport): Row[] {
   return rows;
 }
 
-/** Sheet 5 — TRM: exchange rates by month */
+/** Sheet 6 — TRM: exchange rates by month */
 function buildTRMSheet(data: FlorecitaExport): Row[] {
   const rows: Row[] = [
     ['TIPOS DE CAMBIO (TRM)', '', '', '', ''],
@@ -407,6 +447,7 @@ export async function exportToXLSX(
     { name: 'Gastos', data: buildGastosSheet(data) },
     { name: 'Ingresos', data: buildIngresosSheet(data) },
     { name: 'Deudas', data: buildDeudasSheet(data) },
+    { name: 'Activos', data: buildActivosSheet(data) },
     { name: 'Detalle Gastos', data: buildDetalleGastosSheet(data) },
     { name: 'TRM', data: buildTRMSheet(data) },
   ];

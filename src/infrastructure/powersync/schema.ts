@@ -254,8 +254,8 @@ const holders = new Table(
   {
     household_id: column.text,
     member_id: column.text,
-    subject_type: column.text, // 'income' | 'debt'
-    subject_id: column.text, // incomes.id | debts.id
+    subject_type: column.text, // 'income' | 'debt' | 'asset'
+    subject_id: column.text, // incomes.id | debts.id | assets.id
     created_by: column.text,
     created_at: column.text,
   },
@@ -265,6 +265,23 @@ const holders = new Table(
       idx_holders_member: ['member_id'],
     },
   },
+);
+
+const assets = new Table(
+  {
+    household_id: column.text,
+    name: column.text,
+    kind: column.text, // 'savings' | 'investment' | 'real_estate' | 'vehicle' | 'other'
+    value: column.integer, // integer in the asset's own currency
+    currency: column.text, // 'COP' | 'USD'
+    created_by: column.text,
+    created_at: column.text,
+    updated_at: column.text,
+    last_edited_by: column.text, // nullable
+    last_edited_at: column.text, // nullable
+    deleted_at: column.text, // nullable — soft delete
+  },
+  { indexes: { idx_assets_deleted: ['deleted_at'] } },
 );
 
 // ---------------------------------------------------------------------------
@@ -284,6 +301,7 @@ export const AppSchema = new Schema({
   debt_transactions,
   household_members,
   holders,
+  assets,
 });
 
 export type Database = (typeof AppSchema)['types'];

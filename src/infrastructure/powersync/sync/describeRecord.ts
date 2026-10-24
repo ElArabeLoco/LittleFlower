@@ -12,7 +12,7 @@
 import { labelCache, type LabelTable } from './labelCache';
 import type { SyncChangeOp, SyncRecordChange } from './types';
 
-/** Resolves a budget / income / debt id to its name. */
+/** Resolves a budget / income / debt / asset id to its name. */
 export type NameLookup = (table: LabelTable, id: unknown) => string | null;
 
 type Row = Record<string, unknown>;
@@ -61,6 +61,7 @@ export const DESCRIBED_COLUMNS = [
   'default_amount',
   'real_amount',
   'initial_amount',
+  'value',
   'rate',
   'currency',
   'from_currency',
@@ -89,6 +90,16 @@ export function describedFields(row: Row): Row {
 
 const NO_FIELDS: DescribedFields = { label: null, amount: null, currency: null, month: null };
 
+/** Table named by a holder's subject type; null for an unknown type. */
+function holderSubjectTable(subjectType: unknown): LabelTable | null {
+  switch (subjectType) {
+    case 'income': return 'incomes';
+    case 'debt': return 'debts';
+    case 'asset': return 'assets';
+    default: return null;
+  }
+}
+
 function toChangeOp({ op, opData }: CrudEntryLike): SyncChangeOp {
   if (op === 'PUT') return 'create';
   if (op === 'DELETE') return 'delete';
@@ -96,7 +107,7 @@ function toChangeOp({ op, opData }: CrudEntryLike): SyncChangeOp {
 }
 
 function describeFields(table: string, id: string, row: Row, lookup: NameLookup): DescribedFields {
-  // Own-name fallback (budgets / incomes / debts): partial PATCHes and DELETEs
+  // Own-name fallback (budgets / incomes / debts / assets): partial PATCHes and DELETEs
   // do not carry `name`, but the row's name may already be cached.
   const name = (own: LabelTable) => text(row['name']) ?? text(lookup(own, id));
 
@@ -155,12 +166,18 @@ function describeFields(table: string, id: string, row: Row, lookup: NameLookup)
         currency: 'COP',
         month: null,
       };
+    case 'assets':
+      return {
+        label: name('assets'),
+        amount: num(row['value']),
+        currency: text(row['currency']),
+        month: null,
+      };
     case 'household_members':
       return { ...NO_FIELDS, label: text(row['name']) };
     case 'holders': {
-      // A holder is described by what it belongs to: the income or debt name.
-      const subjectType = row['subject_type'];
-      const subjectTable = subjectType === 'income' ? 'incomes' : subjectType === 'debt' ? 'debts' : null;
+      // A holder is described by what it belongs to: the income, debt or asset name.
+      const subjectTable = holderSubjectTable(row['subject_type']);
       return { ...NO_FIELDS, label: subjectTable ? text(lookup(subjectTable, row['subject_id'])) : null };
     }
     case 'households':

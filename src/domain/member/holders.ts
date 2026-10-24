@@ -1,11 +1,11 @@
 /**
- * Holders (titulares) — who an income or a debt is in the name of.
+ * Holders (titulares) — who an income, a debt or an asset is in the name of.
  *
  * Zero or more members per record. No holders means the whole household.
  */
 
-/** Kinds of record that can have holders. Assets will join later. */
-export const HOLDABLE_TYPES = ['income', 'debt'] as const;
+/** Kinds of record that can have holders. */
+export const HOLDABLE_TYPES = ['income', 'debt', 'asset'] as const;
 
 export type HoldableType = (typeof HOLDABLE_TYPES)[number];
 
