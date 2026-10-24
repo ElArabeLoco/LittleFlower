@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as NetWorthRouteImport } from './routes/net-worth'
 import { Route as MonthRouteImport } from './routes/month'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as LoginRouteImport } from './routes/login'
@@ -36,6 +37,11 @@ const TransactionsRoute = TransactionsRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NetWorthRoute = NetWorthRouteImport.update({
+  id: '/net-worth',
+  path: '/net-worth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonthRoute = MonthRouteImport.update({
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/members': typeof MembersRoute
   '/month': typeof MonthRoute
+  '/net-worth': typeof NetWorthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
   '/debts/$debtId': typeof DebtsDebtIdRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/members': typeof MembersRoute
   '/month': typeof MonthRoute
+  '/net-worth': typeof NetWorthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
   '/debts/$debtId': typeof DebtsDebtIdRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/members': typeof MembersRoute
   '/month': typeof MonthRoute
+  '/net-worth': typeof NetWorthRoute
   '/onboarding': typeof OnboardingRoute
   '/transactions': typeof TransactionsRoute
   '/debts_/$debtId': typeof DebtsDebtIdRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/members'
     | '/month'
+    | '/net-worth'
     | '/onboarding'
     | '/transactions'
     | '/debts/$debtId'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/members'
     | '/month'
+    | '/net-worth'
     | '/onboarding'
     | '/transactions'
     | '/debts/$debtId'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/members'
     | '/month'
+    | '/net-worth'
     | '/onboarding'
     | '/transactions'
     | '/debts_/$debtId'
@@ -257,6 +269,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MembersRoute: typeof MembersRoute
   MonthRoute: typeof MonthRoute
+  NetWorthRoute: typeof NetWorthRoute
   OnboardingRoute: typeof OnboardingRoute
   TransactionsRoute: typeof TransactionsRoute
   DebtsDebtIdRoute: typeof DebtsDebtIdRoute
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/net-worth': {
+      id: '/net-worth'
+      path: '/net-worth'
+      fullPath: '/net-worth'
+      preLoaderRoute: typeof NetWorthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/month': {
@@ -409,6 +429,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MembersRoute: MembersRoute,
   MonthRoute: MonthRoute,
+  NetWorthRoute: NetWorthRoute,
   OnboardingRoute: OnboardingRoute,
   TransactionsRoute: TransactionsRoute,
   DebtsDebtIdRoute: DebtsDebtIdRoute,

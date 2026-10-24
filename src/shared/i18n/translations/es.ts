@@ -820,6 +820,39 @@ export const es = {
   },
 
   // ---------------------------------------------------------------------------
+  // Net worth (patrimonio)
+  // ---------------------------------------------------------------------------
+  netWorth: {
+    title: 'Patrimonio',
+    subtitle: 'Lo que tienen menos lo que deben',
+    scopeLabel: 'Ver el patrimonio de',
+    scopeHousehold: 'Todo el hogar',
+    scopeShared: 'Sin titular',
+    netWorthOf: (scope: string) => `Patrimonio neto · ${scope}`,
+    assetsLabel: 'Activos',
+    liabilitiesLabel: 'Deudas',
+    formula: 'Activos menos deudas pendientes',
+    debtRatio: (pct: number) => `Las deudas equivalen al ${pct}% de los activos.`,
+    onlyDebts: 'Sin activos registrados: por ahora el patrimonio es solo deudas.',
+    noDebtsShort: 'Sin deudas pendientes. Todo lo que tienen es patrimonio.',
+    assetsByKind: 'Activos por tipo',
+    noAssets: 'Sin activos registrados.',
+    noDebts: 'Sin deudas pendientes.',
+    partOf: (total: string, n: number) => `Su parte: 1 de ${n} titulares · total ${total}`,
+    manageAssets: 'Gestionar activos',
+    seeDebts: 'Ver deudas',
+    byMemberTitle: 'Por integrante',
+    byMemberHint: 'Lo que está a nombre de varios se reparte en partes iguales entre sus titulares. Lo que no tiene titular queda en «Sin titular».',
+    sharedHint: 'No está a nombre de nadie: es de todo el hogar.',
+    seeDetail: 'Ver detalle',
+    seeDetailAria: (name: string) => `Ver el detalle de ${name}`,
+    missingTrm: 'Hay activos o deudas en dólares sin TRM registrada y no se suman.',
+    emptyTitle: 'Aún no hay nada que sumar',
+    emptyBody: 'Registra sus activos (ahorros, la casa, el carro) y sus deudas para ver cómo está su patrimonio.',
+    addAssets: 'Agregar activos',
+  },
+
+  // ---------------------------------------------------------------------------
   // Transactions
   // ---------------------------------------------------------------------------
   transactions: {

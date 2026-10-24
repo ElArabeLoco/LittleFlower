@@ -15,7 +15,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { AlertTriangle, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import { ASSET_KINDS } from '@/domain/asset/Asset';
 import type { AssetItem } from '@/application/useAssets';
 import { Button } from '@/shared/ui/button';
@@ -74,6 +74,13 @@ export function AssetsView({ assets, totalCOP, hasMissingTrm, hasMembers, onAdd,
               </p>
               <p className="mt-2 text-sm text-[var(--text-secondary)]">{t.assets.count(assets.length)}</p>
             </div>
+            <Link
+              to="/net-worth"
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg text-sm font-semibold text-[var(--text-brand)] hover:underline"
+            >
+              {t.assets.seeNetWorth}
+              <ChevronRight size={16} aria-hidden="true" />
+            </Link>
           </section>
 
           {hasMissingTrm && <MissingTrmNotice />}

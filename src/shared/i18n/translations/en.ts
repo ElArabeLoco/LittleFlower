@@ -821,6 +821,39 @@ export const en: Translations = {
   },
 
   // ---------------------------------------------------------------------------
+  // Net worth
+  // ---------------------------------------------------------------------------
+  netWorth: {
+    title: 'Net worth',
+    subtitle: 'What you own minus what you owe',
+    scopeLabel: 'Show the net worth of',
+    scopeHousehold: 'Whole household',
+    scopeShared: 'No holder',
+    netWorthOf: (scope: string) => `Net worth · ${scope}`,
+    assetsLabel: 'Assets',
+    liabilitiesLabel: 'Debts',
+    formula: 'Assets minus outstanding debts',
+    debtRatio: (pct: number) => `Debts amount to ${pct}% of assets.`,
+    onlyDebts: 'No assets recorded: for now net worth is only debts.',
+    noDebtsShort: 'No outstanding debts. Everything you own is net worth.',
+    assetsByKind: 'Assets by type',
+    noAssets: 'No assets recorded.',
+    noDebts: 'No outstanding debts.',
+    partOf: (total: string, n: number) => `Their share: 1 of ${n} holders · total ${total}`,
+    manageAssets: 'Manage assets',
+    seeDebts: 'See debts',
+    byMemberTitle: 'By member',
+    byMemberHint: 'Anything in several names is split equally between its holders. Anything without a holder goes to "No holder".',
+    sharedHint: 'Not in anyone\'s name: it belongs to the whole household.',
+    seeDetail: 'See details',
+    seeDetailAria: (name: string) => `See the details of ${name}`,
+    missingTrm: 'Some dollar assets or debts have no exchange rate (TRM) and are left out.',
+    emptyTitle: 'Nothing to add up yet',
+    emptyBody: 'Record your assets (savings, the house, the car) and your debts to see how your net worth looks.',
+    addAssets: 'Add assets',
+  },
+
+  // ---------------------------------------------------------------------------
   // Transactions
   // ---------------------------------------------------------------------------
   transactions: {
