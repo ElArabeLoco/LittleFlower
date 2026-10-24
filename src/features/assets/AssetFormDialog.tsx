@@ -1,5 +1,7 @@
 /**
- * AssetFormDialog — create or edit an asset (type, name, value, holders).
+ * AssetFormDialog — create an asset (type, name, value, holders) or edit
+ * its type, name and holders. An existing asset's value changes through
+ * AssetValueDialog, so every change stays in its history.
  *
  * Controlled and presentational: the container decides when it opens and
  * what happens on submit. The form lives inside the dialog content, so it
@@ -25,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { HolderPicker } from '@/features/members/components/HolderPicker';
 import { ASSET_KIND_STYLES } from './assetKinds';
+import { parseInteger, useValuationFormat } from './valuationFormat';
 
 export interface AssetFormValues {
   fields: AssetFields;
@@ -73,14 +76,9 @@ interface AssetFormProps {
   onSubmit: (values: AssetFormValues) => Promise<void>;
 }
 
-/** Digits only: "450.000.000" → 450000000. Null when nothing numeric was typed. */
-function parseInteger(text: string): number | null {
-  const digits = text.replace(/\D/g, '');
-  return digits ? parseInt(digits, 10) : null;
-}
-
 function AssetForm({ mode, asset, members, onCancel, onSubmit }: AssetFormProps) {
   const { t } = useI18n();
+  const { money } = useValuationFormat();
   const id = useId();
   const [kind, setKind] = useState<AssetKind>(asset?.kind ?? 'savings');
   const [name, setName] = useState(asset?.name ?? '');
@@ -94,12 +92,12 @@ function AssetForm({ mode, asset, members, onCancel, onSubmit }: AssetFormProps)
     e.preventDefault();
     const amount = parseInteger(value);
     if (!name.trim()) { setError(t.assets.form.nameRequired); return; }
-    if (amount === null) { setError(t.assets.form.valueRequired); return; }
+    if (mode === 'create' && amount === null) { setError(t.assets.form.valueRequired); return; }
 
     setError(null);
     setSaving(true);
     try {
-      await onSubmit({ fields: { name: name.trim(), kind, value: amount, currency }, holderIds });
+      await onSubmit({ fields: { name: name.trim(), kind, value: amount ?? 0, currency }, holderIds });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
@@ -159,31 +157,41 @@ function AssetForm({ mode, asset, members, onCancel, onSubmit }: AssetFormProps)
         />
       </div>
 
-      <div className="space-y-1.5">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2 space-y-1.5">
-            <Label htmlFor={`${id}-value`}>{t.assets.form.valueLabel}</Label>
-            <Input
-              id={`${id}-value`}
-              inputMode="numeric"
-              placeholder="0"
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              aria-describedby={`${id}-value-hint`}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={`${id}-currency`}>{t.assets.form.currencyLabel}</Label>
-            <Select value={currency} onValueChange={v => setCurrency(v as AssetCurrency)}>
-              <SelectTrigger id={`${id}-currency`}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ASSET_CURRENCIES.map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+      {mode === 'edit' && asset ? (
+        <div className="space-y-1 rounded-xl bg-[var(--bg-surface-2)] px-3 py-2.5">
+          <p className="text-sm text-[var(--text-secondary)]">
+            {t.assets.form.currentValueLabel}:{' '}
+            <span className="font-semibold tabular-nums text-[var(--text-primary)]">{money(asset.value, asset.currency)}</span>
+          </p>
+          <p className="text-xs text-[var(--text-secondary)]">{t.assets.form.editValueHint}</p>
         </div>
-        <p id={`${id}-value-hint`} className="text-xs text-[var(--text-secondary)]">{t.assets.form.valueHint}</p>
-      </div>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor={`${id}-value`}>{t.assets.form.valueLabel}</Label>
+              <Input
+                id={`${id}-value`}
+                inputMode="numeric"
+                placeholder="0"
+                value={value}
+                onChange={e => setValue(e.target.value)}
+                aria-describedby={`${id}-value-hint`}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`${id}-currency`}>{t.assets.form.currencyLabel}</Label>
+              <Select value={currency} onValueChange={v => setCurrency(v as AssetCurrency)}>
+                <SelectTrigger id={`${id}-currency`}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ASSET_CURRENCIES.map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p id={`${id}-value-hint`} className="text-xs text-[var(--text-secondary)]">{t.assets.form.valueHint}</p>
+        </div>
+      )}
 
       <HolderPicker members={members} value={holderIds} onChange={setHolderIds} subject="asset" />
 

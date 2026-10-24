@@ -5,9 +5,14 @@
  *   ┌ Total en activos  $1.2B · 4 activos     Ver patrimonio > ┐
  *   Ahorros · $20M
  *   ┌ [icon] CDT Bancolombia          $20M ┐
+ *   │        ↗ Se valorizó +5% desde …     │
  *   │        Ana  Luis  compartido         │
- *   │        [Editar] [Eliminar]           │
+ *   │  [Actualizar valor] [Historial] [Editar] [Eliminar]
  *   Inmueble · …
+ *   Cambios de valor (only when some asset has more than one value)
+ *   ┌ En total se valorizaron $50M                              ┐
+ *   │ Apartamento   De $400M (1 Ene 2025) a $450M (1 Jun 2026)  │
+ *   │ ↗ Se valorizó +$50M · +12,5%             [Ver historial]  │
  *
  * Props only, no hooks beyond i18n and number format: the container
  * (AssetsPage) owns data and dialog state, and previews can render this
@@ -15,7 +20,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { AlertTriangle, ChevronRight, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
+import { AlertTriangle, ChevronRight, History, Pencil, Plus, RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { ASSET_KINDS } from '@/domain/asset/Asset';
 import type { AssetItem } from '@/application/useAssets';
 import { Button } from '@/shared/ui/button';
@@ -25,19 +30,39 @@ import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { HolderChips } from '@/features/members/components/HolderChips';
 import { ASSET_KIND_STYLES } from './assetKinds';
+import { useValuationFormat } from './valuationFormat';
+import { ValueChangeBadge } from './ValueChangeBadge';
 
 export interface AssetsViewProps {
   assets: AssetItem[];
   totalCOP: number;
   hasMissingTrm: boolean;
+  /** Assets with more than one value: the value changes report. */
+  changedAssets: AssetItem[];
+  /** Sum of their changes in COP. */
+  totalChangeCOP: number;
   /** Whether the household has any active member. */
   hasMembers: boolean;
   onAdd: () => void;
   onEdit: (asset: AssetItem) => void;
   onDelete: (asset: AssetItem) => void;
+  onUpdateValue: (asset: AssetItem) => void;
+  onShowHistory: (asset: AssetItem) => void;
 }
 
-export function AssetsView({ assets, totalCOP, hasMissingTrm, hasMembers, onAdd, onEdit, onDelete }: AssetsViewProps) {
+export function AssetsView({
+  assets,
+  totalCOP,
+  hasMissingTrm,
+  changedAssets,
+  totalChangeCOP,
+  hasMembers,
+  onAdd,
+  onEdit,
+  onDelete,
+  onUpdateValue,
+  onShowHistory,
+}: AssetsViewProps) {
   const { t } = useI18n();
   const { formatCOP } = useNumberFormat();
 
@@ -94,12 +119,23 @@ export function AssetsView({ assets, totalCOP, hasMissingTrm, hasMembers, onAdd,
               <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {group.items.map(asset => (
                   <li key={asset.id}>
-                    <AssetCard asset={asset} hasMembers={hasMembers} onEdit={onEdit} onDelete={onDelete} />
+                    <AssetCard
+                      asset={asset}
+                      hasMembers={hasMembers}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      onUpdateValue={onUpdateValue}
+                      onShowHistory={onShowHistory}
+                    />
                   </li>
                 ))}
               </ul>
             </section>
           ))}
+
+          {changedAssets.length > 0 && (
+            <ValueChangesReport assets={changedAssets} totalChangeCOP={totalChangeCOP} onShowHistory={onShowHistory} />
+          )}
         </>
       )}
     </main>
@@ -119,14 +155,87 @@ function MissingTrmNotice() {
   );
 }
 
+interface ValueChangesReportProps {
+  assets: AssetItem[];
+  totalChangeCOP: number;
+  onShowHistory: (asset: AssetItem) => void;
+}
+
+/** First value against the current one, for every asset with more than one value. */
+function ValueChangesReport({ assets, totalChangeCOP, onShowHistory }: ValueChangesReportProps) {
+  const { t } = useI18n();
+  const { formatCOP } = useNumberFormat();
+  const { money, date } = useValuationFormat();
+  const total =
+    totalChangeCOP > 0
+      ? t.assets.report.totalUp(formatCOP(totalChangeCOP))
+      : totalChangeCOP < 0
+        ? t.assets.report.totalDown(formatCOP(-totalChangeCOP))
+        : t.assets.report.totalFlat;
+
+  return (
+    <section aria-labelledby="assets-value-changes" className="space-y-3">
+      <div className="px-1">
+        <h2 id="assets-value-changes" className="text-xl font-[760] tracking-[-0.02em] text-[var(--text-primary)]">
+          {t.assets.report.title}
+        </h2>
+        <p className="mt-1 max-w-prose text-sm leading-relaxed text-[var(--text-secondary)]">{t.assets.report.hint}</p>
+      </div>
+      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+        <p className="border-b border-[var(--border-subtle)] px-4 py-3 text-base font-semibold tabular-nums text-[var(--text-primary)]">
+          {total}
+        </p>
+        <ul className="divide-y divide-[var(--border-subtle)]">
+          {assets.map(asset => {
+            const change = asset.change!;
+            return (
+              <li key={asset.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="font-semibold text-[var(--text-primary)]">{asset.name}</span>
+                    <span className="text-sm text-[var(--text-secondary)]">
+                      {t.assets.kinds[asset.kind]} · {t.assets.report.valuesCount(asset.history.length)}
+                    </span>
+                  </p>
+                  <p className="text-sm tabular-nums text-[var(--text-secondary)]">
+                    {t.assets.report.fromTo(
+                      money(change.from.value, change.from.currency),
+                      date(change.from.valuedOn),
+                      money(change.to.value, change.to.currency),
+                      date(change.to.valuedOn),
+                    )}
+                  </p>
+                  <ValueChangeBadge change={change} since={false} />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-11 gap-1.5 self-start sm:h-9 sm:self-auto"
+                  aria-label={t.assets.historyAria(asset.name)}
+                  onClick={() => onShowHistory(asset)}
+                >
+                  <History size={14} aria-hidden="true" />
+                  {t.assets.report.seeHistory}
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 interface AssetCardProps {
   asset: AssetItem;
   hasMembers: boolean;
   onEdit: (asset: AssetItem) => void;
   onDelete: (asset: AssetItem) => void;
+  onUpdateValue: (asset: AssetItem) => void;
+  onShowHistory: (asset: AssetItem) => void;
 }
 
-function AssetCard({ asset, hasMembers, onEdit, onDelete }: AssetCardProps) {
+function AssetCard({ asset, hasMembers, onEdit, onDelete, onUpdateValue, onShowHistory }: AssetCardProps) {
   const { t } = useI18n();
   const { formatCOP, formatUSD } = useNumberFormat();
   const style = ASSET_KIND_STYLES[asset.kind];
@@ -155,9 +264,33 @@ function AssetCard({ asset, hasMembers, onEdit, onDelete }: AssetCardProps) {
         </div>
       </div>
 
+      {asset.change && <ValueChangeBadge change={asset.change} compact />}
+
       <HolderChips holders={asset.holders} hasMembers={hasMembers} subject="asset" />
 
-      <div className="mt-auto flex gap-2 pt-1">
+      <div className="mt-auto flex flex-wrap gap-2 pt-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-11 gap-1.5 sm:h-9"
+          aria-label={t.assets.updateValueAria(asset.name)}
+          onClick={() => onUpdateValue(asset)}
+        >
+          <RefreshCw size={14} aria-hidden="true" />
+          {t.assets.updateValueAction}
+        </Button>
+        {asset.history.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-11 gap-1.5 sm:h-9"
+            aria-label={t.assets.historyAria(asset.name)}
+            onClick={() => onShowHistory(asset)}
+          >
+            <History size={14} aria-hidden="true" />
+            {t.assets.historyAction}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"

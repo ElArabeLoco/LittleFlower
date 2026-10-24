@@ -1,8 +1,10 @@
 /**
  * Asset — something the household owns, at its current value.
  *
- * No depreciation and no value history: the value is whatever the household
- * last wrote. Assets can have holders like incomes and debts (see holders.ts).
+ * No automatic depreciation: the value is whatever the household last wrote.
+ * `value` / `currency` are the latest of its valuations (assetValuation.ts),
+ * the history of values written by hand. Assets can have holders like
+ * incomes and debts (see holders.ts).
  */
 
 /** Asset types. The order is the order they are offered in forms and lists. */

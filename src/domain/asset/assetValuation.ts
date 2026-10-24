@@ -62,7 +62,7 @@ export function valueChange(valuations: AssetValuation[], trm: number | null): V
   const from = sorted[0];
   const to = sorted[sorted.length - 1];
 
-  const fromValue = convert(from.value, from.currency, to.currency, trm);
+  const fromValue = valueIn(from, to.currency, trm);
   if (fromValue === null) return null;
 
   const delta = to.value - fromValue;
@@ -70,8 +70,13 @@ export function valueChange(valuations: AssetValuation[], trm: number | null): V
   return { from, to, delta, percent };
 }
 
-function convert(value: number, from: AssetCurrency, to: AssetCurrency, trm: number | null): number | null {
-  if (from === to) return value;
+/** The valuation's value in `currency`: the other one converts with `trm`, null without it. */
+export function valueIn(
+  valuation: Pick<AssetValuation, 'value' | 'currency'>,
+  currency: AssetCurrency,
+  trm: number | null,
+): number | null {
+  if (valuation.currency === currency) return valuation.value;
   if (!trm) return null;
-  return from === 'USD' ? Math.round(value * trm) : Math.round(value / trm);
+  return valuation.currency === 'USD' ? Math.round(valuation.value * trm) : Math.round(valuation.value / trm);
 }
