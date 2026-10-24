@@ -1113,6 +1113,11 @@ export const es = {
       households: { created: 'Hogar creado', updated: 'Hogar actualizado', deleted: 'Hogar eliminado' },
       users: { created: 'Perfil creado', updated: 'Perfil actualizado', deleted: 'Perfil eliminado' },
       assets: { created: 'Activo creado', updated: 'Activo actualizado', deleted: 'Activo eliminado' },
+      asset_valuations: {
+        created: 'Valor de activo registrado',
+        updated: 'Valor de activo actualizado',
+        deleted: 'Valor de activo eliminado',
+      },
       household_members: { created: 'Integrante creado', updated: 'Integrante actualizado', deleted: 'Integrante eliminado' },
       holders: { created: 'Titular asignado', updated: 'Titular actualizado', deleted: 'Titular quitado' },
       generic: { created: 'Registro creado', updated: 'Registro actualizado', deleted: 'Registro eliminado' },

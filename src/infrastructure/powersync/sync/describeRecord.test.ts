@@ -160,6 +160,16 @@ describe('describeCrudEntry() — tables', () => {
     expect(patched).toEqual(change({ table: 'assets', op: 'update', id: 'a-1', label: 'Apartamento', amount: 480_000_000 }));
   });
 
+  it('asset_valuations: the asset name, the value and its currency', () => {
+    const created = describeCrudEntry(
+      { op: 'PUT', table: 'asset_valuations', id: 'v-1', opData: { asset_id: 'a-1', value: 500_000_000, currency: 'COP' } },
+      lookup,
+    );
+    expect(created).toEqual(
+      change({ table: 'asset_valuations', id: 'v-1', label: 'Apartamento', amount: 500_000_000, currency: 'COP' }),
+    );
+  });
+
   it('debt_transactions: note first, then the related debt name; amount in COP', () => {
     const withNote = describeCrudEntry(
       { op: 'PUT', table: 'debt_transactions', id: 'dt-1', opData: { debt_id: 'd-1', amount: 300_000, note: 'Abono' } },

@@ -5,6 +5,12 @@
  * These were previously duplicated across 6+ files; now centralised here.
  */
 
+/** Today in the device's time zone as 'YYYY-MM-DD'. */
+export function getToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** Returns the current month as 'YYYY-MM'. */
 export function getCurrentMonth(): string {
   return new Date().toISOString().slice(0, 7);

@@ -92,6 +92,7 @@ describe('TRACKED_TABLES', () => {
       'household_members',
       'holders',
       'assets',
+      'asset_valuations',
     ]);
   });
 });
