@@ -367,6 +367,41 @@
   --focus-ring-soft: rgb(202 47 109 / 0.2); /* decorative halo; the field border carries the contrast */
   --shadow-float: 0 18px 40px -16px rgb(46 28 40 / 0.3), 0 2px 8px -2px rgb(46 28 40 / 0.1);
 
+  /* Tactile controls (dashboard edit mode): raised keys, recessed track and well, lifted cards. */
+  --tactile-key-top: #FFFFFF;
+  --tactile-key-bottom: #F5EFF2;
+  --tactile-key-hover: #F9F5F7;
+  --tactile-key-border: var(--border-medium);
+  --tactile-key-edge: #C9BCC3;
+  --tactile-key-shadow: inset 0 1px 0 #FFFFFF, 0 1px 0 #E2D8DD, 0 2px 4px -1px rgb(46 28 40 / 0.16);
+  --tactile-key-pressed-top: #F3ECF0;
+  --tactile-key-pressed-bottom: #F7F2F5;
+  --tactile-key-pressed-shadow: inset 0 1px 3px rgb(46 28 40 / 0.2);
+  --tactile-primary-edge: #8F1A45;
+  --tactile-primary-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 1px 0 #8F1A45, 0 4px 8px -3px rgb(149 27 72 / 0.5);
+  --tactile-primary-pressed-shadow: inset 0 2px 4px rgb(76 12 35 / 0.45);
+  --tactile-danger: #C62F25;           /* 4.8:1 on the key */
+  --tactile-track: #EEE6EA;
+  --tactile-track-shadow: inset 0 1px 3px rgb(46 28 40 / 0.18), inset 0 -1px 0 rgb(255 255 255 / 0.9);
+  --tactile-notch-shadow: inset 0 1px 0 #FFFFFF, 0 1px 0 #DDD2D8, 0 2px 5px -1px rgb(46 28 40 / 0.25);
+  --tactile-ink-soft: #6E616A;         /* labels on the track and in the well, 4.9:1 */
+  --tactile-grip: #B3A6AE;
+  --tactile-grip-highlight: #FFFFFF;
+  --tactile-well: #F0E9ED;
+  --tactile-well-shadow: inset 0 2px 7px rgb(46 28 40 / 0.15), inset 0 -1px 0 rgb(255 255 255 / 0.85);
+  --tactile-knob-shadow: inset 0 1px 0 #FFFFFF, 0 2px 0 #E2D8DD, 0 6px 12px -6px rgb(46 28 40 / 0.35);
+  --tactile-card-border: #E6DDE2;
+  --tactile-card-shadow: inset 0 1px 0 #FFFFFF, 0 1px 0 #E6DDE2, 0 12px 28px -16px rgb(46 28 40 / 0.4), 0 0 0 0 rgb(46 28 40 / 0);
+  --tactile-card-lifted: #FFFFFF;
+  --tactile-card-lifted-shadow: inset 0 1px 0 #FFFFFF, 0 2px 0 #E6DDE2, 0 36px 64px -26px rgb(46 28 40 / 0.5), 0 14px 26px -14px rgb(46 28 40 / 0.28);
+  --tactile-dot: var(--color-pink-600);
+  --tactile-dot-soft: rgb(202 47 109 / 0.16);
+  --tactile-halo: rgb(202 47 109 / 0.45);
+  --tactile-halo-clear: rgb(202 47 109 / 0);
+  --tactile-toast: linear-gradient(180deg, #3A2733 0%, #2A1A24 100%);
+  --tactile-toast-text: #FFFFFF;
+  --tactile-toast-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 18px 40px -16px rgb(46 28 40 / 0.5);
+
   /* Header glass: the bar frosts what scrolls under it; capsules float on it. */
   --bg-bar: rgb(249 245 247 / 0.8);
   --glass-bg: rgb(255 255 255 / 0.72);
@@ -445,6 +480,41 @@
   --focus-ring: #F7A0BF;              /* opaque focus indicator, 8.8:1 on surface */
   --focus-ring-soft: rgb(247 160 191 / 0.25);
   --shadow-float: 0 18px 40px -12px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.04);
+
+  /* Tactile controls: depth from black shadows and a lighter surface for what is lifted. */
+  --tactile-key-top: #3A2B35;
+  --tactile-key-bottom: #2D2129;
+  --tactile-key-hover: #33262F;
+  --tactile-key-border: #4A3B45;
+  --tactile-key-edge: #140D11;
+  --tactile-key-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 1px 0 #0F090D, 0 3px 6px -1px rgb(0 0 0 / 0.55);
+  --tactile-key-pressed-top: #1F161C;
+  --tactile-key-pressed-bottom: #261B23;
+  --tactile-key-pressed-shadow: inset 0 1px 3px rgb(0 0 0 / 0.6);
+  --tactile-primary-edge: #5E0F2C;
+  --tactile-primary-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 1px 0 #5E0F2C, 0 4px 10px -3px rgb(0 0 0 / 0.6);
+  --tactile-primary-pressed-shadow: inset 0 2px 4px rgb(40 4 18 / 0.6);
+  --tactile-danger: var(--color-red-400); /* 5.5:1 on the key */
+  --tactile-track: #150E12;
+  --tactile-track-shadow: inset 0 1px 3px rgb(0 0 0 / 0.6), inset 0 -1px 0 rgb(255 255 255 / 0.05);
+  --tactile-notch-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 1px 0 #0F090D, 0 2px 5px -1px rgb(0 0 0 / 0.6);
+  --tactile-ink-soft: #9B8E96;         /* 6:1 on the track */
+  --tactile-grip: #120B0F;
+  --tactile-grip-highlight: rgb(255 255 255 / 0.12);
+  --tactile-well: #120B0F;
+  --tactile-well-shadow: inset 0 2px 8px rgb(0 0 0 / 0.6), inset 0 -1px 0 rgb(255 255 255 / 0.05);
+  --tactile-knob-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 2px 0 #0F090D, 0 6px 12px -6px rgb(0 0 0 / 0.7);
+  --tactile-card-border: #3F313A;
+  --tactile-card-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 0 #0F090D, 0 14px 30px -16px rgb(0 0 0 / 0.75), 0 0 0 0 rgb(0 0 0 / 0);
+  --tactile-card-lifted: #2E222A;
+  --tactile-card-lifted-shadow: inset 0 1px 0 rgb(255 255 255 / 0.09), 0 2px 0 #0F090D, 0 40px 70px -24px rgb(0 0 0 / 0.85), 0 16px 30px -14px rgb(0 0 0 / 0.6);
+  --tactile-dot: var(--color-pink-400);
+  --tactile-dot-soft: rgb(243 114 163 / 0.2);
+  --tactile-halo: rgb(243 114 163 / 0.5);
+  --tactile-halo-clear: rgb(243 114 163 / 0);
+  --tactile-toast: linear-gradient(180deg, #463440 0%, #3A2A34 100%);
+  --tactile-toast-text: #F4EEF2;
+  --tactile-toast-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 0 0 1px rgb(255 255 255 / 0.06), 0 18px 40px -12px rgb(0 0 0 / 0.7);
 
   --bg-bar: rgb(24 16 21 / 0.78);
   --glass-bg: rgb(255 255 255 / 0.08);
