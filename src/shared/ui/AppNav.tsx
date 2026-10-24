@@ -7,7 +7,7 @@
  *   Inicio      → /home
  *   Dashboard   → /dashboard
  *   Presupuesto → /budget   (hub: Mensual + Anual)
- *   Finanzas    → /finances (hub: Ingresos + Presupuestos + Deudas + Integrantes)
+ *   Finanzas    → /finances (hub: Patrimonio + Ingresos + Presupuestos + Deudas + Activos + …)
  *   Perfil      → /settings (avatar con inicial del usuario)
  *
  * The active tab is marked by a ribbon hanging from the bar's top edge.
@@ -74,7 +74,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: Wallet,
     to: '/finances',
     // Active on the hub AND on the sub-pages it contains
-    match: ['/finances', '/income', '/settings/budgets', '/debts', '/transactions', '/members'],
+    match: ['/finances', '/net-worth', '/income', '/settings/budgets', '/debts', '/assets', '/transactions', '/members'],
   },
 ];
 

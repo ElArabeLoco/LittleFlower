@@ -676,6 +676,10 @@ export const es = {
     transactionsDesc: 'Historial de gastos del mes organizado por forma de pago.',
     membersTitle: 'Integrantes',
     membersDesc: 'Las personas a cuyo nombre están los ingresos, las deudas y los activos. No necesitan cuenta en Florecita.',
+    assetsTitle: 'Activos',
+    assetsDesc: 'Ahorros, inversiones, inmuebles y vehículos del hogar, con su valor actual y a nombre de quién están.',
+    netWorthTitle: 'Patrimonio',
+    netWorthDesc: 'Lo que tienen menos lo que deben: activos contra deudas, de todo el hogar y de cada integrante.',
   },
 
   // ---------------------------------------------------------------------------
@@ -763,6 +767,56 @@ export const es = {
     sharedDebt: 'compartida',
     sharedAsset: 'compartido',
     household: 'Del hogar',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Assets (activos)
+  // ---------------------------------------------------------------------------
+  assets: {
+    title: 'Activos',
+    subtitle: 'Lo que el hogar tiene',
+    intro: 'Ahorros, inversiones, inmuebles, vehículos y todo lo que tenga valor. Escribe cuánto vale hoy y actualízalo cuando cambie.',
+    addShort: 'Agregar',
+    addLong: 'Nuevo activo',
+    totalLabel: 'Total en activos',
+    count: (n: number) => (n === 1 ? '1 activo' : `${n} activos`),
+    kinds: {
+      savings: 'Ahorros',
+      investment: 'Inversión',
+      real_estate: 'Inmueble',
+      vehicle: 'Vehículo',
+      other: 'Otro',
+    },
+    kindHints: {
+      savings: 'Cuentas, CDT, efectivo',
+      investment: 'Acciones, fondos, cripto',
+      real_estate: 'Casa, apartamento, lote',
+      vehicle: 'Carro, moto',
+      other: 'Cualquier otro bien',
+    },
+    approxCOP: (cop: string) => `≈ ${cop}`,
+    missingTrm: 'Sin TRM: no se suma',
+    missingTrmNotice: 'Hay activos en dólares sin TRM registrada y no se suman al total.',
+    seeNetWorth: 'Ver patrimonio',
+    editAction: 'Editar',
+    deleteAction: 'Eliminar',
+    editAria: (name: string) => `Editar ${name}`,
+    deleteAria: (name: string) => `Eliminar ${name}`,
+    confirmDelete: (name: string) => `¿Eliminar el activo "${name}"? Deja de contar en el patrimonio.`,
+    emptyTitle: 'Aún no hay activos',
+    emptyBody: 'Agrega lo que tienen (una cuenta de ahorros, la casa, el carro) para ver su patrimonio: lo que tienen menos lo que deben.',
+    form: {
+      createTitle: 'Nuevo activo',
+      editTitle: 'Editar activo',
+      kindLabel: 'Tipo',
+      nameLabel: 'Nombre *',
+      namePlaceholder: 'Ej: Apartamento, CDT Bancolombia',
+      nameRequired: 'El nombre es obligatorio',
+      valueLabel: 'Valor actual *',
+      valueHint: 'Lo que valdría hoy. No se deprecia solo: actualízalo cuando cambie.',
+      valueRequired: 'Escribe el valor del activo',
+      currencyLabel: 'Moneda',
+    },
   },
 
   // ---------------------------------------------------------------------------

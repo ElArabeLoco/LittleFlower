@@ -677,6 +677,10 @@ export const en: Translations = {
     transactionsDesc: 'Monthly expense ledger organized by payment method.',
     membersTitle: 'Members',
     membersDesc: 'The people whose name the incomes, debts and assets are in. They do not need a Florecita account.',
+    assetsTitle: 'Assets',
+    assetsDesc: 'The household savings, investments, real estate and vehicles, at their current value and in whose name they are.',
+    netWorthTitle: 'Net worth',
+    netWorthDesc: 'What you own minus what you owe: assets against debts, for the whole household and for each member.',
   },
 
   // ---------------------------------------------------------------------------
@@ -764,6 +768,56 @@ export const en: Translations = {
     sharedDebt: 'shared',
     sharedAsset: 'shared',
     household: 'Household',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Assets
+  // ---------------------------------------------------------------------------
+  assets: {
+    title: 'Assets',
+    subtitle: 'What the household owns',
+    intro: 'Savings, investments, real estate, vehicles and anything else of value. Write what it is worth today and update it when it changes.',
+    addShort: 'Add',
+    addLong: 'New asset',
+    totalLabel: 'Total assets',
+    count: (n: number) => (n === 1 ? '1 asset' : `${n} assets`),
+    kinds: {
+      savings: 'Savings',
+      investment: 'Investment',
+      real_estate: 'Real estate',
+      vehicle: 'Vehicle',
+      other: 'Other',
+    },
+    kindHints: {
+      savings: 'Accounts, CDs, cash',
+      investment: 'Stocks, funds, crypto',
+      real_estate: 'House, apartment, land',
+      vehicle: 'Car, motorcycle',
+      other: 'Anything else',
+    },
+    approxCOP: (cop: string) => `≈ ${cop}`,
+    missingTrm: 'No TRM: not added',
+    missingTrmNotice: 'Some dollar assets have no exchange rate (TRM) and are left out of the total.',
+    seeNetWorth: 'See net worth',
+    editAction: 'Edit',
+    deleteAction: 'Delete',
+    editAria: (name: string) => `Edit ${name}`,
+    deleteAria: (name: string) => `Delete ${name}`,
+    confirmDelete: (name: string) => `Delete the asset "${name}"? It stops counting toward net worth.`,
+    emptyTitle: 'No assets yet',
+    emptyBody: 'Add what you own (a savings account, the house, the car) to see your net worth: what you own minus what you owe.',
+    form: {
+      createTitle: 'New asset',
+      editTitle: 'Edit asset',
+      kindLabel: 'Type',
+      nameLabel: 'Name *',
+      namePlaceholder: 'E.g. Apartment, Savings CD',
+      nameRequired: 'The name is required',
+      valueLabel: 'Current value *',
+      valueHint: 'What it would be worth today. It does not depreciate on its own: update it when it changes.',
+      valueRequired: 'Write the value of the asset',
+      currencyLabel: 'Currency',
+    },
   },
 
   // ---------------------------------------------------------------------------
