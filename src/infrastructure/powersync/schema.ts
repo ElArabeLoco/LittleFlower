@@ -284,6 +284,21 @@ const assets = new Table(
   { indexes: { idx_assets_deleted: ['deleted_at'] } },
 );
 
+const asset_valuations = new Table(
+  {
+    household_id: column.text,
+    asset_id: column.text,
+    value: column.integer, // integer in `currency`
+    currency: column.text, // 'COP' | 'USD'
+    valued_on: column.text, // YYYY-MM-DD — the day this value was known
+    note: column.text, // nullable
+    created_by: column.text,
+    created_at: column.text,
+    deleted_at: column.text, // nullable — soft delete
+  },
+  { indexes: { idx_asset_valuations_asset: ['asset_id'] } },
+);
+
 // ---------------------------------------------------------------------------
 // Exported schema
 // ---------------------------------------------------------------------------
@@ -302,6 +317,7 @@ export const AppSchema = new Schema({
   household_members,
   holders,
   assets,
+  asset_valuations,
 });
 
 export type Database = (typeof AppSchema)['types'];

@@ -74,5 +74,8 @@ export {
   insertAsset,
   updateAsset,
   softDeleteAsset,
+  addAssetValuation,
+  deleteAssetValuation,
   type InsertAssetPayload,
+  type AssetValuationPayload,
 } from './repositories/PowerSyncAssetRepository';

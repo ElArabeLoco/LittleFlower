@@ -122,6 +122,30 @@ describe('buildActivosSheet', () => {
     ]);
   });
 
+  it('adds the value history of the assets with more than one value, oldest first', () => {
+    const valuation = (id: string, assetId: string, value: number, valued_on: string, extra: Record<string, unknown> = {}) => ({
+      id, asset_id: assetId, value, currency: 'COP', valued_on, note: null,
+      created_at: `${valued_on}T00:00:00Z`, deleted_at: null, ...extra,
+    });
+    const sheet = buildActivosSheet(backup({
+      assets: [asset('a', { value: 120 }), asset('b')],
+      asset_valuations: [
+        valuation('a2', 'a', 120, '2026-06-01', { note: 'Avalúo' }),
+        valuation('a1', 'a', 100, '2025-01-01'),
+        valuation('a3', 'a', 999, '2026-07-01', { deleted_at: '2026-07-02T00:00:00Z' }),
+        valuation('b1', 'b', 1_000, '2026-01-01'),
+      ],
+    }));
+
+    expect(sheet.slice(4)).toEqual([
+      [],
+      ['HISTORIAL DE VALOR', '', '', '', ''],
+      ['Activo', 'Fecha', 'Valor', 'Moneda', 'Nota'],
+      ['Activo a', '2025-01-01', 100, 'COP', ''],
+      ['Activo a', '2026-06-01', 120, 'COP', 'Avalúo'],
+    ]);
+  });
+
   it('works on backups made before assets existed', () => {
     expect(buildActivosSheet(backup({})).slice(2)).toEqual([['Sin activos registrados']]);
   });

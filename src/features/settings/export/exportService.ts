@@ -94,6 +94,7 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     household_members,
     holders,
     assets,
+    asset_valuations,
   ] = await Promise.all([
     db.getAll('SELECT * FROM households WHERE id = ?', [householdId]),
     db.getAll('SELECT * FROM users WHERE household_id = ?', [householdId]),
@@ -108,6 +109,7 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     db.getAll('SELECT * FROM household_members WHERE household_id = ?', [householdId]),
     db.getAll('SELECT * FROM holders WHERE household_id = ?', [householdId]),
     db.getAll('SELECT * FROM assets WHERE household_id = ?', [householdId]),
+    db.getAll('SELECT * FROM asset_valuations WHERE household_id = ?', [householdId]),
   ]);
 
   return {
@@ -129,6 +131,7 @@ async function queryAllData(householdId: string): Promise<FlorecitaExport> {
     household_members: household_members as Record<string, unknown>[],
     holders: holders as Record<string, unknown>[],
     assets: assets as Record<string, unknown>[],
+    asset_valuations: asset_valuations as Record<string, unknown>[],
   };
 }
 
@@ -367,6 +370,35 @@ export function buildActivosSheet(data: FlorecitaExport): Row[] {
   }
 
   if (activeAssets.length === 0) rows.push(['Sin activos registrados']);
+
+  // Value history of the assets that have more than one value, oldest first.
+  const valuationsByAsset = new Map<string, Record<string, unknown>[]>();
+  for (const valuation of data.asset_valuations ?? []) {
+    if (valuation.deleted_at) continue;
+    const list = valuationsByAsset.get(valuation.asset_id as string) ?? [];
+    list.push(valuation);
+    valuationsByAsset.set(valuation.asset_id as string, list);
+  }
+  const withHistory = activeAssets.filter(a => (valuationsByAsset.get(a.id as string)?.length ?? 0) > 1);
+  if (withHistory.length > 0) {
+    rows.push([], ['HISTORIAL DE VALOR', '', '', '', ''], ['Activo', 'Fecha', 'Valor', 'Moneda', 'Nota']);
+    for (const asset of withHistory) {
+      const history = [...valuationsByAsset.get(asset.id as string)!].sort(
+        (a, b) =>
+          String(a.valued_on).localeCompare(String(b.valued_on)) ||
+          String(a.created_at).localeCompare(String(b.created_at)),
+      );
+      for (const valuation of history) {
+        rows.push([
+          asset.name as string,
+          valuation.valued_on as string,
+          num(valuation.value),
+          (valuation.currency as string) ?? 'COP',
+          (valuation.note as string | null) ?? '',
+        ]);
+      }
+    }
+  }
 
   return rows;
 }

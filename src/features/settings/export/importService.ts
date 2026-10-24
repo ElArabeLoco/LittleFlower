@@ -74,6 +74,10 @@ const TABLE_COLUMNS: Record<string, string[]> = {
     'id', 'household_id', 'name', 'kind', 'value', 'currency', 'created_by', 'created_at',
     'updated_at', 'last_edited_by', 'last_edited_at', 'deleted_at',
   ],
+  asset_valuations: [
+    'id', 'household_id', 'asset_id', 'value', 'currency', 'valued_on', 'note',
+    'created_by', 'created_at', 'deleted_at',
+  ],
 };
 
 // Defaults for NOT NULL columns missing from older backups (or from rows
@@ -83,6 +87,7 @@ const COLUMN_DEFAULTS: Record<string, Record<string, unknown>> = {
   debt_transactions: { interest_amount: 0, fees_amount: 0 },
   household_members: { tone: 'petal' },
   assets: { kind: 'other', value: 0, currency: 'COP' },
+  asset_valuations: { value: 0, currency: 'COP' },
 };
 
 // Import order respects FK dependencies
@@ -97,6 +102,7 @@ const IMPORT_ORDER = [
   'exchange_rates',
   'expenses',
   'debt_transactions',
+  'asset_valuations',
   'holders', // last: points at members, incomes, debts and assets
 ] as const;
 

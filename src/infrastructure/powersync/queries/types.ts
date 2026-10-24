@@ -153,6 +153,17 @@ export interface HouseholdUserRow {
   name: string;
 }
 
+/** One active valuation of an active asset. Currency is raw; read it with toAssetCurrency(). */
+export interface AssetValuationRow {
+  id: string;
+  asset_id: string;
+  value: number;
+  currency: string;
+  valued_on: string;
+  note: string | null;
+  created_at: string;
+}
+
 /** One active asset. Kind and currency are raw; read them with toAssetKind() / toAssetCurrency(). */
 export interface AssetRow {
   id: string;

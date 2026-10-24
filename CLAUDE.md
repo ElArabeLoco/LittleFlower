@@ -93,8 +93,8 @@ useHolders.ts           ← holders of every income, debt or asset, by subject i
 useMemberHoldings.ts    ← what one member holds, with co-holders (delete dialog)
 useMemberSuggestions.ts ← account names offered as member suggestions
 useMemberMutations.ts   ← create / rename / recolor / delete a member
-useAssets.ts            ← active assets with holders and COP value (latest TRM)
-useAssetMutations.ts    ← create / edit / delete an asset with its holders
+useAssets.ts            ← active assets with holders, COP value (latest TRM) and value history
+useAssetMutations.ts    ← create / edit / delete an asset with its holders; add / delete a value
 useNetWorth.ts          ← assets vs debt balances: household, per member, no holder
 ```
 
@@ -150,7 +150,7 @@ BudgetMonth (1) ── (N) Expense
 ExchangeRate   ← per month, USD→COP TRM
 Household      ← 6-digit join code for onboarding
 HouseholdMember (1) ──── (N) Holder ──── (1) Income | Debt | Asset
-Asset          ← name, kind, current value (COP or USD); no depreciation
+Asset (1) ──── (N) AssetValuation   ← values written by hand over time; no depreciation
 ```
 
 ### Members and holders
@@ -163,7 +163,10 @@ Asset          ← name, kind, current value (COP or USD); no depreciation
 
 ### Assets and net worth
 
-- An **Asset** has a kind (`savings | investment | real_estate | vehicle | other`), an integer value in COP or USD and 0..N holders. No depreciation or history: the value is edited by hand. Soft delete only.
+- An **Asset** has a kind (`savings | investment | real_estate | vehicle | other`), an integer value in COP or USD and 0..N holders. Soft delete only.
+- Its value changes by hand: each change is an **AssetValuation** (`asset_valuations`: value, currency, `valued_on` date, optional note). No automatic depreciation. `assets.value` / `assets.currency` cache the latest active valuation by `valued_on`, then `created_at`; every valuation write recomputes them in the same transaction, so net worth reads `assets` only.
+- The first valuation has the id `initial:<assetId>` (migration backfill, `insertAsset`, and the seed `addAssetValuation` writes for an asset that has none). The last valuation of an asset cannot be deleted. The edit form does not change the value: "Actualizar valor" does, so every change lands in the history.
+- Assets with 2+ valuations show their change (first vs. latest, `domain/asset/assetValuation.ts`) on their card, in the "Cambios de valor" report on /assets and in a history dialog with a chart.
 - **Net worth** (`domain/netWorth/netWorth.ts`) = assets at current value − outstanding debt balances, both in COP (USD with the latest TRM; without a TRM the record is left out and flagged).
 - Debt balances come from `balanceByDebt` in `useDebtManagementSummary`, so "Deudas" on /net-worth equals "Total adeudado" on /debts.
 - Per member, a record with N holders counts value / N for each (integer split, remainder to the first holders). Records without active holders form the "Sin titular" group, so members + that group always add up to the household.

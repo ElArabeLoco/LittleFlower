@@ -70,6 +70,7 @@ export const DESCRIBED_COLUMNS = [
   'budget_id',
   'income_id',
   'debt_id',
+  'asset_id',
   'subject_type',
   'subject_id',
   'deleted_at',
@@ -169,6 +170,13 @@ function describeFields(table: string, id: string, row: Row, lookup: NameLookup)
     case 'assets':
       return {
         label: name('assets'),
+        amount: num(row['value']),
+        currency: text(row['currency']),
+        month: null,
+      };
+    case 'asset_valuations':
+      return {
+        label: text(lookup('assets', row['asset_id'])) ?? text(row['note']),
         amount: num(row['value']),
         currency: text(row['currency']),
         month: null,

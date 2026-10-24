@@ -20,6 +20,8 @@ export interface FlorecitaExport {
   holders?: Record<string, unknown>[];
   /** Absent in backups made before assets existed. */
   assets?: Record<string, unknown>[];
+  /** Absent in backups made before asset value history existed. */
+  asset_valuations?: Record<string, unknown>[];
 }
 
 export interface ImportResult {
