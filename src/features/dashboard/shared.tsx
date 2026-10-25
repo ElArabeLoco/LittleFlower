@@ -1,5 +1,6 @@
 import { cn } from '@/shared/ui/cn';
 import { formatK } from './helpers';
+import { useWidgetSlot } from './layout/WidgetSlotContext';
 
 // ---------------------------------------------------------------------------
 // Chart tooltip
@@ -56,19 +57,36 @@ export function PieTooltip({
 // Chart Card (section wrapper)
 // ---------------------------------------------------------------------------
 
-export function ChartCard({ title, subtitle, children, className }: {
+export function ChartCard({ title, subtitle, children, className, bare = false }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   className?: string;
+  /** No card and no title outside edit mode (the KPI strip brings its own tiles). */
+  bare?: boolean;
 }) {
+  // Inside the configurable grid the slot adds the edit controls and the motion classes.
+  const slot = useWidgetSlot();
+  const chromeless = bare && !slot?.editing;
   return (
-    <div className={cn('bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-5', className)}>
-      <div className="mb-4">
-        <h2 className="text-sm font-bold text-[var(--text-primary)]">{title}</h2>
-        {subtitle && <p className="text-xs text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
-      </div>
-      {children}
+    <div
+      className={cn(
+        'rounded-2xl',
+        !chromeless && 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-sm p-5',
+        slot && 'dash-card',
+        slot?.editing && 'is-editing',
+        slot?.lifted && 'is-lifted',
+        className,
+      )}
+    >
+      {slot?.controls}
+      {!chromeless && (
+        <div className="mb-4">
+          <h2 className="text-sm font-bold text-[var(--text-primary)]">{title}</h2>
+          {subtitle && <p className="text-xs text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
+        </div>
+      )}
+      {slot ? <div className="dash-body">{children}</div> : children}
     </div>
   );
 }

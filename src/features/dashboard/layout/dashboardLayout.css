@@ -1,0 +1,318 @@
+/*
+ * Dashboard edit mode: tactile controls, the 6-track widget grid and the
+ * classes the motion layer (gridMotion.ts) animates. Colors come from the
+ * --tactile-* tokens in index.css, so light and dark share these rules.
+ */
+
+/* ---- Tactile controls -------------------------------------------------- */
+
+.dash-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 2.5rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--tactile-key-border);
+  border-bottom-color: var(--tactile-key-edge);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--tactile-key-top) 0%, var(--tactile-key-bottom) 100%);
+  box-shadow: var(--tactile-key-shadow);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.dash-key:hover { background: linear-gradient(180deg, var(--tactile-key-top) 0%, var(--tactile-key-hover) 100%); }
+.dash-key:active,
+.dash-key.is-pressed {
+  transform: translateY(1px);
+  background: linear-gradient(180deg, var(--tactile-key-pressed-top) 0%, var(--tactile-key-pressed-bottom) 100%);
+  box-shadow: var(--tactile-key-pressed-shadow);
+}
+.dash-key-small { height: 2rem; padding: 0 0.75rem; font-size: 0.75rem; }
+.dash-key-primary {
+  border-color: var(--color-pink-700);
+  border-bottom-color: var(--tactile-primary-edge);
+  background: linear-gradient(180deg, #DA4680 0%, #C22966 100%);
+  box-shadow: var(--tactile-primary-shadow);
+  color: #FFFFFF;
+}
+.dash-key-primary:hover { background: linear-gradient(180deg, #DE528A 0%, #C22966 100%); }
+.dash-key-primary:active {
+  background: linear-gradient(180deg, #C22966 0%, #B12259 100%);
+  box-shadow: var(--tactile-primary-pressed-shadow);
+}
+.dash-key-danger { color: var(--tactile-danger); }
+
+.dash-ghost {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 0.625rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dash-ghost:hover { background: var(--bg-hover); }
+
+.dash-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--tactile-track);
+  box-shadow: var(--tactile-track-shadow);
+}
+.dash-notch {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tactile-ink-soft);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.12s ease, box-shadow 0.12s ease, color 0.12s ease;
+}
+.dash-notch:hover { color: var(--text-primary); }
+.dash-notch[aria-pressed='true'] {
+  background: linear-gradient(180deg, var(--tactile-key-top) 0%, var(--tactile-key-bottom) 100%);
+  box-shadow: var(--tactile-notch-shadow);
+  color: var(--text-primary);
+}
+
+.dash-grip { display: grid; grid-template-columns: repeat(2, 4px); gap: 3px; }
+.dash-grip > span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--tactile-grip);
+  box-shadow: 0 1px 0 var(--tactile-grip-highlight);
+}
+
+.dash-well {
+  border: 0;
+  border-radius: 1rem;
+  background: var(--tactile-well);
+  box-shadow: var(--tactile-well-shadow);
+}
+.dash-knob {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--tactile-key-border);
+  border-bottom-color: var(--tactile-key-edge);
+  background: linear-gradient(180deg, var(--tactile-key-top) 0%, var(--tactile-key-bottom) 100%);
+  box-shadow: var(--tactile-knob-shadow);
+  color: var(--text-brand);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.dash-add:active .dash-knob { transform: translateY(2px); box-shadow: var(--tactile-key-pressed-shadow); }
+
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--tactile-track);
+  box-shadow: var(--tactile-track-shadow);
+  color: var(--text-brand);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+.dash-chip > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tactile-dot);
+  box-shadow: 0 0 0 3px var(--tactile-dot-soft);
+}
+
+.dash-key:focus-visible,
+.dash-ghost:focus-visible,
+.dash-notch:focus-visible,
+.dash-add:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .dash-key, .dash-ghost { height: 2.75rem; }
+  .dash-key-small { height: 2.75rem; padding: 0 0.875rem; font-size: 0.8125rem; }
+}
+
+/* ---- Grid: thirds (span 2), halves (span 3) and full rows (span 6) mix ---- */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.dash-slot { position: relative; min-width: 0; grid-column: span 3; }
+.dash-slot[data-width='third'] { grid-column: span 2; }
+.dash-slot[data-width='full'] { grid-column: span 6; }
+.dash-add { grid-column: span 2; }
+
+@media (max-width: 1023px) {
+  .dash-slot[data-width='third'], .dash-add { grid-column: span 3; }
+}
+@media (max-width: 639px) {
+  .dash-grid > * { grid-column: 1 / -1 !important; }
+  .dash-widths { display: none !important; }
+}
+
+/* ---- Cards inside slots ------------------------------------------------- */
+
+.dash-card {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: box-shadow 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.32s ease;
+}
+.dash-card.is-editing {
+  border-color: var(--tactile-card-border);
+  box-shadow: var(--tactile-card-shadow);
+}
+.dash-card.is-lifted {
+  z-index: 60;
+  will-change: transform;
+  background: var(--tactile-card-lifted);
+  box-shadow: var(--tactile-card-lifted-shadow);
+}
+.dash-body { transition: opacity 0.2s ease; }
+.dash-card.is-editing .dash-body { opacity: 0.55; pointer-events: none; }
+.dash-card.is-lifted .dash-body { opacity: 1; }
+.dash-slot.is-dragging { align-self: start; }
+
+.dash-controls { animation: dash-controls-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.dash-grab { touch-action: none; cursor: grab; }
+
+/* The empty slot a lifted card leaves behind, and the halo when it lands. */
+.dash-hole {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: var(--tactile-well);
+  box-shadow: var(--tactile-well-shadow);
+  color: var(--tactile-ink-soft);
+  font-size: 0.75rem;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.dash-slot.is-dragging > .dash-hole { opacity: 1; }
+.dash-halo { position: absolute; inset: 0; border-radius: 1rem; opacity: 0; pointer-events: none; }
+
+.dash-add {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  color: var(--text-primary);
+  cursor: pointer;
+  animation: dash-pop-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+html.dash-dragging,
+html.dash-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---- Catalog: drawer on the right, bottom sheet on phones ---------------- */
+
+.dash-catalog {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-float);
+  animation: dash-drawer-in 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (max-width: 639px) {
+  .dash-catalog {
+    top: auto;
+    left: 0;
+    width: auto;
+    max-height: 86vh;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation-name: dash-sheet-in;
+  }
+}
+
+/* ---- Toast with undo ----------------------------------------------------- */
+
+.dash-toast {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  bottom: calc(4rem + env(safe-area-inset-bottom) + 16px);
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 14px;
+  background: var(--tactile-toast);
+  box-shadow: var(--tactile-toast-shadow);
+  color: var(--tactile-toast-text);
+  font-size: 0.8125rem;
+  transform: translateX(-50%);
+  animation: dash-toast-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.dash-toast-undo {
+  height: 2.25rem;
+  padding: 0 12px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.12) 0%, rgb(255 255 255 / 0.04) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 1px 0 rgb(0 0 0 / 0.3);
+  color: #F7A0BF;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.dash-toast-undo:active { transform: translateY(1px); }
+.dash-toast-undo:focus-visible { outline: 2px solid #F7A0BF; outline-offset: 2px; }
+
+@keyframes dash-controls-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes dash-pop-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes dash-drawer-in { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: none; } }
+@keyframes dash-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes dash-toast-in { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-controls, .dash-add, .dash-catalog, .dash-toast { animation: none; }
+  .dash-card, .dash-hole, .dash-body, .dash-key, .dash-notch { transition: none; }
+}

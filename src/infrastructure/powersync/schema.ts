@@ -299,6 +299,17 @@ const asset_valuations = new Table(
   { indexes: { idx_asset_valuations_asset: ['asset_id'] } },
 );
 
+// One row per user: the order and width of their dashboard widgets.
+const dashboard_layouts = new Table({
+  household_id: column.text,
+  user_id: column.text, // also the row id
+  layout: column.text, // JSON {"v":1,"items":[{"id","width"}]}, read with parseLayout()
+  created_at: column.text,
+  updated_at: column.text,
+  last_edited_by: column.text, // nullable
+  last_edited_at: column.text, // nullable
+});
+
 // ---------------------------------------------------------------------------
 // Exported schema
 // ---------------------------------------------------------------------------
@@ -318,6 +329,7 @@ export const AppSchema = new Schema({
   holders,
   assets,
   asset_valuations,
+  dashboard_layouts,
 });
 
 export type Database = (typeof AppSchema)['types'];
