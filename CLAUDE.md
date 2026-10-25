@@ -75,6 +75,7 @@ queries/
   useHouseholdQueries.ts
   useMemberQueries.ts
   useAssetQueries.ts
+  useDashboardLayoutQueries.ts
   types.ts      ← canonical SQLite row types (snake_case)
   index.ts      ← barrel export
 ```
@@ -96,6 +97,7 @@ useMemberMutations.ts   ← create / rename / recolor / delete a member
 useAssets.ts            ← active assets with holders, COP value (latest TRM) and value history
 useAssetMutations.ts    ← create / edit / delete an asset with its holders; add / delete a value
 useNetWorth.ts          ← assets vs debt balances: household, per member, no holder
+useDashboardLayout.ts   ← the user's dashboard layout (widget order + widths); default when nothing is saved
 ```
 
 ### Lifecycle
@@ -170,6 +172,13 @@ Asset (1) ──── (N) AssetValuation   ← values written by hand over time
 - **Net worth** (`domain/netWorth/netWorth.ts`) = assets at current value − outstanding debt balances, both in COP (USD with the latest TRM; without a TRM the record is left out and flagged).
 - Debt balances come from `balanceByDebt` in `useDebtManagementSummary`, so "Deudas" on /net-worth equals "Total adeudado" on /debts.
 - Per member, a record with N holders counts value / N for each (integer split, remainder to the first holders). Records without active holders form the "Sin titular" group, so members + that group always add up to the household.
+
+### Dashboard layout
+
+- Each user arranges their own dashboard: one row per user in `dashboard_layouts` (id = user id, JSON `{"v":1,"items":[{"id","width"}]}`). No row = `DEFAULT_LAYOUT`, which reproduces the original rows.
+- The catalog is fixed (`WIDGET_IDS` in `domain/dashboard/dashboardLayout.ts`); each widget appears at most once. Widths: third / half / full on a 6-track grid; thirds become halves under 1024 px and everything is full width under 640 px.
+- `features/dashboard/layout/widgetRegistry.tsx` maps each id to its component. Widgets keep rendering their own `ChartCard`; inside the grid, `ChartCard` reads `WidgetSlotContext` to add the edit controls and motion classes.
+- Motion (drag, FLIP reflow, spring settle) lives in `features/dashboard/layout/gridMotion.ts` and respects `prefers-reduced-motion`.
 
 ### Expense rules
 
