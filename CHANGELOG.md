@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.18.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.17.1...littleflower-v0.18.0) (2026-10-25)
+
+
+### Features
+
+* **dashboard:** per-user configurable dashboard with a tactile edit mode ([#83](https://github.com/ElArabeLoco/LittleFlower/issues/83)) ([2f75790](https://github.com/ElArabeLoco/LittleFlower/commit/2f75790e22570217d0f5952d7dd7861f5f8d574b))
+
 ## [0.17.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.17.0...littleflower-v0.17.1) (2026-10-24)
 
 
