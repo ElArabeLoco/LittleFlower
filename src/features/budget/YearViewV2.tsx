@@ -12,6 +12,7 @@ import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCategoryName } from '@/domain/budget/categories';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
+import { SpendingViewSwitch } from '@/shared/ui/SpendingViewSwitch';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useYearViewData, type BudgetRow } from '@/application/useYearViewData';
 import {
@@ -479,6 +480,7 @@ export function YearViewV2() {
         subtitle={t.yearView.budgetYear(year)}
         maxWidth="max-w-full"
         compact
+        actions={<SpendingViewSwitch current="year" />}
       />
 
       <YearViewHeader

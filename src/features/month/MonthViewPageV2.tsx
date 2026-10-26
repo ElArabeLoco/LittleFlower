@@ -3,10 +3,12 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, CreditCard, Banknote, LayoutList, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
+import { SpendingViewSwitch } from '@/shared/ui/SpendingViewSwitch';
 import { getCategoryName } from '@/domain/budget/categories';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useMonthViewData, type BudgetRow, type BudgetMonthRow } from '@/application/useMonthViewData';
@@ -142,6 +144,7 @@ export function MonthViewPageV2() {
         title={t.monthView.title}
         subtitle={formatMonthLabel(month)}
         maxWidth="max-w-5xl"
+        actions={<SpendingViewSwitch current="month" />}
       />
 
       <div className="max-w-5xl mx-auto w-full px-4 py-2.5 flex items-center gap-3">
@@ -242,6 +245,18 @@ export function MonthViewPageV2() {
               onToggleExecution={handleToggleExecution}
             />
           </div>
+
+          {(creditCardBudgets.length > 0 || cashBudgets.length > 0) && (
+            <div className="flex justify-center">
+              <Link
+                to="/transactions"
+                className="inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-[var(--text-brand)] hover:underline"
+              >
+                {t.monthView.seeExpenseList}
+                <ChevronRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          )}
 
           {activeIncomes.length > 0 && (
             <IncomeSection

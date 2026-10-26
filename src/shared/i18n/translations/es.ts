@@ -117,10 +117,19 @@ export const es = {
   // ---------------------------------------------------------------------------
   nav: {
     home: 'Inicio',
-    dashboard: 'Dashboard',
-    budget: 'Presupuesto',
+    dashboard: 'Gráficas',
+    spending: 'Gastos',
     finances: 'Finanzas',
     profile: 'Perfil',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Gastos tab: Mes · Año switch
+  // ---------------------------------------------------------------------------
+  spendingViews: {
+    label: 'Vista de gastos',
+    month: 'Mes',
+    year: 'Año',
   },
 
   // ---------------------------------------------------------------------------
@@ -332,7 +341,8 @@ export const es = {
   // Month View
   // ---------------------------------------------------------------------------
   monthView: {
-    title: 'Vista Mensual',
+    title: 'Gastos del mes',
+    seeExpenseList: 'Ver la lista de gastos del mes',
     unmarkExecuted: 'Desmarcar como ejecutado',
     markExecuted: 'Marcar como ejecutado',
     budgetLabel: 'Presupuesto',
@@ -375,8 +385,8 @@ export const es = {
   // Year View
   // ---------------------------------------------------------------------------
   yearView: {
-    title: 'Vista Anual',
-    budgetYear: (year: number) => `Presupuesto ${year}`,
+    title: 'Presupuesto del año',
+    budgetYear: (year: number) => `Enero a diciembre de ${year}`,
     itemHeader: 'Rubro',
     budgetedRow: 'Presupuestado',
     executedRow: 'Ejecutado',
@@ -492,19 +502,6 @@ export const es = {
     noCardItems: 'Sin ítems de tarjeta',
     noCashItems: 'Sin ítems de efectivo',
     confirmDelete: (name: string) => `¿Eliminar "${name}"? Los datos históricos se conservan.`,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Budget Hub
-  // ---------------------------------------------------------------------------
-  budgetHub: {
-    title: 'Presupuesto',
-    subtitle: 'Elige tu vista',
-    description: 'Dos formas de ver tu presupuesto. Escoge la que mejor se adapte a lo que necesitas ahora.',
-    monthlyTitle: 'Vista Mensual',
-    monthlyDesc: 'Revisa y registra gastos del mes. Tarjetas por presupuesto con ejecución real y acceso a cada gasto.',
-    yearlyTitle: 'Vista Anual',
-    yearlyDesc: 'Spreadsheet de los 12 meses. Edita presupuestos por mes, ve totales y balance real del año completo.',
   },
 
   // ---------------------------------------------------------------------------

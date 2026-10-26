@@ -118,10 +118,19 @@ export const en: Translations = {
   // ---------------------------------------------------------------------------
   nav: {
     home: 'Home',
-    dashboard: 'Dashboard',
-    budget: 'Budget',
+    dashboard: 'Charts',
+    spending: 'Spending',
     finances: 'Finances',
     profile: 'Profile',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Spending tab: Month · Year switch
+  // ---------------------------------------------------------------------------
+  spendingViews: {
+    label: 'Spending view',
+    month: 'Month',
+    year: 'Year',
   },
 
   // ---------------------------------------------------------------------------
@@ -333,7 +342,8 @@ export const en: Translations = {
   // Month View
   // ---------------------------------------------------------------------------
   monthView: {
-    title: 'Monthly View',
+    title: 'Spending this month',
+    seeExpenseList: 'See the month\'s expense list',
     unmarkExecuted: 'Unmark as executed',
     markExecuted: 'Mark as executed',
     budgetLabel: 'Budget',
@@ -376,8 +386,8 @@ export const en: Translations = {
   // Year View
   // ---------------------------------------------------------------------------
   yearView: {
-    title: 'Yearly View',
-    budgetYear: (year: number) => `Budget ${year}`,
+    title: 'Budget for the year',
+    budgetYear: (year: number) => `January to December ${year}`,
     itemHeader: 'Item',
     budgetedRow: 'Budgeted',
     executedRow: 'Spent',
@@ -493,19 +503,6 @@ export const en: Translations = {
     noCardItems: 'No card items',
     noCashItems: 'No cash items',
     confirmDelete: (name: string) => `Delete "${name}"? Historical data will be preserved.`,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Budget Hub
-  // ---------------------------------------------------------------------------
-  budgetHub: {
-    title: 'Budget',
-    subtitle: 'Choose your view',
-    description: 'Two ways to view your budget. Choose the one that best fits what you need right now.',
-    monthlyTitle: 'Monthly View',
-    monthlyDesc: 'Review and record monthly expenses. Cards per budget with real execution and access to each expense.',
-    yearlyTitle: 'Yearly View',
-    yearlyDesc: 'Spreadsheet of all 12 months. Edit budgets by month, see totals and real balance for the full year.',
   },
 
   // ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ export class MonthViewPage extends BasePage {
   }
 
   get title() {
-    return this.page.getByText('Vista Mensual');
+    return this.page.getByRole('heading', { name: 'Gastos del mes' });
   }
 
   /** Button to go to the previous month */

@@ -39,8 +39,8 @@ export function SectionTiles({ lines }: { lines: SectionLines }) {
   const { t } = useI18n();
 
   const tiles: Tile[] = [
-    { to: '/month', icon: CalendarDays, tone: 'petal', title: t.budgetHub.monthlyTitle, line: lines.month },
-    { to: '/anual', icon: Sheet, tone: 'iris', title: t.budgetHub.yearlyTitle, line: t.home.yearLine },
+    { to: '/month', icon: CalendarDays, tone: 'petal', title: t.monthView.title, line: lines.month },
+    { to: '/anual', icon: Sheet, tone: 'iris', title: t.yearView.title, line: t.home.yearLine },
     { to: '/dashboard', icon: ChartColumn, tone: 'sky', title: t.nav.dashboard, line: t.home.dashboardLine },
     { to: '/income', icon: TrendingUp, tone: 'leaf', title: t.finances.incomeTitle, line: lines.income },
     { to: '/settings/budgets', icon: ListChecks, tone: 'petal', title: t.finances.budgetsTitle, line: lines.budgets },
