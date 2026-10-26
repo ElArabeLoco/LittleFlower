@@ -11,6 +11,7 @@ import { db } from '../client';
 import { newId, now, authorshipStamp, assertAuth } from '../mutationHelpers';
 import { buildMonthRange } from '@/shared/helpers/dateRange';
 import { recordExpense } from './PowerSyncExpenseRepository';
+import { BudgetExpenseRangeError, rangeViolation, type ExpenseSpan } from '@/domain/budget/budgetLifecycle';
 import type { IBudgetRepository } from '@/domain/budget/IBudgetRepository';
 import type { Budget, BudgetMonth, PaymentMode } from '@/domain/budget/Budget';
 
@@ -185,11 +186,39 @@ export async function insertBudget(payload: InsertBudgetPayload, userId: string)
   return id;
 }
 
+/** First and last month whose non-deleted expenses net to a non-zero sum; null when none. */
+async function readExpenseSpan(budgetId: string): Promise<ExpenseSpan | null> {
+  const row = await db.get<{ first: string | null; last: string | null }>(
+    `SELECT MIN(month) AS first, MAX(month) AS last FROM (
+       SELECT bm.month AS month
+       FROM expenses e JOIN budget_months bm ON bm.id = e.budget_month_id
+       WHERE bm.budget_id = ? AND e.deleted_at IS NULL
+       GROUP BY bm.month HAVING SUM(e.amount) != 0
+     )`,
+    [budgetId],
+  );
+  return row?.first && row.last ? { first: row.first, last: row.last } : null;
+}
+
 export async function updateBudget(
   id: string,
-  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'end_month' | 'debt_id' | 'payment_mode'>>,
+  patch: Partial<Pick<InsertBudgetPayload, 'name' | 'description' | 'default_amount' | 'category_id' | 'start_month' | 'end_month' | 'debt_id' | 'payment_mode'>>,
   userId: string,
 ): Promise<void> {
+  // Backstop for offline races: re-check the range against the local ledger
+  if ('start_month' in patch || 'end_month' in patch) {
+    const current = await db.get<{ start_month: string; end_month: string | null }>(
+      `SELECT start_month, end_month FROM budgets WHERE id = ?`,
+      [id],
+    );
+    const start = patch.start_month ?? current?.start_month;
+    const end = 'end_month' in patch ? (patch.end_month ?? null) : (current?.end_month ?? null);
+    if (start) {
+      const violation = rangeViolation(start, end, await readExpenseSpan(id));
+      if (violation) throw new BudgetExpenseRangeError(violation.field, violation.limit);
+    }
+  }
+
   const stamp = authorshipStamp(userId);
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -199,6 +228,7 @@ export async function updateBudget(
   if (patch.default_amount !== undefined) { fields.push('default_amount = ?'); values.push(patch.default_amount); }
   if (patch.category_id !== undefined) { fields.push('category_id = ?'); values.push(patch.category_id); }
   if (patch.payment_mode !== undefined) { fields.push('payment_mode = ?'); values.push(patch.payment_mode); }
+  if (patch.start_month !== undefined) { fields.push('start_month = ?'); values.push(patch.start_month); }
   if ('end_month' in patch) { fields.push('end_month = ?'); values.push(patch.end_month ?? null); }
   if ('debt_id' in patch) { fields.push('debt_id = ?'); values.push(patch.debt_id ?? null); }
 
@@ -210,6 +240,7 @@ export async function updateBudget(
 
 /** Soft-delete: sets deleted_at to now. Does not remove the record. */
 export async function deleteBudget(id: string, userId: string): Promise<void> {
+  if (await readExpenseSpan(id)) throw new BudgetExpenseRangeError('delete');
   const stamp = authorshipStamp(userId);
   await db.execute(
     `UPDATE budgets SET deleted_at = ?, last_edited_by = ?, last_edited_at = ? WHERE id = ?`,
