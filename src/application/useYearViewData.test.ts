@@ -299,6 +299,22 @@ describe('useYearViewData', () => {
     expect(cashMetrics?.executed).toBe(100_000);
   });
 
+  it('omits budgets that are not active in the viewed year from every list', () => {
+    (useBudgetsQuery as Mock).mockReturnValue({
+      data: [
+        makeBudgetRow({ id: 'ended', payment_mode: 'both', start_month: '2024-01', end_month: '2024-06' }),
+        makeBudgetRow({ id: 'future', payment_mode: 'both', start_month: '2026-01' }),
+        makeBudgetRow({ id: 'mid', payment_mode: 'both', start_month: '2024-01', end_month: '2025-03' }),
+      ],
+    });
+
+    const { result } = renderHook(() => useYearViewData(2025, MONTHS_2025));
+    const ids = (list: BudgetRow[]) => list.map(b => b.id);
+    expect(ids(result.current.budgets)).toEqual(['mid']);
+    expect(ids(result.current.creditCardBudgets)).toEqual(['mid']);
+    expect(ids(result.current.cashBudgets)).toEqual(['mid']);
+  });
+
   it('returns empty maps when no data', () => {
     const { result } = renderHook(() => useYearViewData(2025, MONTHS_2025));
     expect(result.current.budgets).toEqual([]);

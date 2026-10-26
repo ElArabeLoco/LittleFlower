@@ -4,6 +4,7 @@ import { useBudgetsQuery, useBudgetMonthsForRange } from '@/infrastructure/power
 import { useExpenseSumsByModeForRange } from '@/infrastructure/powersync/queries/useExpenseQueries';
 import { useActiveIncomes, useIncomeMonthsForRange } from '@/infrastructure/powersync/queries/useIncomeQueries';
 import { useExchangeRatesForRange } from '@/infrastructure/powersync/queries/useExchangeRateQueries';
+import { isActiveInRange } from './yearViewLens';
 import type { BudgetRow, BudgetMonthRow } from '@/infrastructure/powersync/queries/types';
 
 export type { BudgetRow, BudgetMonthRow };
@@ -48,7 +49,7 @@ export function useYearViewData(year: number, months: string[]): YearViewData {
   const fromMonth = `${year}-01`;
   const toMonth = `${year}-12`;
 
-  const { data: budgets = [] } = useBudgetsQuery();
+  const { data: allBudgets = [] } = useBudgetsQuery();
   const { data: budgetMonths = [] } = useBudgetMonthsForRange(fromMonth, toMonth);
   const { data: incomes = [] } = useActiveIncomes();
   const { data: incomeMonths = [] } = useIncomeMonthsForRange(fromMonth, toMonth);
@@ -113,6 +114,12 @@ export function useYearViewData(year: number, months: string[]): YearViewData {
     }
     return m;
   }, [months, incomes, imMap, rateMap]);
+
+  // Only budgets active in at least one month of the year get a row
+  const budgets = useMemo(
+    () => allBudgets.filter(b => isActiveInRange(b, fromMonth, toMonth)),
+    [allBudgets, fromMonth, toMonth],
+  );
 
   // Dual-mode budgets appear in BOTH groups
   const creditCardBudgets = useMemo(
