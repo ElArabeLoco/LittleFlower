@@ -510,9 +510,9 @@ export const es = {
     finishTitle: (name: string) => `Finalizar "${name}"`,
     finishLastMonth: 'Último mes activo',
     finishEffect: (month: string) =>
-      `Desde ${month} deja de aparecer en Mes, Año y Gráficas. Sus meses anteriores y sus gastos no cambian.`,
+      `Desde ${month.toLowerCase()} deja de aparecer en Mes, Año y Gráficas. Sus meses anteriores y sus gastos no cambian.`,
     finishHasExpenses: (month: string) =>
-      `Tiene gastos hasta ${month}: por eso no se puede eliminar ni terminar antes de ese mes.`,
+      `Tiene gastos hasta ${month.toLowerCase()}: por eso no se puede eliminar ni terminar antes de ese mes.`,
     hasExpensesRange: (from: string, to: string) => `Tiene gastos de ${from} a ${to}`,
     hasExpensesOne: (month: string) => `Tiene gastos en ${month}`,
     rangeStartError: (month: string) => `El inicio no puede ser después de ${month}: ese mes tiene gastos.`,

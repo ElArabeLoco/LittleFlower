@@ -3,14 +3,17 @@ import type { BudgetExpenseRangeError, ExpenseSpan } from '@/domain/budget/budge
 
 export type { ExpenseSpan };
 
-/** 'YYYY-MM' as "mar 2025" (short) or "noviembre 2026" (full), using the active language's month names. */
+/**
+ * 'YYYY-MM' as "mar 2025" (short) or "Noviembre 2026" (full), using the active language's month names.
+ * Full names keep the table's casing; each translation decides how to case them mid-sentence.
+ */
 export function formatMonthLabel(
   month: string,
   names: { shortLower: Record<string, string>; full: Record<string, string> },
   style: 'short' | 'full',
 ): string {
   const [y, m] = month.split('-');
-  const name = style === 'short' ? names.shortLower[m] : names.full[m]?.toLowerCase();
+  const name = style === 'short' ? names.shortLower[m] : names.full[m];
   return `${name ?? m} ${y}`;
 }
 
