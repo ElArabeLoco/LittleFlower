@@ -9,7 +9,7 @@ const LazyTransactionsPage = lazy(() =>
 
 function TransactionsRoute() {
   return (
-    <FeatureErrorBoundary feature="Transacciones">
+    <FeatureErrorBoundary feature="Lista de gastos">
       <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="h-5 w-5 animate-spin rounded-full border-2 border-pink-400 border-t-transparent" /></div>}>
         <LazyTransactionsPage />
       </Suspense>

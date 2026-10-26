@@ -54,7 +54,7 @@ export function DashboardPage() {
       <DashboardDataProvider selectedMonth={selectedMonth}>
           <div className="min-h-screen bg-[var(--bg-app)] flex flex-col">
               <AppHeader
-                  title="Dashboard"
+                  title={t.dashboard.title}
                   maxWidth="max-w-7xl"
                   actions={<EditActions editor={editor} />}
                   // Month navigation: the header's last row, so it sticks with it.
