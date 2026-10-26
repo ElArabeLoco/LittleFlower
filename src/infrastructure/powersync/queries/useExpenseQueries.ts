@@ -25,6 +25,23 @@ export function useExpensesForBudgetMonth(budgetMonthId: string | null) {
   );
 }
 
+/** Expense of a partida with its budget month (partida history). */
+export interface BudgetExpenseRow extends ExpenseListRow {
+  month: string;
+}
+
+/** Every non-deleted expense of a budget, oldest budget month first. */
+export function useExpensesForBudget(budgetId: string) {
+  return useQuery<BudgetExpenseRow>(
+    `SELECT e.id, e.amount, e.note, e.timestamp, e.paid_with_credit_card, bm.month
+     FROM expenses e
+     JOIN budget_months bm ON bm.id = e.budget_month_id
+     WHERE bm.budget_id = ? AND e.deleted_at IS NULL
+     ORDER BY bm.month ASC, e.timestamp ASC, e.created_at ASC`,
+    [budgetId],
+  );
+}
+
 /** Aggregated expense totals per budget_month for a single month. */
 export interface ExpenseSumRow {
   budget_month_id: string;

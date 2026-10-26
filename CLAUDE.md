@@ -99,6 +99,7 @@ useAssetMutations.ts    ← create / edit / delete an asset with its holders; ad
 useNetWorth.ts          ← assets vs debt balances: household, per member, no holder
 useDashboardLayout.ts   ← the user's dashboard layout (widget order + widths); default when nothing is saved
 useBudgetManagementData.ts ← Partidas page: active budgets by group, finished ones, expense span per budget
+useBudgetExpenseHistory.ts ← one partida's expenses in pages of whole months, opening on the current month's page
 ```
 
 ### Lifecycle
