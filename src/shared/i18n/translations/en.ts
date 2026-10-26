@@ -504,6 +504,21 @@ export const en: Translations = {
     noCardItems: 'No card items',
     noCashItems: 'No cash items',
     confirmDelete: (name: string) => `Delete "${name}"? Historical data will be preserved.`,
+    editAction: 'Edit',
+    finishAction: 'Finish',
+    deleteAction: 'Delete',
+    finishedSection: (n: number) => `Finished (${n})`,
+    finishTitle: (name: string) => `Finish "${name}"`,
+    finishLastMonth: 'Last active month',
+    finishEffect: (month: string) =>
+      `From ${month} on it no longer appears in Month, Year and Charts. Its earlier months and expenses do not change.`,
+    finishHasExpenses: (month: string) =>
+      `It has expenses up to ${month}, so it cannot be deleted or ended before that month.`,
+    hasExpensesRange: (from: string, to: string) => `Has expenses from ${from} to ${to}`,
+    hasExpensesOne: (month: string) => `Has expenses in ${month}`,
+    rangeStartError: (month: string) => `The start cannot be after ${month}: that month has expenses.`,
+    rangeEndError: (month: string) => `The end cannot be before ${month}: that month has expenses.`,
+    deleteHasExpenses: 'This budget item has expenses: finish it instead of deleting it.',
   },
 
   // ---------------------------------------------------------------------------

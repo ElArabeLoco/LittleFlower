@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/shared/ui/cn';
 import { CATEGORIES } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
-import { useBudgetMutations, type BackfillSummary } from '@/application/useBudgetMutations';
-import type { BudgetFormState, DebtOption } from './types';
+import { rangeViolation } from '@/domain/budget/budgetLifecycle';
+import { useBudgetMutations, BudgetExpenseRangeError, type BackfillSummary } from '@/application/useBudgetMutations';
+import { formatMonthLabel, rangeErrorMessage, type BudgetFormState, type DebtOption, type ExpenseSpan } from './types';
 
 const defaultForm = (): BudgetFormState => ({
   name: '',
@@ -31,6 +32,8 @@ interface BudgetFormDialogProps {
   householdId: string;
   userId: string;
   debts: DebtOption[];
+  /** Months with expenses (edit mode); the start/end fields cannot cross it. */
+  expenseSpan?: ExpenseSpan | null;
   onDone: () => void;
   trigger: React.ReactNode;
 }
@@ -112,7 +115,7 @@ function BackfillPanel({ summary, debtName, busy, onConfirm, onSkip, onBack }: B
   );
 }
 
-export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, onDone, trigger }: BudgetFormDialogProps) {
+export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId, debts, expenseSpan = null, onDone, trigger }: BudgetFormDialogProps) {
   const { t } = useI18n();
   const { insertBudget, updateBudget, previewDebtBackfill, applyDebtBackfill } = useBudgetMutations(householdId, userId);
   const [open, setOpen] = useState(false);
@@ -140,6 +143,12 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
     if (isNaN(amount) || amount < 0) { setError(t.budgets.validationAmount); return null; }
     if (!form.name.trim()) { setError(t.budgets.validationName); return null; }
     if (form.end_month && form.end_month < form.start_month) { setError(t.budgets.validationEndMonth); return null; }
+    const violation = rangeViolation(form.start_month, form.end_month || null, expenseSpan);
+    if (violation) {
+      const label = formatMonthLabel(violation.limit, t.months, 'short');
+      setError(violation.field === 'start' ? t.budgets.rangeStartError(label) : t.budgets.rangeEndError(label));
+      return null;
+    }
     return amount;
   }
 
@@ -193,6 +202,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           description: form.description.trim() || undefined,
           category_id: form.category_id,
           default_amount: amount,
+          start_month: form.start_month,
           end_month: form.end_month || null,
           debt_id: form.debt_id || null,
           payment_mode: form.payment_mode,
@@ -201,7 +211,7 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
       setOpen(false);
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.unexpectedError);
+      setError(err instanceof BudgetExpenseRangeError ? rangeErrorMessage(err, t) : err instanceof Error ? err.message : t.common.unexpectedError);
     } finally {
       setIsLoading(false);
     }
@@ -256,12 +266,13 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="b-start">{t.budgets.startMonth}</Label>
-              <Input id="b-start" type="month" value={form.start_month}
+              <Input id="b-start" type="month" value={form.start_month} max={expenseSpan?.first}
                 onChange={e => set('start_month', e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="b-end">{t.budgets.endMonth} <span className="text-gray-400 font-normal">{t.common.optional}</span></Label>
-              <Input id="b-end" type="month" value={form.end_month} min={form.start_month}
+              <Input id="b-end" type="month" value={form.end_month}
+                min={expenseSpan && expenseSpan.last > form.start_month ? expenseSpan.last : form.start_month}
                 onChange={e => set('end_month', e.target.value)} />
               {form.end_month && (
                 <button type="button" className="text-xs text-gray-400 hover:text-gray-600"
@@ -271,6 +282,17 @@ export function BudgetFormDialog({ mode, initial, budgetId, householdId, userId,
               )}
             </div>
           </div>
+
+          {mode === 'edit' && expenseSpan && (
+            <p className="text-xs text-[var(--text-muted)]">
+              {expenseSpan.first === expenseSpan.last
+                ? t.budgets.hasExpensesOne(formatMonthLabel(expenseSpan.first, t.months, 'short'))
+                : t.budgets.hasExpensesRange(
+                    formatMonthLabel(expenseSpan.first, t.months, 'short'),
+                    formatMonthLabel(expenseSpan.last, t.months, 'short'),
+                  )}
+            </p>
+          )}
 
           {/* Payment mode — tri-state, visible in both create and edit */}
           <div className="space-y-1.5">
