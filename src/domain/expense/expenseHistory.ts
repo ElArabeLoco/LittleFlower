@@ -1,8 +1,7 @@
-/** Expenses of one month in a history page, with their net total (reversals included). */
+/** Expenses of one month in a history page. */
 export interface MonthGroup<T> {
   month: string;
   rows: T[];
-  total: number;
 }
 
 /**
@@ -10,15 +9,14 @@ export interface MonthGroup<T> {
  * `pageSize` rows unless one month alone has more. Pages fill from the newest month
  * backwards, so the oldest page is the short one. Rows keep their order within a month.
  */
-export function paginateByMonth<T extends { month: string; amount: number }>(
+export function paginateByMonth<T extends { month: string }>(
   rows: T[],
   pageSize: number,
 ): MonthGroup<T>[][] {
   const byMonth = new Map<string, MonthGroup<T>>();
   for (const r of rows) {
-    const group = byMonth.get(r.month) ?? { month: r.month, rows: [], total: 0 };
+    const group = byMonth.get(r.month) ?? { month: r.month, rows: [] };
     group.rows.push(r);
-    group.total += r.amount;
     byMonth.set(r.month, group);
   }
   const groups = [...byMonth.values()].sort((a, b) => a.month.localeCompare(b.month));

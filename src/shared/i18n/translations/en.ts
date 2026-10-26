@@ -523,7 +523,6 @@ export const en: Translations = {
     actionOn: (action: string, name: string) => `${action} "${name}"`,
     historyTitle: (name: string) => `Expenses of "${name}"`,
     historyEmpty: 'This budget item has no expenses yet.',
-    historyCurrentMonth: 'Current month',
     historyPage: (page: number, total: number) => `Page ${page} of ${total}`,
     historyPrev: 'Earlier expenses',
     historyNext: 'Later expenses',

@@ -10,11 +10,11 @@ describe('paginateByMonth', () => {
     expect(paginateByMonth([], 20)).toEqual([]);
   });
 
-  it('groups rows by month, oldest first, with the net total', () => {
+  it('groups rows by month, oldest first, keeping their order within the month', () => {
     const [page] = paginateByMonth([row('2026-02', 50), row('2026-01', 100), row('2026-02', -20)], 20);
-    expect(page.map(g => [g.month, g.rows.length, g.total])).toEqual([
-      ['2026-01', 1, 100],
-      ['2026-02', 2, 30],
+    expect(page.map(g => [g.month, g.rows.map(r => r.amount)])).toEqual([
+      ['2026-01', [100]],
+      ['2026-02', [50, -20]],
     ]);
   });
 

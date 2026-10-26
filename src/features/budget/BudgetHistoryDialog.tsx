@@ -30,10 +30,9 @@ export function BudgetHistoryDialog({ budget, trigger }: BudgetHistoryDialogProp
   );
 }
 
-/** 'YYYY-MM-DD…' as 'DD/MM'. */
-function formatDay(timestamp: string): string {
-  const [, m, d] = timestamp.slice(0, 10).split('-');
-  return `${d}/${m}`;
+/** 'YYYY-MM-DD…' as '03 oct 2026', with the active language's month names. */
+function formatDate(timestamp: string, months: Parameters<typeof formatMonthLabel>[1]): string {
+  return `${timestamp.slice(8, 10)} ${formatMonthLabel(timestamp.slice(0, 7), months, 'short')}`;
 }
 
 function BudgetHistory({ budgetId, showMode }: { budgetId: string; showMode: boolean }) {
@@ -66,6 +65,7 @@ export function BudgetHistoryView({ pages, initialPage, currentMonth, showMode }
     .map(m => formatMonthLabel(m, t.months, 'short'))
     .filter((label, i, all) => all.indexOf(label) === i)
     .join(' – ');
+  const rows = page.flatMap(group => group.rows);
 
   return (
     <div className="flex flex-col gap-4">
@@ -86,41 +86,48 @@ export function BudgetHistoryView({ pages, initialPage, currentMonth, showMode }
         </div>
       )}
 
-      {page.map(group => (
-        <section key={group.month}>
-          <div className="flex items-baseline justify-between gap-3 border-b border-[var(--border-medium)] pb-1.5">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-              {formatMonthLabel(group.month, t.months, 'full')}
-              {group.month === currentMonth && (
-                <span className="rounded-full bg-violet-50 px-2 py-px text-[11px] font-semibold text-violet-800 dark:bg-violet-950/50 dark:text-violet-200">
-                  {t.budgets.historyCurrentMonth}
-                </span>
-              )}
-            </h3>
-            <span className={cn('text-sm font-semibold tabular-nums', group.total < 0 && 'text-rose-500')}>
-              {formatCOP(group.total)}
-            </span>
-          </div>
-          <ul>
-            {group.rows.map(r => (
-              <li key={r.id} className="flex items-baseline gap-3 border-b border-[var(--border-subtle)] py-2 text-sm last:border-b-0">
-                <span className="w-11 shrink-0 tabular-nums text-[var(--text-muted)]">{formatDay(r.timestamp)}</span>
-                <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">
-                  {r.note ?? <span className="text-[var(--text-muted)]">—</span>}
-                  {showMode && (
-                    <span className="text-xs text-[var(--text-muted)]">
-                      {' · '}{r.paid_with_credit_card === 1 ? t.budgets.cardMethod : t.budgets.cashMethod}
-                    </span>
-                  )}
-                </span>
-                <span className={cn('shrink-0 font-medium tabular-nums', r.amount < 0 ? 'text-rose-500' : 'text-[var(--text-primary)]')}>
-                  {formatCOP(r.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)]">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--bg-surface-2)] text-xs text-[var(--text-muted)]">
+            <tr>
+              <th scope="col" className="py-2 pl-3 pr-2 text-left font-semibold">{t.transactions.dateHeader}</th>
+              <th scope="col" className="px-2 py-2 text-left font-semibold">{t.transactions.noteHeader}</th>
+              <th scope="col" className="py-2 pl-2 pr-3 text-right font-semibold">{t.transactions.amountHeader}</th>
+            </tr>
+          </thead>
+          {/* Baselines line up when a long description wraps. */}
+          <tbody className="[&_td]:align-baseline">
+            {rows.map(r => {
+              const isCurrent = r.month === currentMonth;
+              return (
+                // The current month carries the year view's tint and a bolder date.
+                <tr key={r.id} className={cn('border-t border-[var(--border-subtle)]', isCurrent && 'bg-[var(--color-now)]/[0.07]')}>
+                  <td className={cn(
+                    'whitespace-nowrap py-2.5 pl-3 pr-2 text-xs tabular-nums',
+                    isCurrent ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-secondary)]',
+                  )}>
+                    {formatDate(r.timestamp, t.months)}
+                  </td>
+                  <td className="w-full break-words px-2 py-2.5 text-[var(--text-secondary)]">
+                    {r.note ?? <span className="text-[var(--text-muted)]">—</span>}
+                    {showMode && (
+                      <span className="text-xs text-[var(--text-muted)]">
+                        {' · '}{r.paid_with_credit_card === 1 ? t.budgets.cardMethod : t.budgets.cashMethod}
+                      </span>
+                    )}
+                  </td>
+                  <td className={cn(
+                    'whitespace-nowrap py-2.5 pl-2 pr-3 text-right font-medium tabular-nums',
+                    r.amount < 0 ? 'text-rose-500' : 'text-[var(--text-primary)]',
+                  )}>
+                    {formatCOP(r.amount)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

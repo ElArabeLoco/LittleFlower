@@ -522,7 +522,6 @@ export const es = {
     actionOn: (action: string, name: string) => `${action} "${name}"`,
     historyTitle: (name: string) => `Gastos de "${name}"`,
     historyEmpty: 'Esta partida aún no tiene gastos.',
-    historyCurrentMonth: 'Mes actual',
     historyPage: (page: number, total: number) => `Página ${page} de ${total}`,
     historyPrev: 'Gastos anteriores',
     historyNext: 'Gastos siguientes',
