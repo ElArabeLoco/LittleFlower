@@ -11,6 +11,13 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.20.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.19.0...littleflower-v0.20.0) (2026-10-26)
+
+
+### Features
+
+* **budgets:** expense history per partida with icon-only actions ([#90](https://github.com/ElArabeLoco/LittleFlower/issues/90)) ([87c9ec4](https://github.com/ElArabeLoco/LittleFlower/commit/87c9ec4069837d91d7f831e95f1e8dcd16025da9))
+
 ## [0.19.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.18.1...littleflower-v0.19.0) (2026-10-26)
 
 
