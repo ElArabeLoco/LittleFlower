@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Florecita app icon source (PWA, maskable, apple-touch). Full-bleed blush
-       ground with a faint gradient; the flower, whose heart is a gold peso coin,
-       stays inside the maskable safe zone (inner 80% circle). -->
+  <!-- Florecita app icon source (PWA, maskable, apple-touch). Full-bleed mint
+       to blush ground; the flower sprouts from a stack of gold coins, a nod to
+       savings, and stays inside the maskable safe zone (inner 80% circle). -->
   <defs>
     <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFFAFC"/>
-      <stop offset="1" stop-color="#FBE5EE"/>
+      <stop offset="0" stop-color="#F3FBF6"/>
+      <stop offset="1" stop-color="#FDF0F5"/>
     </linearGradient>
     <radialGradient id="glow" cx="0.28" cy="0.2" r="0.7">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9"/>
@@ -16,38 +16,55 @@
       <stop offset="0.36" stop-color="#E8538C"/>
       <stop offset="1" stop-color="#FBB3CE"/>
     </radialGradient>
-    <radialGradient id="coin" gradientUnits="userSpaceOnUse" cx="-5" cy="-6" r="24">
-      <stop offset="0" stop-color="#FFF6DA"/>
-      <stop offset="0.5" stop-color="#FED06B"/>
-      <stop offset="1" stop-color="#F0A126"/>
-    </radialGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F0A126"/>
+      <stop offset="0.45" stop-color="#F9BA41"/>
+      <stop offset="1" stop-color="#D47B0E"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF2CD"/>
+      <stop offset="1" stop-color="#FED06B"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#67D598"/>
+      <stop offset="1" stop-color="#2DA065"/>
+    </linearGradient>
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
-      <feOffset dy="10" result="blur"/>
-      <feFlood flood-color="#7C1C3D" flood-opacity="0.16"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="9"/>
+      <feOffset dy="9" result="blur"/>
+      <feFlood flood-color="#4C0C23" flood-opacity="0.14"/>
       <feComposite in2="blur" operator="in"/>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <path id="p" d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+    <!-- One coin seen from the side: its face sits at y = 0. -->
+    <g id="coin">
+      <path d="M-84 0V22A84 23 0 0 0 84 22V0Z" fill="url(#side)"/>
+      <path d="M-84 22A84 23 0 0 0 84 22" fill="none" stroke="#AD5907" stroke-opacity="0.35" stroke-width="2"/>
+      <ellipse rx="84" ry="23" fill="url(#top)" stroke="#E9A13A" stroke-width="2"/>
+      <ellipse rx="64" ry="16" fill="none" stroke="#F0A126" stroke-opacity="0.6" stroke-width="2.5"/>
+    </g>
   </defs>
   <rect width="512" height="512" fill="url(#ground)"/>
   <rect width="512" height="512" fill="url(#glow)"/>
   <g filter="url(#shadow)">
-    <g transform="translate(256 262) scale(2.85)">
-      <g fill="url(#petal)" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round">
+    <use href="#coin" transform="translate(256 384)"/>
+    <use href="#coin" transform="translate(246 360)"/>
+    <use href="#coin" transform="translate(260 336)"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M258 334C256 300 250 262 256 214" fill="none" stroke="#2DA065" stroke-width="9" stroke-linecap="round"/>
+    <path d="M254 292C226 294 200 280 190 252C220 248 246 262 254 292Z" fill="url(#leaf)"/>
+    <path d="M256 272C282 270 304 254 312 228C284 226 262 242 256 272Z" fill="url(#leaf)"/>
+    <g transform="translate(256 160) scale(1.72)">
+      <g fill="url(#petal)" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round">
         <use href="#p"/>
         <use href="#p" transform="rotate(72)"/>
         <use href="#p" transform="rotate(144)"/>
         <use href="#p" transform="rotate(216)"/>
         <use href="#p" transform="rotate(288)"/>
       </g>
-      <circle r="16" fill="url(#coin)" stroke="#FFFFFF" stroke-width="1.4"/>
-      <circle r="16" fill="none" stroke="#D47B0E" stroke-width="0.9"/>
-      <circle r="12.6" fill="none" stroke="#E9A13A" stroke-width="0.7"/>
-      <g fill="none" stroke="#AD5907" stroke-width="2" stroke-linecap="round">
-        <path d="M4.1-4.4C3.4-6.2 1.9-7.1 0-7.1C-2.5-7.1-4.2-5.8-4.2-3.8C-4.2-1.5-2.3-0.8 0-0.2C2.5 0.4 4.4 1.3 4.4 3.6C4.4 5.8 2.6 7.1 0 7.1C-2.2 7.1-3.9 6.2-4.4 4.3"/>
-        <path d="M0-9.6V-7.1M0 7.1V9.6"/>
-      </g>
+      <circle r="9" fill="#F9BA41" stroke="#FFFFFF" stroke-width="1.6"/>
     </g>
   </g>
 </svg>
