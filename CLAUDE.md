@@ -98,6 +98,7 @@ useAssets.ts            ← active assets with holders, COP value (latest TRM) a
 useAssetMutations.ts    ← create / edit / delete an asset with its holders; add / delete a value
 useNetWorth.ts          ← assets vs debt balances: household, per member, no holder
 useDashboardLayout.ts   ← the user's dashboard layout (widget order + widths); default when nothing is saved
+useBudgetManagementData.ts ← Partidas page: active budgets by group, finished ones, expense span per budget
 ```
 
 ### Lifecycle
@@ -179,6 +180,14 @@ Asset (1) ──── (N) AssetValuation   ← values written by hand over time
 - The catalog is fixed (`WIDGET_IDS` in `domain/dashboard/dashboardLayout.ts`); each widget appears at most once. Widths: third / half / full on a 6-track grid; thirds become halves under 1024 px and everything is full width under 640 px.
 - `features/dashboard/layout/widgetRegistry.tsx` maps each id to its component. Widgets keep rendering their own `ChartCard`; inside the grid, `ChartCard` reads `WidgetSlotContext` to add the edit controls and motion classes.
 - Motion (drag, FLIP reflow, spring settle) lives in `features/dashboard/layout/gridMotion.ts` and respects `prefers-reduced-motion`.
+
+### Budget lifecycle
+
+- "Months with expenses" of a partida = months whose non-deleted expenses net to a non-zero sum (a reversed expense does not count); its expense span is the first and last of them. Rules live in `domain/budget/budgetLifecycle.ts`.
+- A partida with an expense span cannot be deleted: it gets "Finalizar" (sets `end_month`) instead. Without expenses it is still soft-deleted.
+- Any start/end edit must keep the span inside the range. The form checks it, and `PowerSyncBudgetRepository` checks it again (`BudgetExpenseRangeError`) as a backstop for offline races between devices.
+- Finished = `end_month < current month` (ending this month is still active). Finished partidas sit in a collapsed "Finalizadas" section on /settings/budgets and are reopened only through Editar.
+- The year view lists only budgets active in some month of the viewed year.
 
 ### Expense rules
 
