@@ -17,6 +17,13 @@ export interface BudgetRow {
   debt_id: string | null;
 }
 
+/** First and last month with expenses (net non-zero) of one budget. */
+export interface BudgetExpenseSpanRow {
+  budget_id: string;
+  first_month: string;
+  last_month: string;
+}
+
 export interface BudgetMonthRow {
   id: string;
   budget_id: string;

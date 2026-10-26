@@ -5,14 +5,17 @@ vi.mock('@/infrastructure/powersync/client', () => ({
   db: {
     getAll: vi.fn(),
     get: vi.fn(),
+    execute: vi.fn(),
   },
 }));
 
 import { db } from '@/infrastructure/powersync/client';
-import { PowerSyncBudgetRepository } from './PowerSyncBudgetRepository';
+import { PowerSyncBudgetRepository, deleteBudget, updateBudget } from './PowerSyncBudgetRepository';
+import { BudgetExpenseRangeError } from '@/domain/budget/budgetLifecycle';
 
 const mockGetAll = db.getAll as Mock;
 const mockGet = db.get as Mock;
+const mockExecute = db.execute as Mock;
 
 function makeBudgetRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -200,6 +203,57 @@ describe('PowerSyncBudgetRepository', () => {
       mockGet.mockResolvedValue(null);
       const result = await repo.getMonthRow('non-existent', '2025-03');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('lifecycle guards', () => {
+    const noSpan = { first: null, last: null };
+    const withSpan = { first: '2025-03', last: '2025-08' };
+
+    /** db.get answers the span query first-or-last; the budget row query returns the row. */
+    function mockDb(span: { first: string | null; last: string | null }, row: Record<string, unknown> = {}) {
+      mockGet.mockImplementation(async (sql: string) =>
+        sql.includes('MIN(month)') ? span : { start_month: '2025-01', end_month: null, ...row },
+      );
+    }
+
+    it('deleteBudget throws when the budget has expenses', async () => {
+      mockDb(withSpan);
+      await expect(deleteBudget('b1', 'u1')).rejects.toBeInstanceOf(BudgetExpenseRangeError);
+      expect(mockExecute).not.toHaveBeenCalled();
+    });
+
+    it('deleteBudget soft-deletes a budget without expenses', async () => {
+      mockDb(noSpan);
+      await deleteBudget('b1', 'u1');
+      expect(mockExecute).toHaveBeenCalledOnce();
+      expect(mockExecute.mock.calls[0][0]).toContain('SET deleted_at');
+    });
+
+    it('updateBudget saves start_month', async () => {
+      mockDb(withSpan);
+      await updateBudget('b1', { start_month: '2025-02' }, 'u1');
+      const [sql, values] = mockExecute.mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('start_month = ?');
+      expect(values).toContain('2025-02');
+    });
+
+    it('updateBudget throws when the new start is after the first expense month', async () => {
+      mockDb(withSpan);
+      await expect(updateBudget('b1', { start_month: '2025-04' }, 'u1')).rejects.toMatchObject({ kind: 'start', limit: '2025-03' });
+      expect(mockExecute).not.toHaveBeenCalled();
+    });
+
+    it('updateBudget throws when the new end is before the last expense month', async () => {
+      mockDb(withSpan);
+      await expect(updateBudget('b1', { end_month: '2025-07' }, 'u1')).rejects.toMatchObject({ kind: 'end', limit: '2025-08' });
+      expect(mockExecute).not.toHaveBeenCalled();
+    });
+
+    it('updateBudget skips the range check for unrelated patches', async () => {
+      mockDb(withSpan);
+      await updateBudget('b1', { name: 'X' }, 'u1');
+      expect(mockExecute).toHaveBeenCalledOnce();
     });
   });
 });

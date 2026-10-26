@@ -1,5 +1,5 @@
 import { useQuery } from '@powersync/react';
-import type { BudgetRow, BudgetMonthRow } from './types';
+import type { BudgetRow, BudgetMonthRow, BudgetExpenseSpanRow } from './types';
 
 /** All active budgets ordered by payment type then name. */
 export function useBudgetsQuery() {
@@ -8,6 +8,18 @@ export function useBudgetsQuery() {
             default_amount, household_id, start_month, end_month, debt_id
      FROM budgets WHERE deleted_at IS NULL
      ORDER BY CASE payment_mode WHEN 'credit_card' THEN 0 WHEN 'both' THEN 1 ELSE 2 END, name ASC`,
+  );
+}
+
+/** Months with expenses per budget (months netting to zero are ignored). */
+export function useBudgetExpenseSpansQuery() {
+  return useQuery<BudgetExpenseSpanRow>(
+    `SELECT budget_id, MIN(month) AS first_month, MAX(month) AS last_month FROM (
+       SELECT bm.budget_id AS budget_id, bm.month AS month
+       FROM expenses e JOIN budget_months bm ON bm.id = e.budget_month_id
+       WHERE e.deleted_at IS NULL
+       GROUP BY bm.budget_id, bm.month HAVING SUM(e.amount) != 0
+     ) GROUP BY budget_id`,
   );
 }
 

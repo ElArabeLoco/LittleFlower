@@ -16,6 +16,7 @@ import {
 } from '@/infrastructure/powersync/mutationWrappers';
 import { summarizeBackfill, type BackfillSummary } from '@/domain/debt/backfill';
 
+export { BudgetExpenseRangeError } from '@/domain/budget/budgetLifecycle';
 export type { InsertBudgetPayload, UpsertBudgetMonthPayload, RegisterFullPaymentPayload, ApplyForwardPayload, BackfillSummary };
 
 export function useBudgetMutations(householdId: string, userId: string) {
@@ -33,6 +34,12 @@ export function useBudgetMutations(householdId: string, userId: string) {
     async (id: string, patch: Parameters<typeof updateBudgetMW>[1]) => {
       return updateBudgetMW(id, patch, userId);
     },
+    [userId],
+  );
+
+  /** Sets the last active month of a budget; the repository enforces its expense range. */
+  const finishBudget = useCallback(
+    async (id: string, endMonth: string) => updateBudgetMW(id, { end_month: endMonth }, userId),
     [userId],
   );
 
@@ -89,6 +96,7 @@ export function useBudgetMutations(householdId: string, userId: string) {
   return {
     insertBudget,
     updateBudget,
+    finishBudget,
     deleteBudget,
     upsertBudgetMonth,
     updateBudgetMonthExecution,
