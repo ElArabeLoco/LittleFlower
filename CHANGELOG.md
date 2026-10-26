@@ -11,6 +11,14 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.18.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.18.0...littleflower-v0.18.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **brand:** app icon with a flower sprouting from gold coins ([#85](https://github.com/ElArabeLoco/LittleFlower/issues/85)) ([d499ea2](https://github.com/ElArabeLoco/LittleFlower/commit/d499ea2c329b30cb7893bb9f1738f050ae2a2eac))
+* **nav:** rename and regroup sections around a Gastos tab ([#86](https://github.com/ElArabeLoco/LittleFlower/issues/86)) ([c846023](https://github.com/ElArabeLoco/LittleFlower/commit/c846023eabf7c3895c3f5289fbc0247d40b77b26))
+
 ## [0.18.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.17.1...littleflower-v0.18.0) (2026-10-25)
 
 
