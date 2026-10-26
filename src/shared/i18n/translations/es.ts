@@ -518,6 +518,13 @@ export const es = {
     rangeStartError: (month: string) => `El inicio no puede ser después de ${month}: ese mes tiene gastos.`,
     rangeEndError: (month: string) => `El fin no puede ser antes de ${month}: ese mes tiene gastos.`,
     deleteHasExpenses: 'Esta partida tiene gastos: finalízala en vez de eliminarla.',
+    historyAction: 'Ver gastos',
+    historyTitle: (name: string) => `Gastos de "${name}"`,
+    historyEmpty: 'Esta partida aún no tiene gastos.',
+    historyCurrentMonth: 'Mes actual',
+    historyPage: (page: number, total: number) => `Página ${page} de ${total}`,
+    historyPrev: 'Gastos anteriores',
+    historyNext: 'Gastos siguientes',
   },
 
   // ---------------------------------------------------------------------------

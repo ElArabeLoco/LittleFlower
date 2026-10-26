@@ -1,10 +1,11 @@
-import { Pencil, Trash2, CalendarOff } from 'lucide-react';
+import { Pencil, Trash2, CalendarOff, History } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
 import { BudgetFormDialog } from './BudgetFormDialog';
+import { BudgetHistoryDialog } from './BudgetHistoryDialog';
 import { FinishBudgetDialog } from './FinishBudgetDialog';
 import type { BudgetRow, DebtOption, ExpenseSpan } from './types';
 
@@ -51,6 +52,15 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
+              <BudgetHistoryDialog
+                budget={b}
+                trigger={
+                  <Button variant="ghost" size="icon" className="text-[var(--text-secondary)]"
+                    aria-label={t.budgets.historyAction} title={t.budgets.historyAction}>
+                    <History size={16} />
+                  </Button>
+                }
+              />
               <BudgetFormDialog
                 mode="edit"
                 budgetId={b.id}
@@ -70,8 +80,9 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
                 }}
                 onDone={() => {}}
                 trigger={
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-[var(--text-secondary)] hover:text-pink-600">
-                    <Pencil size={14} /> {t.budgets.editAction}
+                  <Button variant="ghost" size="icon" className="text-[var(--text-secondary)] hover:text-pink-600"
+                    aria-label={t.budgets.editAction} title={t.budgets.editAction}>
+                    <Pencil size={16} />
                   </Button>
                 }
               />
@@ -82,16 +93,18 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
                   householdId={householdId}
                   userId={userId}
                   trigger={
-                    <Button variant="ghost" size="sm" className="gap-1.5 text-[var(--text-secondary)]">
-                      <CalendarOff size={14} /> {t.budgets.finishAction}
+                    <Button variant="ghost" size="icon" className="text-[var(--text-secondary)]"
+                      aria-label={t.budgets.finishAction} title={t.budgets.finishAction}>
+                      <CalendarOff size={16} />
                     </Button>
                   }
                 />
               )}
               {!span && (
-                <Button variant="ghost" size="sm" className="gap-1.5 text-rose-600 hover:text-rose-700"
+                <Button variant="ghost" size="icon" className="text-rose-600 hover:text-rose-700"
+                  aria-label={t.budgets.deleteAction} title={t.budgets.deleteAction}
                   onClick={() => onDelete(b.id, b.name)}>
-                  <Trash2 size={14} /> {t.budgets.deleteAction}
+                  <Trash2 size={16} />
                 </Button>
               )}
             </div>
