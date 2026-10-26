@@ -1,14 +1,12 @@
 /**
  * SettingsPage — /settings
  *
- * Página de perfil del usuario:
- *   1. Tarjeta de perfil — avatar grande, email, nombre del usuario
- *   2. Tarjeta de hogar  — nombre del household + ID (solo lectura, con botón de copiar)
- *                          + acceso a los integrantes de la economía
- *   3. Apariencia        — tema claro / oscuro / automático
- *   4. Idioma            — español / english
- *   5. Números           — formato abreviado / completo
- *   6. Sesión            — Cerrar sesión
+ * Página de perfil del usuario. En pantallas anchas, dos columnas de alto parecido:
+ *   Izquierda  — Perfil (avatar, nombre, email) y Hogar (nombre, código de unión,
+ *                integrantes de la economía)
+ *   Derecha    — Preferencias: tema, idioma y formato de montos en una sola tarjeta
+ * Debajo, a todo el ancho: Datos (exportar / importar) y un pie con la versión y
+ * Cerrar sesión.
  */
 
 import { useState } from 'react';
@@ -35,6 +33,16 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h2 className="text-sm font-semibold text-[var(--text-secondary)] px-1 mb-2">
       {children}
     </h2>
+  );
+}
+
+/** Label and one-line description at the top of a card block. */
+function PreferenceHeading({ label, description }: { label: string; description: string }) {
+  return (
+    <div className="px-4 pt-3 pb-1">
+      <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
+      <p className="text-xs text-[var(--text-muted)]">{description}</p>
+    </div>
   );
 }
 
@@ -356,12 +364,11 @@ export function SettingsPage() {
         maxWidth="max-w-4xl"
       />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-          {/* ── Left column: identity ── */}
+          {/* ── Left column: who you are and your household ── */}
           <div className="space-y-6">
-            {/* Perfil */}
             <section>
               <SectionTitle>{t.settings.profileTitle}</SectionTitle>
               <SettingsCard>
@@ -369,7 +376,6 @@ export function SettingsPage() {
               </SettingsCard>
             </section>
 
-            {/* Hogar */}
             {householdId && (
               <section>
                 <SectionTitle>{t.settings.householdTitle}</SectionTitle>
@@ -380,89 +386,50 @@ export function SettingsPage() {
             )}
           </div>
 
-          {/* ── Right column: preferences ── */}
-          <div className="space-y-6">
-            {/* Apariencia */}
-            <section>
-              <SectionTitle>{t.settings.appearanceTitle}</SectionTitle>
-              <SettingsCard>
-                <div className="px-4 pt-3 pb-1">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.themeLabel}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{t.settings.themeDescription}</p>
-                </div>
+          {/* ── Right column: how the app looks and reads, in one card ── */}
+          <section>
+            <SectionTitle>{t.settings.preferencesTitle}</SectionTitle>
+            <SettingsCard>
+              <div>
+                <PreferenceHeading label={t.settings.themeLabel} description={t.settings.themeDescription} />
                 <ThemeSelector />
-              </SettingsCard>
-            </section>
-
-            {/* Idioma */}
-            <section>
-              <SectionTitle>{t.settings.languageTitle}</SectionTitle>
-              <SettingsCard>
-                <div className="px-4 pt-3 pb-1">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.languageLabel}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{t.settings.languageDescription}</p>
-                </div>
+              </div>
+              <div>
+                <PreferenceHeading label={t.settings.languageLabel} description={t.settings.languageDescription} />
                 <LanguageSelector />
-              </SettingsCard>
-            </section>
-
-            {/* Números */}
-            <section>
-              <SectionTitle>{t.settings.numbersTitle}</SectionTitle>
-              <SettingsCard>
-                <div className="px-4 pt-3 pb-1">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.numberFormatLabel}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{t.settings.numberFormatDescription}</p>
-                </div>
+              </div>
+              <div>
+                <PreferenceHeading label={t.settings.numberFormatLabel} description={t.settings.numberFormatDescription} />
                 <NumberFormatSelector />
-              </SettingsCard>
-            </section>
-
-            {/* Datos */}
-            <section>
-              <SectionTitle>{t.settings.dataTitle}</SectionTitle>
-              <SettingsCard>
-                <div className="px-4 pt-3 pb-1">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{t.settings.dataTitle}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{t.settings.dataDescription}</p>
-                </div>
-                <ExportImportSection householdId={householdId} />
-              </SettingsCard>
-            </section>
-
-            {/* Versión */}
-            <section>
-              <SectionTitle>{t.settings.versionTitle}</SectionTitle>
-              <SettingsCard>
-                <div className="flex items-center gap-3 px-5 py-4">
-                  <Tag size={16} className="shrink-0 text-[var(--text-muted)]" />
-                  <div className="flex-1">
-                    <p className="text-sm text-[var(--text-primary)]">Florecita</p>
-                    <p className="text-xs text-[var(--text-muted)]">v{__APP_VERSION__}</p>
-                  </div>
-                </div>
-              </SettingsCard>
-            </section>
-
-            {/* Sesión */}
-            <section>
-              <SectionTitle>{t.settings.sessionTitle}</SectionTitle>
-              <SettingsCard>
-                <div className="px-1 py-1">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-12 rounded-xl"
-                    onClick={handleLogout}
-                  >
-                    <LogOut size={16} />
-                    {t.settings.signOut}
-                  </Button>
-                </div>
-              </SettingsCard>
-            </section>
-          </div>
+              </div>
+            </SettingsCard>
+          </section>
 
         </div>
+
+        {/* Datos: full width, its actions two by two on wide screens */}
+        <section>
+          <SectionTitle>{t.settings.dataTitle}</SectionTitle>
+          <SettingsCard className="overflow-hidden">
+            <p className="px-4 pt-3 pb-2 text-xs text-[var(--text-muted)]">{t.settings.dataDescription}</p>
+            <ExportImportSection householdId={householdId} />
+          </SettingsCard>
+        </section>
+
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-4">
+          <p className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+            <Tag size={15} aria-hidden="true" className="shrink-0" />
+            Florecita v{__APP_VERSION__}
+          </p>
+          <Button
+            variant="ghost"
+            className="h-11 gap-2 rounded-xl px-4 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+            onClick={handleLogout}
+          >
+            <LogOut size={16} aria-hidden="true" />
+            {t.settings.signOut}
+          </Button>
+        </footer>
       </main>
 
       <AppNav />

@@ -978,8 +978,8 @@ export const es = {
     membersLabel: 'Integrantes de la economía',
     membersNone: 'Aún no hay integrantes',
     membersManage: 'Gestionar',
-    // Appearance
-    appearanceTitle: 'Apariencia',
+    // Preferences
+    preferencesTitle: 'Preferencias',
     themeLabel: 'Tema',
     themeDescription: 'Elige entre modo claro, oscuro o automático según el sistema',
     themeLight: 'Claro',
@@ -989,21 +989,16 @@ export const es = {
     themeDarkDesc: 'Siempre modo oscuro',
     themeAutoDesc: 'Sigue el sistema',
     // Language
-    languageTitle: 'Idioma',
     languageLabel: 'Idioma de la app',
     languageDescription: 'Cambia el idioma de toda la interfaz',
     // Numbers
-    numbersTitle: 'Números',
     numberFormatLabel: 'Formato de montos',
     numberFormatDescription: 'Afecta todos los valores mostrados (no los campos de entrada)',
     abbreviated: 'Abreviado',
-    abbreviatedDesc: 'Compacto, ideal para el spreadsheet',
+    abbreviatedDesc: 'Compacto, ideal para el presupuesto del año',
     full: 'Completo',
     fullDesc: 'Cifra exacta en pesos',
-    // Version
-    versionTitle: 'Versión',
     // Session
-    sessionTitle: 'Sesión',
     signOut: 'Cerrar sesión',
     // Data export/import
     dataTitle: 'Datos',

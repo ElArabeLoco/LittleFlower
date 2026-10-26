@@ -22,7 +22,7 @@ function ActionRow({ icon, label, sublabel, loading, loadingLabel, onClick, vari
       onClick={onClick}
       disabled={loading}
       className={cn(
-        'w-full flex items-center gap-3 px-4 py-3 text-left transition-all',
+        'w-full flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-3 text-left transition-all',
         'hover:bg-[var(--bg-hover)] disabled:opacity-60 disabled:cursor-not-allowed',
         variant === 'import' && 'text-[var(--text-brand)]',
       )}
@@ -149,8 +149,10 @@ export function ExportImportSection({ householdId }: ExportImportSectionProps) {
     }
   }
 
+  // One column of rows; two by two on wide screens. The 1px gap shows the
+  // border color between the rows, which paint the surface.
   return (
-    <div className="divide-y divide-[var(--border-subtle)]">
+    <div className="grid grid-cols-1 gap-px bg-[var(--border-subtle)] lg:grid-cols-2">
       <ActionRow
         icon={<FileJson size={16} />}
         label={t.settings.exportLF}
@@ -197,7 +199,7 @@ export function ExportImportSection({ householdId }: ExportImportSectionProps) {
       {/* Inline feedback */}
       {feedback && (
         <div className={cn(
-          'flex items-start gap-2 px-4 py-3 text-sm',
+          'flex items-start gap-2 bg-[var(--bg-surface)] px-4 py-3 text-sm lg:col-span-2',
           feedback.type === 'success' && 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30',
           feedback.type === 'warning' && 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30',
           feedback.type === 'error' && 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30',

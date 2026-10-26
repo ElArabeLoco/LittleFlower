@@ -979,8 +979,8 @@ export const en: Translations = {
     membersLabel: 'Household economy members',
     membersNone: 'No members yet',
     membersManage: 'Manage',
-    // Appearance
-    appearanceTitle: 'Appearance',
+    // Preferences
+    preferencesTitle: 'Preferences',
     themeLabel: 'Theme',
     themeDescription: 'Choose between light, dark, or auto mode based on your system',
     themeLight: 'Light',
@@ -990,21 +990,16 @@ export const en: Translations = {
     themeDarkDesc: 'Always dark mode',
     themeAutoDesc: 'Follow system',
     // Language
-    languageTitle: 'Language',
     languageLabel: 'App language',
     languageDescription: 'Change the language of the entire interface',
     // Numbers
-    numbersTitle: 'Numbers',
     numberFormatLabel: 'Amount format',
     numberFormatDescription: 'Affects all displayed values (not input fields)',
     abbreviated: 'Abbreviated',
-    abbreviatedDesc: 'Compact, great for the spreadsheet',
+    abbreviatedDesc: 'Compact, great for the yearly budget',
     full: 'Full',
     fullDesc: 'Exact amount in pesos',
-    // Version
-    versionTitle: 'Version',
     // Session
-    sessionTitle: 'Session',
     signOut: 'Sign out',
     // Data export/import
     dataTitle: 'Data',
