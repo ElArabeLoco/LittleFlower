@@ -11,6 +11,20 @@ Releases from v0.1.0 onward are automated via
 
 ---
 
+## [0.19.0](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.18.1...littleflower-v0.19.0) (2026-10-26)
+
+
+### Features
+
+* **budgets:** block deleting or narrowing a partida past its expenses ([d43fbb8](https://github.com/ElArabeLoco/LittleFlower/commit/d43fbb8c00c310fe56b49e5b16df98b8e16346fa))
+* **budgets:** finish action and collapsed finished section on Partidas ([015c4fd](https://github.com/ElArabeLoco/LittleFlower/commit/015c4fdf71695c4f145820582b9e8e7397d81a80))
+
+
+### Bug Fixes
+
+* **budgets:** keep English month names capitalized in the finish dialog ([43fd0b1](https://github.com/ElArabeLoco/LittleFlower/commit/43fd0b10bd342699a99e7790a1967de7f91328d0))
+* **year-view:** hide budgets that are not active in the viewed year ([890609f](https://github.com/ElArabeLoco/LittleFlower/commit/890609fe273c1cf9016e67a864c1b1cca9ef2000))
+
 ## [0.18.1](https://github.com/ElArabeLoco/LittleFlower/compare/littleflower-v0.18.0...littleflower-v0.18.1) (2026-10-26)
 
 
