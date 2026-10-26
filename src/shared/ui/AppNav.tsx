@@ -1,23 +1,18 @@
 /**
  * AppNav — bottom navigation bar shared across all main pages.
  *
- * Mobile-first. Fixed to the bottom of the viewport.
- * 4 tabs + profile avatar:
- *
- *   Inicio      → /home
- *   Dashboard   → /dashboard
- *   Presupuesto → /budget   (hub: Mensual + Anual)
- *   Finanzas    → /finances (hub: Patrimonio + Ingresos + Presupuestos + Deudas + Activos + …)
- *   Perfil      → /settings (avatar con inicial del usuario)
+ * Mobile-first. Fixed to the bottom of the viewport. 4 tabs + profile avatar;
+ * which paths each tab owns lives in navTabs.ts.
  *
  * The active tab is marked by a ribbon hanging from the bar's top edge.
  */
 
 import { Link, useRouterState } from '@tanstack/react-router';
-import { House, LayoutDashboard, CalendarDays, Wallet, type LucideIcon } from 'lucide-react';
+import { House, ChartColumn, Receipt, Wallet, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useI18n } from '@/shared/i18n/I18nContext';
+import { activeNavTab, NAV_TABS, type NavPath, type NavTabKey } from './navTabs';
 
 // ---------------------------------------------------------------------------
 // User avatar
@@ -36,47 +31,15 @@ function UserAvatar({ email, size = 20 }: { email: string; size?: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Nav item definitions (all except profile — profile is special)
+// Tab icons (profile shows the user's avatar instead)
 // ---------------------------------------------------------------------------
 
-type NavPath = '/home' | '/dashboard' | '/budget' | '/finances' | '/settings';
-
-interface NavItem {
-  labelKey: 'home' | 'dashboard' | 'budget' | 'finances';
-  icon: LucideIcon;
-  to: NavPath;
-  /** All paths that should highlight this tab as active */
-  match: string[];
-}
-
-const NAV_ITEMS: NavItem[] = [
-  {
-    labelKey: 'home',
-    icon: House,
-    to: '/home',
-    match: ['/home'],
-  },
-  {
-    labelKey: 'dashboard',
-    icon: LayoutDashboard,
-    to: '/dashboard',
-    match: ['/dashboard'],
-  },
-  {
-    labelKey: 'budget',
-    icon: CalendarDays,
-    to: '/budget',
-    // Active on the hub AND on the sub-pages it contains
-    match: ['/budget', '/month', '/anual'],
-  },
-  {
-    labelKey: 'finances',
-    icon: Wallet,
-    to: '/finances',
-    // Active on the hub AND on the sub-pages it contains
-    match: ['/finances', '/net-worth', '/income', '/settings/budgets', '/debts', '/assets', '/transactions', '/members'],
-  },
-];
+const TAB_ICONS: Record<Exclude<NavTabKey, 'profile'>, LucideIcon> = {
+  home: House,
+  dashboard: ChartColumn,
+  spending: Receipt,
+  finances: Wallet,
+};
 
 // ---------------------------------------------------------------------------
 // Tab link
@@ -126,9 +89,8 @@ export function AppNav() {
   const { t } = useI18n();
 
   const email = session?.email ?? '';
-
-  // Profile tab is active on /settings but NOT on /settings/budgets
-  const isProfileActive = pathname === '/settings' || pathname === '/settings/';
+  const activeTab = activeNavTab(pathname);
+  const isProfileActive = activeTab === 'profile';
 
   return (
     <>
@@ -137,13 +99,14 @@ export function AppNav() {
 
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--nav-border)] bg-[var(--nav-bg)] pb-[env(safe-area-inset-bottom)] transition-colors">
         <ul className="mx-auto flex h-16 max-w-lg items-stretch">
-          {NAV_ITEMS.map(item => {
-            const isActive = item.match.some(m => pathname === m || pathname.startsWith(m + '/'));
-            const Icon = item.icon;
+          {NAV_TABS.map(tab => {
+            if (tab.key === 'profile') return null;
+            const isActive = activeTab === tab.key;
+            const Icon = TAB_ICONS[tab.key];
 
             return (
-              <li key={item.to} className="flex-1">
-                <NavTab to={item.to} isActive={isActive} label={t.nav[item.labelKey]}>
+              <li key={tab.to} className="flex-1">
+                <NavTab to={tab.to} isActive={isActive} label={t.nav[tab.key]}>
                   <Icon size={22} strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
                 </NavTab>
               </li>

@@ -9,7 +9,7 @@ const LazyDashboardPage = lazy(() =>
 
 function DashboardRoute() {
   return (
-    <FeatureErrorBoundary feature="Dashboard">
+    <FeatureErrorBoundary feature="Gráficas">
       <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="h-5 w-5 animate-spin rounded-full border-2 border-pink-400 border-t-transparent" /></div>}>
         <LazyDashboardPage />
       </Suspense>

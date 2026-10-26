@@ -117,10 +117,19 @@ export const es = {
   // ---------------------------------------------------------------------------
   nav: {
     home: 'Inicio',
-    dashboard: 'Dashboard',
-    budget: 'Presupuesto',
+    dashboard: 'Gráficas',
+    spending: 'Gastos',
     finances: 'Finanzas',
     profile: 'Perfil',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Gastos tab: Mes · Año switch
+  // ---------------------------------------------------------------------------
+  spendingViews: {
+    label: 'Vista de gastos',
+    month: 'Mes',
+    year: 'Año',
   },
 
   // ---------------------------------------------------------------------------
@@ -153,27 +162,28 @@ export const es = {
         : `${count} ${count === 1 ? 'ingreso' : 'ingresos'} este mes${foreign ? ', con dólares' : ''}`,
     budgetsLine: (count: number) => (count === 1 ? '1 partida activa' : `${count} partidas activas`),
     debtsLine: (amount: string | null) => (amount ? `Saldo pendiente ${amount}` : 'Sin deudas pendientes'),
-    transactionsLine: 'Todos los movimientos del mes',
+    transactionsLine: 'Cada gasto del mes',
     profileTitle: 'Perfil y hogar',
-    profileLine: 'Código de invitación y tema',
+    profileLine: 'Integrantes, invitación y tema',
     pendingTitle: 'Pendientes del mes',
     pendingTotal: (amount: string) => `Total ${amount}`,
     pendingEmpty: 'Todo está ejecutado este mes.',
     pendingMore: (n: number) => (n === 1 ? 'Ver 1 más en el mes' : `Ver ${n} más en el mes`),
     modeBoth: 'Tarjeta y efectivo',
     recentEmpty: 'Todavía no hay gastos este mes.',
-    seeTransactions: 'Ver todas las transacciones',
+    seeTransactions: 'Ver la lista de gastos',
     pickBudgetDesc: '¿En qué partida va el gasto?',
     searchBudget: 'Buscar partida',
     noBudgetMatch: 'Ninguna partida coincide con la búsqueda.',
     noBudgets: 'Primero crea las partidas de tu presupuesto.',
-    createBudgets: 'Ir a Presupuestos',
+    createBudgets: 'Ir a Partidas',
   },
 
   // ---------------------------------------------------------------------------
   // Dashboard
   // ---------------------------------------------------------------------------
   dashboard: {
+    title: 'Gráficas',
     realBalance: 'Balance real',
     available: 'Disponible',
     budgeted: 'Presupuestado',
@@ -184,7 +194,7 @@ export const es = {
     metricFormulaLabel: 'Cómo se calcula',
     metricInfo: {
       realBalance: {
-        description: 'Lo que de verdad le queda al hogar este mes: el ingreso disponible menos todo lo que ya se pagó en efectivo. Es el mismo balance real que ves en la vista mensual y en el inicio.',
+        description: 'Lo que de verdad le queda al hogar este mes: el ingreso disponible menos todo lo que ya se pagó en efectivo. Es el mismo balance real que ves en Gastos del mes y en Inicio.',
         formula: 'Disponible − gastos pagados en efectivo',
       },
       available: {
@@ -222,14 +232,14 @@ export const es = {
     paymentTypeDistribution: 'Distribución por tipo de pago',
     card: 'Tarjeta',
     cash: 'Efectivo',
-    topBudgets: 'Top presupuestos este mes',
+    topBudgets: 'Partidas con más gasto este mes',
     executionLabel: 'Ejecución: gastado sobre presupuestado',
-    exceededBudgets: 'Rubros excedidos',
-    exceededDesc: (n: number) => `Presupuestos superados en los últimos 6 meses (${n} ocurrencia${n !== 1 ? 's' : ''})`,
+    exceededBudgets: 'Partidas excedidas',
+    exceededDesc: (n: number) => `Partidas que se pasaron del presupuesto en los últimos 6 meses (${n} ${n === 1 ? 'vez' : 'veces'})`,
     budgetedShort: 'Presup.',
     spentShort: 'Gastado',
     recentExpenses: 'Gastos recientes',
-    recentExpensesDesc: 'Últimas transacciones registradas',
+    recentExpensesDesc: 'Últimos gastos registrados',
     debtProgress: 'Progreso de deudas',
     debtProgressDesc: 'Saldo pendiente por deuda',
     pctPaid: '% pagado',
@@ -252,11 +262,11 @@ export const es = {
     burnUpSaludTitle: 'Cosas de Salud',
     burnUpSaludDesc: 'Gasto acumulado vs ritmo ideal',
     burnUpCreditCardTitle: '💳 Tarjeta de Crédito',
-    burnUpCreditCardDesc: 'Total gastos en presupuestos de tarjeta vs ritmo ideal',
+    burnUpCreditCardDesc: 'Gasto en partidas de tarjeta vs ritmo ideal',
     burnUpCashTitle: '💵 Efectivo',
     burnUpCashDesc: 'Total gastos en efectivo vs ritmo ideal',
     noDataYet: 'Aún no hay datos',
-    addBudgetsAndIncome: 'Agrega presupuestos e ingresos para ver tus estadísticas',
+    addBudgetsAndIncome: 'Agrega partidas e ingresos para ver tus estadísticas',
     incomeHistory: 'Histórico de ingresos',
     incomeHistoryDesc: 'Ingreso disponible en COP por mes',
     incomeHistoryLabel: 'Ingreso disponible',
@@ -274,13 +284,13 @@ export const es = {
     expenseHistorySaludDesc: 'Gasto real en cosas de salud por mes',
     expenseHistorySaludLabel: 'Gasto salud',
     pendingPayments: 'Por pagar este mes',
-    pendingItemsCount: (n: number) => `${n} rubro${n !== 1 ? 's' : ''} pendiente${n !== 1 ? 's' : ''}`,
+    pendingItemsCount: (n: number) => `${n} partida${n !== 1 ? 's' : ''} pendiente${n !== 1 ? 's' : ''}`,
     totalPending: 'Total pendiente',
     allPaidThisMonth: 'Todo al día este mes',
-    noPendingItems: 'Sin rubros pendientes de pago',
+    noPendingItems: 'Sin partidas pendientes de pago',
     pendingRestoreAll: 'Restaurar todos',
     kpisTitle: 'Resumen del mes',
-    pendingDesc: 'Rubros del mes que aún no se pagan',
+    pendingDesc: 'Partidas del mes que aún no se pagan',
     kpisDesc: 'Balance real, disponible, presupuestado, gastado y por gastar',
   },
 
@@ -308,15 +318,15 @@ export const es = {
     addWidget: 'Agregar widget',
     available: (n: number) =>
       n === 0
-        ? 'Todos los widgets del catálogo ya están en tu dashboard'
+        ? 'Todos los widgets del catálogo ya están en Gráficas'
         : n === 1 ? '1 widget disponible en el catálogo' : `${n} widgets disponibles en el catálogo`,
     catalogTitle: 'Catálogo de widgets',
-    catalogCount: (shown: number, total: number) => `${shown} de ${total} en tu dashboard`,
+    catalogCount: (shown: number, total: number) => `${shown} de ${total} en Gráficas`,
     close: 'Cerrar',
-    inDashboard: 'En tu dashboard',
+    inDashboard: 'Ya en Gráficas',
     addLabel: (title: string) => `Agregar ${title}`,
     groups: { summary: 'Resumen', month: 'Gasto del mes', burnUp: 'Burn-up del mes', debts: 'Deudas', history: 'Históricos' },
-    emptyTitle: 'Tu dashboard no tiene widgets',
+    emptyTitle: 'No hay widgets en Gráficas',
     emptyText: 'Agrégalos desde el catálogo cuando quieras.',
     openCatalog: 'Abrir catálogo',
     removed: (title: string) => `Quitaste «${title}».`,
@@ -332,15 +342,16 @@ export const es = {
   // Month View
   // ---------------------------------------------------------------------------
   monthView: {
-    title: 'Vista Mensual',
+    title: 'Gastos del mes',
+    seeExpenseList: 'Ver la lista de gastos del mes',
     unmarkExecuted: 'Desmarcar como ejecutado',
     markExecuted: 'Marcar como ejecutado',
     budgetLabel: 'Presupuesto',
     spentLabel: 'Gastado',
     remainingLabel: 'Restante',
     viewOrAddExpenses: 'Ver o registrar gastos',
-    noBudgets: 'Sin presupuestos activos',
-    addBudgetsHint: 'Agrega presupuestos desde la sección Presupuestos',
+    noBudgets: 'Sin partidas activas',
+    addBudgetsHint: 'Crea las partidas en Finanzas › Partidas',
     creditCard: 'Tarjeta de Crédito',
     cashLabel: 'Efectivo',
     incomeLabel: 'Ingresos',
@@ -360,7 +371,7 @@ export const es = {
     prevMonth: 'Mes anterior',
     nextMonth: 'Mes siguiente',
     sortAndFilter: 'Ordenar y filtrar',
-    searchPlaceholder: 'Buscar rubro…',
+    searchPlaceholder: 'Buscar partida…',
     pending: 'Pendientes',
     executed: 'Ejecutados',
     sortDefault: 'Predeterminado',
@@ -375,9 +386,9 @@ export const es = {
   // Year View
   // ---------------------------------------------------------------------------
   yearView: {
-    title: 'Vista Anual',
-    budgetYear: (year: number) => `Presupuesto ${year}`,
-    itemHeader: 'Rubro',
+    title: 'Presupuesto del año',
+    budgetYear: (year: number) => `Enero a diciembre de ${year}`,
+    itemHeader: 'Partida',
     budgetedRow: 'Presupuestado',
     executedRow: 'Ejecutado',
     toExecuteRow: 'Por ejecutar',
@@ -387,17 +398,17 @@ export const es = {
     totalBudgetedRow: 'Total presupuestado',
     realBalanceRow: 'Balance ideal',
     trueRealBalanceRow: 'Balance real',
-    noItems: 'No hay ítems de presupuesto.',
-    addFromSettings: 'Agrega presupuestos desde Configuración.',
+    noItems: 'No hay partidas.',
+    addFromSettings: 'Créalas en Finanzas › Partidas.',
     executedHint: 'Ejecutado ✓ — clic derecho para ver opciones',
     editHint: 'Doble clic para editar · clic derecho para más opciones',
     viewExpenses: 'Ver / registrar gastos',
-    searchPlaceholder: 'Buscar rubro…',
+    searchPlaceholder: 'Buscar partida…',
     sortValue: 'Valor',
     sortName: 'Nombre',
     sortCategory: 'Categoría',
     sortReset: 'Predeterminado',
-    matchCount: (n: number) => `${n} rubro${n !== 1 ? 's' : ''}`,
+    matchCount: (n: number) => `${n} partida${n !== 1 ? 's' : ''}`,
     // Context menu
     ctxMarkExecuted: 'Marcar como pagado',
     ctxMarkUnexecuted: 'Desmarcar como pagado',
@@ -406,7 +417,7 @@ export const es = {
     ctxForwardAmount: 'De aquí en adelante…',
     ctxForwardAmountDesc: (month: string) => `Aplicar este valor desde ${month} en adelante`,
     ctxForwardPastNotAvailable: 'No disponible en meses pasados',
-    ctxViewExpenses: 'Ver transacciones',
+    ctxViewExpenses: 'Ver gastos',
     // Edit toolbar
     editOnlyThisMonth: 'Solo este mes',
     editForwardMonths: (range: string, count: number) => `${range} (${count} ${count === 1 ? 'mes' : 'meses'})`,
@@ -446,7 +457,7 @@ export const es = {
     statusPaid: 'Pagado',
     statusPending: 'Pendiente de pago',
     statusPlanned: 'Planeado',
-    statusNotStarted: 'Este rubro todavía no empieza en ese mes',
+    statusNotStarted: 'Esta partida todavía no empieza en ese mes',
     statusOverBy: (amount: string) => `Se pasó ${amount}`,
   },
 
@@ -454,10 +465,10 @@ export const es = {
   // Budget Management
   // ---------------------------------------------------------------------------
   budgets: {
-    title: 'Presupuestos',
-    subtitle: 'Gestiona tus categorías de gasto',
-    newBudget: 'Nuevo presupuesto',
-    editBudget: 'Editar presupuesto',
+    title: 'Partidas',
+    subtitle: 'Las partidas del presupuesto y su valor de cada mes',
+    newBudget: 'Nueva partida',
+    editBudget: 'Editar partida',
     nameLabel: 'Nombre *',
     namePlaceholder: 'Ej: Netflix, Cuota apartamento',
     descriptionLabel: 'Descripción (opcional)',
@@ -485,26 +496,13 @@ export const es = {
     validationAmount: 'El monto debe ser un número válido en COP',
     validationName: 'El nombre es obligatorio',
     validationEndMonth: 'El mes de fin debe ser igual o posterior al mes de inicio',
-    noBudgets: 'Sin presupuestos aún',
-    createFirst: 'Crea el primero con el botón "Nuevo"',
+    noBudgets: 'Aún no hay partidas',
+    createFirst: 'Crea la primera con el botón "Nuevo"',
     creditCardGroup: 'Tarjeta de Crédito',
     cashGroup: 'Efectivo',
-    noCardItems: 'Sin ítems de tarjeta',
-    noCashItems: 'Sin ítems de efectivo',
+    noCardItems: 'Sin partidas de tarjeta',
+    noCashItems: 'Sin partidas de efectivo',
     confirmDelete: (name: string) => `¿Eliminar "${name}"? Los datos históricos se conservan.`,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Budget Hub
-  // ---------------------------------------------------------------------------
-  budgetHub: {
-    title: 'Presupuesto',
-    subtitle: 'Elige tu vista',
-    description: 'Dos formas de ver tu presupuesto. Escoge la que mejor se adapte a lo que necesitas ahora.',
-    monthlyTitle: 'Vista Mensual',
-    monthlyDesc: 'Revisa y registra gastos del mes. Tarjetas por presupuesto con ejecución real y acceso a cada gasto.',
-    yearlyTitle: 'Vista Anual',
-    yearlyDesc: 'Spreadsheet de los 12 meses. Edita presupuestos por mes, ve totales y balance real del año completo.',
   },
 
   // ---------------------------------------------------------------------------
@@ -711,18 +709,16 @@ export const es = {
   // ---------------------------------------------------------------------------
   finances: {
     title: 'Finanzas',
-    subtitle: 'La configuración de tu hogar',
-    description: 'Configura y gestiona el lado financiero del hogar: de dónde viene la plata y cómo la organizas.',
+    subtitle: 'El plan del hogar y cómo va',
+    description: 'Aquí se arma el plan del hogar: lo que entra, en qué se gasta, lo que deben y lo que tienen. Los gastos del día a día se registran en Gastos.',
+    statusTitle: 'Cómo vamos',
+    planTitle: 'Plan del hogar',
     incomeTitle: 'Ingresos',
     incomeDesc: 'Gestiona las fuentes de ingreso del hogar. Soporta salarios en COP y USD con conversión TRM automática.',
-    budgetsTitle: 'Presupuestos',
-    budgetsDesc: 'Define y gestiona las categorías de gasto del hogar. Crea, edita y organiza por tipo de pago.',
+    budgetsTitle: 'Partidas',
+    budgetsDesc: 'Las partidas del presupuesto: cuánto planean gastar en cada una cada mes y si se paga con tarjeta o en efectivo.',
     debtsTitle: 'Deudas',
-    debtsDesc: 'Registra y haz seguimiento de tus deudas. Vincula presupuestos para abonos automáticos.',
-    transactionsTitle: 'Transacciones',
-    transactionsDesc: 'Historial de gastos del mes organizado por forma de pago.',
-    membersTitle: 'Integrantes',
-    membersDesc: 'Las personas a cuyo nombre están los ingresos, las deudas y los activos. No necesitan cuenta en Florecita.',
+    debtsDesc: 'Registra y haz seguimiento de tus deudas. Vincula partidas para abonos automáticos.',
     assetsTitle: 'Activos',
     assetsDesc: 'Ahorros, inversiones, inmuebles y vehículos del hogar, con su valor actual y a nombre de quién están.',
     netWorthTitle: 'Patrimonio',
@@ -809,7 +805,7 @@ export const es = {
       asset: (list: string) => `Compartido entre ${list}.`,
     },
     noMembers: 'Aún no hay integrantes. Puedes guardar sin titulares y asignarlos cuando los crees en',
-    noMembersLink: 'Finanzas › Integrantes',
+    noMembersLink: 'Perfil › Integrantes',
     sharedIncome: 'compartido',
     sharedDebt: 'compartida',
     sharedAsset: 'compartido',
@@ -955,16 +951,16 @@ export const es = {
   // Transactions
   // ---------------------------------------------------------------------------
   transactions: {
-    title: 'Transacciones',
-    subtitle: 'Gastos del mes',
+    title: 'Lista de gastos',
+    subtitle: 'Cada gasto del mes, por forma de pago',
     creditCardGroup: 'Tarjeta de Crédito',
     cashGroup: 'Efectivo',
-    budgetHeader: 'Rubro',
+    budgetHeader: 'Partida',
     noteHeader: 'Descripción',
     amountHeader: 'Monto',
     dateHeader: 'Fecha',
     total: 'Total',
-    noTransactions: 'Sin transacciones este mes',
+    noTransactions: 'Sin gastos este mes',
   },
 
   // ---------------------------------------------------------------------------
@@ -983,8 +979,8 @@ export const es = {
     membersLabel: 'Integrantes de la economía',
     membersNone: 'Aún no hay integrantes',
     membersManage: 'Gestionar',
-    // Appearance
-    appearanceTitle: 'Apariencia',
+    // Preferences
+    preferencesTitle: 'Preferencias',
     themeLabel: 'Tema',
     themeDescription: 'Elige entre modo claro, oscuro o automático según el sistema',
     themeLight: 'Claro',
@@ -994,21 +990,16 @@ export const es = {
     themeDarkDesc: 'Siempre modo oscuro',
     themeAutoDesc: 'Sigue el sistema',
     // Language
-    languageTitle: 'Idioma',
     languageLabel: 'Idioma de la app',
     languageDescription: 'Cambia el idioma de toda la interfaz',
     // Numbers
-    numbersTitle: 'Números',
     numberFormatLabel: 'Formato de montos',
     numberFormatDescription: 'Afecta todos los valores mostrados (no los campos de entrada)',
     abbreviated: 'Abreviado',
-    abbreviatedDesc: 'Compacto, ideal para el spreadsheet',
+    abbreviatedDesc: 'Compacto, ideal para el presupuesto del año',
     full: 'Completo',
     fullDesc: 'Cifra exacta en pesos',
-    // Version
-    versionTitle: 'Versión',
     // Session
-    sessionTitle: 'Sesión',
     signOut: 'Cerrar sesión',
     // Data export/import
     dataTitle: 'Datos',

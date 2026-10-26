@@ -118,10 +118,19 @@ export const en: Translations = {
   // ---------------------------------------------------------------------------
   nav: {
     home: 'Home',
-    dashboard: 'Dashboard',
-    budget: 'Budget',
+    dashboard: 'Charts',
+    spending: 'Spending',
     finances: 'Finances',
     profile: 'Profile',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Spending tab: Month · Year switch
+  // ---------------------------------------------------------------------------
+  spendingViews: {
+    label: 'Spending view',
+    month: 'Month',
+    year: 'Year',
   },
 
   // ---------------------------------------------------------------------------
@@ -154,27 +163,28 @@ export const en: Translations = {
         : `${count} ${count === 1 ? 'income' : 'incomes'} this month${foreign ? ', with dollars' : ''}`,
     budgetsLine: (count: number) => (count === 1 ? '1 active item' : `${count} active items`),
     debtsLine: (amount: string | null) => (amount ? `Outstanding ${amount}` : 'No outstanding debts'),
-    transactionsLine: 'Every movement of the month',
+    transactionsLine: 'Every expense of the month',
     profileTitle: 'Profile and household',
-    profileLine: 'Invite code and theme',
+    profileLine: 'Members, invite and theme',
     pendingTitle: 'Pending this month',
     pendingTotal: (amount: string) => `Total ${amount}`,
     pendingEmpty: 'Everything is executed this month.',
     pendingMore: (n: number) => (n === 1 ? 'See 1 more in the month' : `See ${n} more in the month`),
     modeBoth: 'Card and cash',
     recentEmpty: 'No expenses this month yet.',
-    seeTransactions: 'See all transactions',
+    seeTransactions: 'See the expense list',
     pickBudgetDesc: 'Which budget item is this expense for?',
     searchBudget: 'Search items',
     noBudgetMatch: 'No item matches the search.',
     noBudgets: 'First create your budget items.',
-    createBudgets: 'Go to Budgets',
+    createBudgets: 'Go to Budget items',
   },
 
   // ---------------------------------------------------------------------------
   // Dashboard
   // ---------------------------------------------------------------------------
   dashboard: {
+    title: 'Charts',
     realBalance: 'Real balance',
     available: 'Available',
     budgeted: 'Budgeted',
@@ -185,7 +195,7 @@ export const en: Translations = {
     metricFormulaLabel: 'How it is calculated',
     metricInfo: {
       realBalance: {
-        description: 'What the household really has left this month: available income minus everything already paid in cash. It is the same real balance you see in the monthly view and on Home.',
+        description: 'What the household really has left this month: available income minus everything already paid in cash. It is the same real balance you see in Spending this month and on Home.',
         formula: 'Available − expenses paid in cash',
       },
       available: {
@@ -223,14 +233,14 @@ export const en: Translations = {
     paymentTypeDistribution: 'Distribution by payment type',
     card: 'Card',
     cash: 'Cash',
-    topBudgets: 'Top budgets this month',
+    topBudgets: 'Top budget items this month',
     executionLabel: 'Execution: spent over budgeted',
-    exceededBudgets: 'Exceeded budgets',
-    exceededDesc: (n: number) => `Budgets exceeded in the last 6 months (${n} occurrence${n !== 1 ? 's' : ''})`,
+    exceededBudgets: 'Exceeded budget items',
+    exceededDesc: (n: number) => `Budget items that went over budget in the last 6 months (${n} time${n !== 1 ? 's' : ''})`,
     budgetedShort: 'Budget',
     spentShort: 'Spent',
     recentExpenses: 'Recent expenses',
-    recentExpensesDesc: 'Latest recorded transactions',
+    recentExpensesDesc: 'Latest recorded expenses',
     debtProgress: 'Debt progress',
     debtProgressDesc: 'Pending balance per debt',
     pctPaid: '% paid',
@@ -253,11 +263,11 @@ export const en: Translations = {
     burnUpSaludTitle: 'Health',
     burnUpSaludDesc: 'Cumulative spend vs ideal pace',
     burnUpCreditCardTitle: '💳 Credit Card',
-    burnUpCreditCardDesc: 'Total credit card budget spend vs ideal pace',
+    burnUpCreditCardDesc: 'Spending on card budget items vs ideal pace',
     burnUpCashTitle: '💵 Cash',
     burnUpCashDesc: 'Total cash spend vs ideal pace',
     noDataYet: 'No data yet',
-    addBudgetsAndIncome: 'Add budgets and income to see your stats',
+    addBudgetsAndIncome: 'Add budget items and income to see your stats',
     incomeHistory: 'Income history',
     incomeHistoryDesc: 'Available income in COP per month',
     incomeHistoryLabel: 'Available income',
@@ -309,15 +319,15 @@ export const en: Translations = {
     addWidget: 'Add widget',
     available: (n: number) =>
       n === 0
-        ? 'Every catalog widget is already on your dashboard'
+        ? 'Every catalog widget is already on Charts'
         : n === 1 ? '1 widget available in the catalog' : `${n} widgets available in the catalog`,
     catalogTitle: 'Widget catalog',
-    catalogCount: (shown: number, total: number) => `${shown} of ${total} on your dashboard`,
+    catalogCount: (shown: number, total: number) => `${shown} of ${total} on Charts`,
     close: 'Close',
-    inDashboard: 'On your dashboard',
+    inDashboard: 'Already on Charts',
     addLabel: (title: string) => `Add ${title}`,
     groups: { summary: 'Summary', month: 'This month’s spending', burnUp: 'Monthly burn-up', debts: 'Debts', history: 'History' },
-    emptyTitle: 'Your dashboard has no widgets',
+    emptyTitle: 'There are no widgets on Charts',
     emptyText: 'Add them from the catalog whenever you like.',
     openCatalog: 'Open catalog',
     removed: (title: string) => `You removed “${title}”.`,
@@ -333,15 +343,16 @@ export const en: Translations = {
   // Month View
   // ---------------------------------------------------------------------------
   monthView: {
-    title: 'Monthly View',
+    title: 'Spending this month',
+    seeExpenseList: 'See the month\'s expense list',
     unmarkExecuted: 'Unmark as executed',
     markExecuted: 'Mark as executed',
     budgetLabel: 'Budget',
     spentLabel: 'Spent',
     remainingLabel: 'Remaining',
     viewOrAddExpenses: 'View or record expenses',
-    noBudgets: 'No active budgets',
-    addBudgetsHint: 'Add budgets from the Budgets section',
+    noBudgets: 'No active budget items',
+    addBudgetsHint: 'Create budget items in Finances › Budget items',
     creditCard: 'Credit Card',
     cashLabel: 'Cash',
     incomeLabel: 'Income',
@@ -361,7 +372,7 @@ export const en: Translations = {
     prevMonth: 'Previous month',
     nextMonth: 'Next month',
     sortAndFilter: 'Sort & filter',
-    searchPlaceholder: 'Search budget…',
+    searchPlaceholder: 'Search budget item…',
     pending: 'Pending',
     executed: 'Executed',
     sortDefault: 'Default',
@@ -376,8 +387,8 @@ export const en: Translations = {
   // Year View
   // ---------------------------------------------------------------------------
   yearView: {
-    title: 'Yearly View',
-    budgetYear: (year: number) => `Budget ${year}`,
+    title: 'Budget for the year',
+    budgetYear: (year: number) => `January to December ${year}`,
     itemHeader: 'Item',
     budgetedRow: 'Budgeted',
     executedRow: 'Spent',
@@ -389,16 +400,16 @@ export const en: Translations = {
     realBalanceRow: 'Ideal balance',
     trueRealBalanceRow: 'Real balance',
     noItems: 'No budget items.',
-    addFromSettings: 'Add budgets from Settings.',
+    addFromSettings: 'Create them in Finances › Budget items.',
     executedHint: 'Executed ✓ — right-click for options',
     editHint: 'Double-click to edit · right-click for more options',
     viewExpenses: 'View / record expenses',
-    searchPlaceholder: 'Search budget…',
+    searchPlaceholder: 'Search budget item…',
     sortValue: 'Value',
     sortName: 'Name',
     sortCategory: 'Category',
     sortReset: 'Default',
-    matchCount: (n: number) => `${n} budget${n !== 1 ? 's' : ''}`,
+    matchCount: (n: number) => `${n} budget item${n !== 1 ? 's' : ''}`,
     // Context menu
     ctxMarkExecuted: 'Mark as paid',
     ctxMarkUnexecuted: 'Unmark as paid',
@@ -407,7 +418,7 @@ export const en: Translations = {
     ctxForwardAmount: 'From here on…',
     ctxForwardAmountDesc: (month: string) => `Apply this value from ${month} onwards`,
     ctxForwardPastNotAvailable: 'Not available for past months',
-    ctxViewExpenses: 'View transactions',
+    ctxViewExpenses: 'View expenses',
     // Edit toolbar
     editOnlyThisMonth: 'This month only',
     editForwardMonths: (range: string, count: number) => `${range} (${count} ${count === 1 ? 'month' : 'months'})`,
@@ -447,7 +458,7 @@ export const en: Translations = {
     statusPaid: 'Paid',
     statusPending: 'Payment pending',
     statusPlanned: 'Planned',
-    statusNotStarted: 'This budget has not started in that month',
+    statusNotStarted: 'This budget item has not started in that month',
     statusOverBy: (amount: string) => `Over by ${amount}`,
   },
 
@@ -455,10 +466,10 @@ export const en: Translations = {
   // Budget Management
   // ---------------------------------------------------------------------------
   budgets: {
-    title: 'Budgets',
-    subtitle: 'Manage your spending categories',
-    newBudget: 'New budget',
-    editBudget: 'Edit budget',
+    title: 'Budget items',
+    subtitle: 'Your budget items and their amount each month',
+    newBudget: 'New budget item',
+    editBudget: 'Edit budget item',
     nameLabel: 'Name *',
     namePlaceholder: 'E.g.: Netflix, Rent',
     descriptionLabel: 'Description (optional)',
@@ -486,26 +497,13 @@ export const en: Translations = {
     validationAmount: 'Amount must be a valid COP number',
     validationName: 'Name is required',
     validationEndMonth: 'End month must be equal to or after start month',
-    noBudgets: 'No budgets yet',
+    noBudgets: 'No budget items yet',
     createFirst: 'Create the first one with the "New" button',
     creditCardGroup: 'Credit Card',
     cashGroup: 'Cash',
     noCardItems: 'No card items',
     noCashItems: 'No cash items',
     confirmDelete: (name: string) => `Delete "${name}"? Historical data will be preserved.`,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Budget Hub
-  // ---------------------------------------------------------------------------
-  budgetHub: {
-    title: 'Budget',
-    subtitle: 'Choose your view',
-    description: 'Two ways to view your budget. Choose the one that best fits what you need right now.',
-    monthlyTitle: 'Monthly View',
-    monthlyDesc: 'Review and record monthly expenses. Cards per budget with real execution and access to each expense.',
-    yearlyTitle: 'Yearly View',
-    yearlyDesc: 'Spreadsheet of all 12 months. Edit budgets by month, see totals and real balance for the full year.',
   },
 
   // ---------------------------------------------------------------------------
@@ -712,18 +710,16 @@ export const en: Translations = {
   // ---------------------------------------------------------------------------
   finances: {
     title: 'Finances',
-    subtitle: 'Your household setup',
-    description: 'Set up and manage the financial side of your household: where the money comes from and how you organize it.',
+    subtitle: 'The household plan and how it is going',
+    description: 'This is where the household plan is set up: what comes in, what it is spent on, what you owe and what you own. Day-to-day expenses are recorded in Spending.',
+    statusTitle: 'Where we stand',
+    planTitle: 'Household plan',
     incomeTitle: 'Income',
     incomeDesc: 'Manage your household income sources. Supports COP and USD salaries with automatic TRM conversion.',
-    budgetsTitle: 'Budgets',
-    budgetsDesc: 'Define and manage your household spending categories. Create, edit, and organize by payment type.',
+    budgetsTitle: 'Budget items',
+    budgetsDesc: 'The budget items: how much you plan to spend on each one every month, and whether it is paid by card or in cash.',
     debtsTitle: 'Debts',
-    debtsDesc: 'Track your debts. Link budgets for automatic payments.',
-    transactionsTitle: 'Transactions',
-    transactionsDesc: 'Monthly expense ledger organized by payment method.',
-    membersTitle: 'Members',
-    membersDesc: 'The people whose name the incomes, debts and assets are in. They do not need a Florecita account.',
+    debtsDesc: 'Track your debts. Link budget items for automatic payments.',
     assetsTitle: 'Assets',
     assetsDesc: 'The household savings, investments, real estate and vehicles, at their current value and in whose name they are.',
     netWorthTitle: 'Net worth',
@@ -810,7 +806,7 @@ export const en: Translations = {
       asset: (list: string) => `Shared between ${list}.`,
     },
     noMembers: 'No members yet. You can save without holders and assign them once you create them in',
-    noMembersLink: 'Finances › Members',
+    noMembersLink: 'Profile › Members',
     sharedIncome: 'shared',
     sharedDebt: 'shared',
     sharedAsset: 'shared',
@@ -956,16 +952,16 @@ export const en: Translations = {
   // Transactions
   // ---------------------------------------------------------------------------
   transactions: {
-    title: 'Transactions',
-    subtitle: 'Monthly expenses',
+    title: 'Expense list',
+    subtitle: 'Every expense of the month, by payment method',
     creditCardGroup: 'Credit Card',
     cashGroup: 'Cash',
-    budgetHeader: 'Budget',
+    budgetHeader: 'Budget item',
     noteHeader: 'Description',
     amountHeader: 'Amount',
     dateHeader: 'Date',
     total: 'Total',
-    noTransactions: 'No transactions this month',
+    noTransactions: 'No expenses this month',
   },
 
   // ---------------------------------------------------------------------------
@@ -984,8 +980,8 @@ export const en: Translations = {
     membersLabel: 'Household economy members',
     membersNone: 'No members yet',
     membersManage: 'Manage',
-    // Appearance
-    appearanceTitle: 'Appearance',
+    // Preferences
+    preferencesTitle: 'Preferences',
     themeLabel: 'Theme',
     themeDescription: 'Choose between light, dark, or auto mode based on your system',
     themeLight: 'Light',
@@ -995,21 +991,16 @@ export const en: Translations = {
     themeDarkDesc: 'Always dark mode',
     themeAutoDesc: 'Follow system',
     // Language
-    languageTitle: 'Language',
     languageLabel: 'App language',
     languageDescription: 'Change the language of the entire interface',
     // Numbers
-    numbersTitle: 'Numbers',
     numberFormatLabel: 'Amount format',
     numberFormatDescription: 'Affects all displayed values (not input fields)',
     abbreviated: 'Abbreviated',
-    abbreviatedDesc: 'Compact, great for the spreadsheet',
+    abbreviatedDesc: 'Compact, great for the yearly budget',
     full: 'Full',
     fullDesc: 'Exact amount in pesos',
-    // Version
-    versionTitle: 'Version',
     // Session
-    sessionTitle: 'Session',
     signOut: 'Sign out',
     // Data export/import
     dataTitle: 'Data',

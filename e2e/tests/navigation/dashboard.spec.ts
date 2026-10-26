@@ -24,9 +24,8 @@ test.describe('Dashboard (/dashboard)', () => {
     await expect(page.getByRole('navigation')).toBeVisible();
   });
 
-  test('shows Dashboard as active nav tab', async ({ page }) => {
-    const dashText = page.getByRole('navigation').getByText('Dashboard');
-    await expect(dashText).toBeVisible();
+  test('shows Gráficas as the active nav tab', async ({ page }) => {
+    await expect(page.getByRole('navigation').getByRole('link', { name: 'Gráficas' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('shows "Gastos recientes" section', async ({ page }) => {

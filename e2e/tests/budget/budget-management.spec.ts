@@ -19,8 +19,8 @@ test.describe('Budget Management (/settings/budgets)', () => {
   });
 
   test('shows the budget management page with "Nuevo" button', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Presupuestos' })
-      .or(page.getByText('Presupuestos').first())).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Partidas' })
+      .or(page.getByText('Partidas').first())).toBeVisible();
     await expect(budgetPage.newBudgetButton).toBeVisible();
   });
 

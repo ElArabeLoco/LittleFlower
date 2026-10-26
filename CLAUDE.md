@@ -204,6 +204,26 @@ Expenses are an **append-only ledger** — no edits, no deletes in the tradition
 
 ---
 
+## Navigation and UI vocabulary
+
+One name per thing in the Spanish UI (English in parentheses):
+
+- **Presupuesto** (budget): the month's plan as a whole.
+- **Partida** (budget item): each line of the plan, a `Budget` row. Never "rubro", "ítem" or "categoría de gasto".
+- **Gasto** (expense): what gets recorded against a partida.
+
+Bottom nav (`shared/ui/navTabs.ts` decides which paths highlight each tab, tested):
+
+| Tab | Opens | Also owns |
+|---|---|---|
+| Inicio | `/home` | |
+| Gráficas | `/dashboard` | |
+| Gastos | `/month` | `/anual` (Mes · Año switch in the header, `SpendingViewSwitch`), `/transactions` ("Lista de gastos"), `/budget` (redirects to `/month`) |
+| Finanzas | `/finances` | "Cómo vamos": `/net-worth`; "Plan del hogar": `/income`, `/settings/budgets` ("Partidas"), `/debts`, `/assets` |
+| Perfil | `/settings` | `/members` (linked from the Hogar card) |
+
+---
+
 ## Auth
 
 - Supabase Auth (email + password)

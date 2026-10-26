@@ -116,12 +116,12 @@ describe('configurable dashboard editor', () => {
     await user.click(screen.getByRole('button', { name: 'Agregar' }));
 
     const catalog = screen.getByRole('dialog', { name: 'Catálogo de widgets' });
-    expect(within(catalog).getByText('3 de 22 en tu dashboard')).toBeInTheDocument();
+    expect(within(catalog).getByText('3 de 22 en Gráficas')).toBeInTheDocument();
     await user.click(within(catalog).getByRole('button', { name: 'Agregar Balance real mes a mes' }));
 
     expect(slotIds(container)).toEqual(['kpis', 'trend', 'recent', 'balance']);
     expect(lastSaved(save)[3]).toEqual({ id: 'balance', width: 'half' });
-    expect(within(catalog).getByText('4 de 22 en tu dashboard')).toBeInTheDocument();
+    expect(within(catalog).getByText('4 de 22 en Gráficas')).toBeInTheDocument();
     expect(within(catalog).queryByRole('button', { name: 'Agregar Balance real mes a mes' })).toBeNull();
   });
 
@@ -163,7 +163,7 @@ describe('configurable dashboard editor', () => {
 
   it('offers the catalog when every widget was removed', async () => {
     const { user } = setup([]);
-    expect(screen.getByText('Tu dashboard no tiene widgets')).toBeInTheDocument();
+    expect(screen.getByText('No hay widgets en Gráficas')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Abrir catálogo' }));
 

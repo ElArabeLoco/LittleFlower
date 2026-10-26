@@ -14,7 +14,7 @@ export class BasePage {
   }
 
   /** Click a nav tab by its label text. */
-  async clickNavTab(label: 'Dashboard' | 'Presupuesto' | 'Finanzas' | 'Perfil') {
+  async clickNavTab(label: 'Inicio' | 'Gráficas' | 'Gastos' | 'Finanzas' | 'Perfil') {
     await this.page.getByRole('navigation').getByText(label, { exact: true }).click();
   }
 
