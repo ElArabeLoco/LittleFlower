@@ -45,7 +45,7 @@ export function SectionTiles({ lines }: { lines: SectionLines }) {
     { to: '/income', icon: TrendingUp, tone: 'leaf', title: t.finances.incomeTitle, line: lines.income },
     { to: '/settings/budgets', icon: ListChecks, tone: 'petal', title: t.finances.budgetsTitle, line: lines.budgets },
     { to: '/debts', icon: Landmark, tone: 'polen', title: t.finances.debtsTitle, line: lines.debts },
-    { to: '/transactions', icon: ArrowLeftRight, tone: 'iris', title: t.finances.transactionsTitle, line: t.home.transactionsLine },
+    { to: '/transactions', icon: ArrowLeftRight, tone: 'iris', title: t.transactions.title, line: t.home.transactionsLine },
     { to: '/settings', icon: SlidersHorizontal, tone: 'mist', title: t.home.profileTitle, line: t.home.profileLine },
   ];
 

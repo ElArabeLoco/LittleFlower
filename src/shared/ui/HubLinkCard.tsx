@@ -1,5 +1,5 @@
 /**
- * HubLinkCard — navigation card for the hub pages (/budget, /finances).
+ * HubLinkCard — navigation card for the hub pages (/finances).
  *
  * Anatomy:
  *   ┌─────────────────────────────────────────┐
@@ -14,7 +14,7 @@
  * direct child of a grid, e.g. `grid grid-cols-1 sm:grid-cols-2 gap-4`.
  *
  * Usage:
- *   <HubLinkCard to="/month" title="Vista Mensual" description="…" icon={CalendarDays} tone="petal" />
+ *   <HubLinkCard to="/income" title="Ingresos" description="…" icon={TrendingUp} tone="leaf" />
  */
 
 import { Link, type LinkProps } from '@tanstack/react-router';

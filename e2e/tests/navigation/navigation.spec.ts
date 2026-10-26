@@ -99,10 +99,11 @@ test.describe('Gastos tab: Mes · Año switch', () => {
 });
 
 test.describe('Finances Hub (/finances)', () => {
-  test('shows hub with Ingresos, Presupuestos, Deudas options', async ({ page }) => {
+  test('shows hub with Patrimonio, Ingresos, Partidas, Deudas options', async ({ page }) => {
     await page.goto('/finances');
-    await expect(page.getByText('Ingresos').first()).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Presupuestos').first()).toBeVisible();
+    await expect(page.getByText('Patrimonio').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Ingresos').first()).toBeVisible();
+    await expect(page.getByText('Partidas').first()).toBeVisible();
     await expect(page.getByText('Deudas').first()).toBeVisible();
   });
 
