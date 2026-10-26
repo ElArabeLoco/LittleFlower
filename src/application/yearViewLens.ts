@@ -15,6 +15,15 @@ export function hasStarted(budget: Pick<BudgetRow, 'start_month' | 'end_month'>,
   return month >= budget.start_month && (budget.end_month == null || month <= budget.end_month);
 }
 
+/** Whether the budget is active in at least one month of [fromMonth, toMonth]. */
+export function isActiveInRange(
+  budget: Pick<BudgetRow, 'start_month' | 'end_month'>,
+  fromMonth: string,
+  toMonth: string,
+): boolean {
+  return budget.start_month <= toMonth && (budget.end_month == null || budget.end_month >= fromMonth);
+}
+
 export function plannedAmount(budget: Pick<BudgetRow, 'default_amount'>, bm: BudgetMonthRow | undefined): number {
   return bm?.amount ?? budget.default_amount;
 }

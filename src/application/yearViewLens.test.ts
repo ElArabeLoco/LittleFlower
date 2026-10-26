@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { groupIdOf, hasStarted, lensValue, sumKnown, budgetMonthValue } from './yearViewLens';
+import { groupIdOf, hasStarted, isActiveInRange, lensValue, sumKnown, budgetMonthValue } from './yearViewLens';
 import type { BudgetRow, BudgetMonthRow } from '@/infrastructure/powersync/queries/types';
 
 const budget = (over: Partial<BudgetRow> = {}): BudgetRow =>
@@ -20,6 +20,32 @@ describe('hasStarted', () => {
     expect(hasStarted(b, '2026-02')).toBe(true);
     expect(hasStarted(b, '2026-06')).toBe(true);
     expect(hasStarted(b, '2026-07')).toBe(false);
+  });
+});
+
+describe('isActiveInRange', () => {
+  const from = '2026-01';
+  const to = '2026-12';
+  it('excludes a budget that ended before the range', () => {
+    expect(isActiveInRange(budget({ start_month: '2025-01', end_month: '2025-12' }), from, to)).toBe(false);
+  });
+  it('excludes a budget that starts after the range', () => {
+    expect(isActiveInRange(budget({ start_month: '2027-01' }), from, to)).toBe(false);
+  });
+  it('keeps a budget that ends mid-range', () => {
+    expect(isActiveInRange(budget({ start_month: '2025-01', end_month: '2026-06' }), from, to)).toBe(true);
+  });
+  it('keeps a budget that starts mid-range', () => {
+    expect(isActiveInRange(budget({ start_month: '2026-07' }), from, to)).toBe(true);
+  });
+  it('keeps an open-ended budget spanning the range', () => {
+    expect(isActiveInRange(budget({ start_month: '2024-01', end_month: null }), from, to)).toBe(true);
+  });
+  it('treats the boundary months as active', () => {
+    expect(isActiveInRange(budget({ start_month: '2025-01', end_month: '2026-01' }), from, to)).toBe(true);
+    expect(isActiveInRange(budget({ start_month: '2026-12', end_month: null }), from, to)).toBe(true);
+    expect(isActiveInRange(budget({ start_month: '2025-01', end_month: '2025-12' }), from, to)).toBe(false);
+    expect(isActiveInRange(budget({ start_month: '2027-01', end_month: null }), from, to)).toBe(false);
   });
 });
 
