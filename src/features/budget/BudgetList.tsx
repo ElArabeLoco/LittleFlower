@@ -2,6 +2,7 @@ import { Pencil, Trash2, CalendarOff, History } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/ui/cn';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
 import { BudgetFormDialog } from './BudgetFormDialog';
@@ -21,6 +22,9 @@ interface BudgetListProps {
   finished?: boolean;
 }
 
+/** Quiet icon key: the ink darkens on hover; the name shows as a tooltip and is read aloud. */
+const ICON_ACTION = 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]';
+
 export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDelete, expenseSpans, finished = false }: BudgetListProps) {
   const { t } = useI18n();
   const { formatCOP } = useNumberFormat();
@@ -36,28 +40,32 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
     <ul className="divide-y divide-[var(--border-subtle)]">
       {items.map(b => {
         const span = expenseSpans.get(b.id) ?? null;
+        const label = (action: string) => ({ 'aria-label': t.budgets.actionOn(action, b.name), title: action });
         return (
           <li key={b.id} className="flex flex-col gap-1 py-3 px-1 hover:bg-[var(--bg-hover)] rounded-lg transition-colors sm:flex-row sm:items-center sm:gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+              <p className="text-sm font-medium text-[var(--text-primary)] break-words">
                 <span className="mr-1.5">{getCategoryEmoji(b.category_id)}</span>{b.name}
                 {finished && <span className="font-normal text-[var(--text-muted)]"> · {modeLabel(b.payment_mode)}</span>}
               </p>
-              <p className="text-xs text-[var(--text-muted)]">
-                {getCategoryName(b.category_id)} ·{' '}
-                {b.end_month
-                  ? `${b.start_month} → ${b.end_month}`
-                  : `${t.common.from} ${b.start_month}`}{' '}
-                · {formatCOP(b.default_amount)}/mes
+              {/* Wraps between the parts only, never inside a date or an amount. */}
+              <p className="text-xs text-[var(--text-muted)] [&>span]:whitespace-nowrap">
+                <span>{getCategoryName(b.category_id)} ·</span>{' '}
+                <span>
+                  {b.end_month
+                    ? `${b.start_month} → ${b.end_month}`
+                    : `${t.common.from} ${b.start_month}`} ·
+                </span>{' '}
+                <span>{formatCOP(b.default_amount)}/mes</span>
               </p>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
+            {/* Same slot for each action on every row, so the icons line up as columns. */}
+            <div className="flex items-center justify-end gap-0.5 shrink-0">
               <BudgetHistoryDialog
                 budget={b}
                 trigger={
-                  <Button variant="ghost" size="icon" className="text-[var(--text-secondary)]"
-                    aria-label={t.budgets.historyAction} title={t.budgets.historyAction}>
-                    <History size={16} />
+                  <Button variant="ghost" size="icon" className={ICON_ACTION} {...label(t.budgets.historyAction)}>
+                    <History size={18} />
                   </Button>
                 }
               />
@@ -80,9 +88,8 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
                 }}
                 onDone={() => {}}
                 trigger={
-                  <Button variant="ghost" size="icon" className="text-[var(--text-secondary)] hover:text-pink-600"
-                    aria-label={t.budgets.editAction} title={t.budgets.editAction}>
-                    <Pencil size={16} />
+                  <Button variant="ghost" size="icon" className={ICON_ACTION} {...label(t.budgets.editAction)}>
+                    <Pencil size={18} />
                   </Button>
                 }
               />
@@ -93,20 +100,25 @@ export function BudgetList({ items, emptyLabel, householdId, userId, debts, onDe
                   householdId={householdId}
                   userId={userId}
                   trigger={
-                    <Button variant="ghost" size="icon" className="text-[var(--text-secondary)]"
-                      aria-label={t.budgets.finishAction} title={t.budgets.finishAction}>
-                      <CalendarOff size={16} />
+                    <Button variant="ghost" size="icon" className={ICON_ACTION} {...label(t.budgets.finishAction)}>
+                      <CalendarOff size={18} />
                     </Button>
                   }
                 />
               )}
-              {!span && (
-                <Button variant="ghost" size="icon" className="text-rose-600 hover:text-rose-700"
-                  aria-label={t.budgets.deleteAction} title={t.budgets.deleteAction}
-                  onClick={() => onDelete(b.id, b.name)}>
-                  <Trash2 size={16} />
-                </Button>
-              )}
+              {/* Delete sits apart behind a hairline; rows with expenses keep the slot empty. */}
+              <span className={cn('ml-1 border-l pl-1', span ? 'border-transparent' : 'border-[var(--border-subtle)]')}>
+                {span ? (
+                  <span aria-hidden="true" className="block size-10" />
+                ) : (
+                  <Button variant="ghost" size="icon"
+                    className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                    {...label(t.budgets.deleteAction)}
+                    onClick={() => onDelete(b.id, b.name)}>
+                    <Trash2 size={18} />
+                  </Button>
+                )}
+              </span>
             </div>
           </li>
         );

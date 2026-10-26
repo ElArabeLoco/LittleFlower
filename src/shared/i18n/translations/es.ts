@@ -519,6 +519,7 @@ export const es = {
     rangeEndError: (month: string) => `El fin no puede ser antes de ${month}: ese mes tiene gastos.`,
     deleteHasExpenses: 'Esta partida tiene gastos: finalízala en vez de eliminarla.',
     historyAction: 'Ver gastos',
+    actionOn: (action: string, name: string) => `${action} "${name}"`,
     historyTitle: (name: string) => `Gastos de "${name}"`,
     historyEmpty: 'Esta partida aún no tiene gastos.',
     historyCurrentMonth: 'Mes actual',

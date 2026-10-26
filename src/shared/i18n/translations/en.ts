@@ -520,6 +520,7 @@ export const en: Translations = {
     rangeEndError: (month: string) => `The end cannot be before ${month}: that month has expenses.`,
     deleteHasExpenses: 'This budget item has expenses: finish it instead of deleting it.',
     historyAction: 'View expenses',
+    actionOn: (action: string, name: string) => `${action} "${name}"`,
     historyTitle: (name: string) => `Expenses of "${name}"`,
     historyEmpty: 'This budget item has no expenses yet.',
     historyCurrentMonth: 'Current month',
