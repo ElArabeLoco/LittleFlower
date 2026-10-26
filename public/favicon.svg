@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <!-- Florecita small-size mark: the app icon's petals without stamens, around
-       a gold coin heart, so it still reads at 16px. The petal edge follows the
+  <!-- Florecita small-size mark: the app icon's flower over two coins, without
+       stem or leaves, so it still reads at 16px. The petal edge follows the
        browser's color scheme so it separates petals on light and dark tabs. -->
   <defs>
     <radialGradient id="petal" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="54">
@@ -8,12 +8,16 @@
       <stop offset="0.4" stop-color="#E8538C"/>
       <stop offset="1" stop-color="#FCA8C7"/>
     </radialGradient>
-    <radialGradient id="coin" gradientUnits="userSpaceOnUse" cx="-4" cy="-5" r="18">
-      <stop offset="0" stop-color="#FFF2CD"/>
-      <stop offset="0.5" stop-color="#FED06B"/>
-      <stop offset="1" stop-color="#F0A126"/>
-    </radialGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F0A126"/>
+      <stop offset="0.45" stop-color="#F9BA41"/>
+      <stop offset="1" stop-color="#D47B0E"/>
+    </linearGradient>
     <path id="p" d="M0 0C-10-8-22-24-22-38C-22-48-15-54-8-53C-5-52.5-2-51 0-48C2-51 5-52.5 8-53C15-54 22-48 22-38C22-24 10-8 0 0Z"/>
+    <g id="coin">
+      <path d="M-44 0V13A44 12 0 0 0 44 13V0Z" fill="url(#side)"/>
+      <ellipse rx="44" ry="12" fill="#FFE39C" stroke="#E9A13A" stroke-width="2.5"/>
+    </g>
   </defs>
   <style>
     .edge { stroke: #FFFFFF; }
@@ -21,15 +25,16 @@
       .edge { stroke: #181015; }
     }
   </style>
-  <g transform="translate(60 61) scale(1.1)">
-    <g class="edge" fill="url(#petal)" stroke-width="4" stroke-linejoin="round">
+  <use href="#coin" transform="translate(60 94)"/>
+  <use href="#coin" transform="translate(60 80)"/>
+  <g transform="translate(60 42) scale(0.74)">
+    <g class="edge" fill="url(#petal)" stroke-width="4.5" stroke-linejoin="round">
       <use href="#p"/>
       <use href="#p" transform="rotate(72)"/>
       <use href="#p" transform="rotate(144)"/>
       <use href="#p" transform="rotate(216)"/>
       <use href="#p" transform="rotate(288)"/>
     </g>
-    <circle class="edge" r="14" fill="url(#coin)" stroke-width="3"/>
-    <circle r="12.5" fill="none" stroke="#D47B0E" stroke-width="2"/>
+    <circle class="edge" r="12" fill="#F9BA41" stroke-width="4"/>
   </g>
 </svg>

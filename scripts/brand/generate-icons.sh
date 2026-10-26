@@ -13,7 +13,7 @@ rsvg-convert -w 32 -h 32 public/favicon.svg -o public/favicon-32x32.png
 rsvg-convert -w 48 -h 48 public/favicon.svg -o "$tmp/favicon-48.png"
 magick public/favicon-16x16.png public/favicon-32x32.png "$tmp/favicon-48.png" public/favicon.ico
 
-# App icons: full-bleed blush ground, flower inside the maskable safe zone.
+# App icons: full-bleed mint-to-blush ground, sprout inside the maskable safe zone.
 rsvg-convert -w 180 -h 180 scripts/brand/app-icon.svg -o public/apple-touch-icon.png
 rsvg-convert -w 192 -h 192 scripts/brand/app-icon.svg -o public/pwa-192x192.png
 rsvg-convert -w 512 -h 512 scripts/brand/app-icon.svg -o public/pwa-512x512.png
