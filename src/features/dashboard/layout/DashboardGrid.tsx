@@ -10,7 +10,7 @@ import {
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { cn } from '@/shared/ui/cn';
 import { ChartCard } from '../shared';
-import { WidgetSlotProvider } from './WidgetSlotContext';
+import { WidgetSlotProvider } from './useWidgetSlot';
 import type { DashboardEditor } from './useDashboardEditor';
 import './dashboardLayout.css';
 

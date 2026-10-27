@@ -9,18 +9,18 @@ import { LayoutList, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { cn } from '@/shared/ui/cn';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
-import { getCategoryName } from '@/domain/budget/categories';
+import { sortYearBudgets, type YearSortKey } from '@/features/budget/sortYearBudgets';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { SpendingViewSwitch } from '@/shared/ui/SpendingViewSwitch';
 import { useI18n } from '@/shared/i18n/I18nContext';
-import { useYearViewData, type BudgetRow } from '@/application/useYearViewData';
+import { useYearViewData } from '@/application/useYearViewData';
 import {
   groupIdOf, sumKnown, budgetRowValues, summarizeSelection, moveSelection, selectionBounds, isSingleCell,
   plannedAmount, hasStarted, type YearLens, type CellSelection,
 } from '@/application/yearViewLens';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
-import { useAppSettings } from '@/features/settings/AppSettingsContext';
+import { useAppSettings } from '@/features/settings/useAppSettings';
 import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { getCurrentMonth } from '@/shared/helpers';
 import type { PaymentMode } from '@/domain/budget/Budget';
@@ -33,32 +33,7 @@ import { YearViewHeader } from '@/features/budget/components/YearViewHeader';
 import { YearViewStatusBar, type StatusCell, type StatusRange } from '@/features/budget/components/YearViewStatusBar';
 import type { CellContextData, ContextMenuPos, CtxMenuState, ForwardConfirmState } from '@/features/budget/components/yearViewTypes';
 
-export type YearSortKey =
-  | 'name-asc' | 'name-desc'
-  | 'category-asc' | 'category-desc'
-  | 'value-asc' | 'value-desc';
-
 const YEAR_DEFAULT_SORT: YearSortKey = 'name-asc';
-
-export function sortYearBudgets(budgets: BudgetRow[], sortKey: YearSortKey): BudgetRow[] {
-  return [...budgets].sort((a, b) => {
-    switch (sortKey) {
-      case 'name-asc':  return a.name.localeCompare(b.name);
-      case 'name-desc': return b.name.localeCompare(a.name);
-      case 'category-asc': {
-        const cmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
-        return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
-      }
-      case 'category-desc': {
-        const cmp = getCategoryName(b.category_id).localeCompare(getCategoryName(a.category_id));
-        return cmp !== 0 ? cmp : b.name.localeCompare(a.name);
-      }
-      case 'value-asc':  return a.default_amount - b.default_amount;
-      case 'value-desc': return b.default_amount - a.default_amount;
-      default: return 0;
-    }
-  });
-}
 
 function yearMonths(year: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);

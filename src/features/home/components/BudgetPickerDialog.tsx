@@ -8,7 +8,7 @@ import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import type { MonthBudget } from '@/application/homeSummary';
 import { useI18n } from '@/shared/i18n/I18nContext';
-import { buttonVariants } from '@/shared/ui/button';
+import { buttonVariants } from '@/shared/ui/buttonVariants';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
 

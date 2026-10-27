@@ -14,23 +14,12 @@
  * the effective theme changes.
  */
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { AppSettingsContext, type Theme, type NumberFormat } from './useAppSettings';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export type Theme = 'light' | 'dark' | 'auto';
-export type NumberFormat = 'abbreviated' | 'full';
-
-interface AppSettings {
-  theme: Theme;
-  numberFormat: NumberFormat;
-  setTheme: (t: Theme) => void;
-  setNumberFormat: (f: NumberFormat) => void;
-  /** The actual resolved theme taking 'auto' into account */
-  resolvedTheme: 'light' | 'dark';
-}
 
 // ---------------------------------------------------------------------------
 // Storage helpers
@@ -67,8 +56,6 @@ function applyThemeClass(resolved: 'light' | 'dark') {
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
-
-const AppSettingsContext = createContext<AppSettings | null>(null);
 
 export function AppSettingsProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(readTheme);
@@ -107,10 +94,4 @@ export function AppSettingsProvider({ children }: { children: React.ReactNode })
       {children}
     </AppSettingsContext.Provider>
   );
-}
-
-export function useAppSettings(): AppSettings {
-  const ctx = useContext(AppSettingsContext);
-  if (!ctx) throw new Error('useAppSettings must be used inside AppSettingsProvider');
-  return ctx;
 }

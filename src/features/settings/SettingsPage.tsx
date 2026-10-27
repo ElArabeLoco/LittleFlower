@@ -15,7 +15,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
-import { useAppSettings, type Theme, type NumberFormat } from './AppSettingsContext';
+import { useAppSettings, type Theme, type NumberFormat } from './useAppSettings';
 import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages, Tag, Users, ChevronRight } from 'lucide-react';
 import { ExportImportSection } from './export/ExportImportSection';
 import { cn } from '@/shared/ui/cn';

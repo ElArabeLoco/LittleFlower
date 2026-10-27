@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { cn } from '@/shared/ui/cn';
 import type { YearLens } from '@/application/yearViewLens';
-import type { YearSortKey } from '../YearViewV2';
+import type { YearSortKey } from '../sortYearBudgets';
 
 const SORT_OPTIONS: YearSortKey[] = ['name-asc', 'value-desc', 'category-asc'];
 

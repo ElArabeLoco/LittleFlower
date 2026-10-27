@@ -1,7 +1,8 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { AppSettingsProvider, useAppSettings } from './AppSettingsContext';
+import { AppSettingsProvider } from './AppSettingsContext';
+import { useAppSettings } from './useAppSettings';
 
 describe('AppSettingsProvider and useAppSettings', () => {
   beforeEach(() => {

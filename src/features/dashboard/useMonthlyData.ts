@@ -7,7 +7,7 @@
  * how many chart components are on the page.
  */
 import { useMemo } from 'react';
-import { useDashboardCtx } from './DashboardContext';
+import { useDashboardCtx } from './useDashboardCtx';
 import type { MonthlyDataPoint } from '@/application/useDashboardData';
 import { useI18n } from '@/shared/i18n/I18nContext';
 import { makeShortMonth } from './helpers';
