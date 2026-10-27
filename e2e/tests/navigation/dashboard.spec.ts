@@ -28,7 +28,7 @@ test.describe('Dashboard (/dashboard)', () => {
     await expect(page.getByRole('navigation').getByRole('link', { name: 'Gráficas' })).toHaveAttribute('aria-current', 'page');
   });
 
-  test('shows "Gastos recientes" section', async ({ page }) => {
+  test('shows "Gastos recientes" section', async () => {
     await expect(dashboard.recentExpensesHeading).toBeVisible({ timeout: 15_000 });
   });
 

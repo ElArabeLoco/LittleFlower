@@ -21,11 +21,11 @@ test.describe('Settings Page (/settings)', () => {
       .toBeVisible({ timeout: 15_000 });
   });
 
-  test('shows the household section', async ({ page }) => {
+  test('shows the household section', async () => {
     await settingsPage.expectHouseholdVisible();
   });
 
-  test('shows the join code section', async ({ page }) => {
+  test('shows the join code section', async () => {
     await expect(settingsPage.joinCodeSection).toBeVisible();
   });
 
@@ -78,7 +78,7 @@ test.describe('Settings Page (/settings)', () => {
     await expect(btn).toHaveClass(/border-\[var\(--color-primary\)\]/, { timeout: 5_000 });
   });
 
-  test('shows the "Cerrar sesión" logout button', async ({ page }) => {
+  test('shows the "Cerrar sesión" logout button', async () => {
     await expect(settingsPage.logoutButton).toBeVisible();
   });
 
