@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { CheckCircle2, Circle } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import type { PaymentMode } from '@/domain/budget/Budget';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';

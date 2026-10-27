@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from './cn';
 
 const Dialog = DialogPrimitive.Root;

@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import type { SyncAlert as SyncAlertModel } from '@/application/useSyncStatus';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { RetryButton } from './SyncActionButtons';

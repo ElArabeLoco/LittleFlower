@@ -7,7 +7,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from './cn';
 
 type SpendingView = 'month' | 'year';

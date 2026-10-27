@@ -10,7 +10,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { ChartCard } from './shared';
 import { formatK, getPreviousMonth, buildBurnUpData } from './helpers';
 import {

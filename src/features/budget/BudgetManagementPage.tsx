@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Plus, CreditCard, Banknote, ChevronRight, ChevronDown } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { Button } from '@/shared/ui/button';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { useBudgetMutations, BudgetExpenseRangeError } from '@/application/useBudgetMutations';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useBudgetManagementData } from '@/application/useBudgetManagementData';
 import { useDebtOptionsQuery } from '@/infrastructure/powersync/queries/useDebtQueries';
 import { BudgetFormDialog } from './BudgetFormDialog';

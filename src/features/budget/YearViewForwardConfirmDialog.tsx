@@ -1,4 +1,4 @@
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import type { ForwardConfirmState } from './yearViewTypes';
 
 interface YearViewForwardConfirmDialogProps {

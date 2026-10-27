@@ -1,5 +1,5 @@
 import { LayoutDashboard, Plus } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import type { DashboardEditor } from './useDashboardEditor';
 
 /** Header actions: «Personalizar» in view mode; «Agregar» and «Listo» in edit mode. */

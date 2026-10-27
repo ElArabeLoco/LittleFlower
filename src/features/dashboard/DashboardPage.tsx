@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useAuth } from '@/features/auth/useAuth';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { getCurrentMonth, getPreviousMonth, nextMonth, makeFullMonthLabel } from './helpers';

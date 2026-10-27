@@ -14,7 +14,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useSyncActions, useSyncStatus } from '@/application/useSyncStatus';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { NO_ALERT, trackAlert } from './syncPresentation';
 import { SyncStatusContext, type SyncStatusContextValue } from './syncStatusContext';
 

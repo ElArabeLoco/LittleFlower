@@ -16,13 +16,13 @@
 import { useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { supabase } from '@/infrastructure/powersync/SupabaseConnector';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
 import { FlowerMark } from '@/shared/ui/FlowerMark';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 
 type Mode = 'choose' | 'create' | 'join';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useAuth } from './AuthContext';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useAuth } from './useAuth';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';

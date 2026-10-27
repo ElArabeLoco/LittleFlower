@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { ChartCard } from './shared';
 import { useDebtData } from './useDebtData';

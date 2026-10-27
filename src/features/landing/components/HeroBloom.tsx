@@ -13,7 +13,7 @@
  */
 
 import { Coins, History, Sheet, Users, WifiOff, type LucideIcon } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { FlowerMark } from '@/shared/ui/FlowerMark';
 import { cn } from '@/shared/ui/cn';
 

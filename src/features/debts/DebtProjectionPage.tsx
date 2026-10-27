@@ -4,7 +4,7 @@ import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { useDebtProjection, type DebtProjection } from '@/application/useDebtProjection';
 import { ratePercents, type AmortizationMethod, type DebtKind } from '@/application/debtPlan';

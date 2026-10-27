@@ -6,14 +6,14 @@ import React, {
   useState, useRef, useEffect, useMemo,
 } from 'react';
 import { LayoutList, X } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { cn } from '@/shared/ui/cn';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { sortYearBudgets, type YearSortKey } from '@/features/budget/sortYearBudgets';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { SpendingViewSwitch } from '@/shared/ui/SpendingViewSwitch';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useYearViewData } from '@/application/useYearViewData';
 import {
   groupIdOf, sumKnown, budgetRowValues, summarizeSelection, moveSelection, selectionBounds, isSingleCell,

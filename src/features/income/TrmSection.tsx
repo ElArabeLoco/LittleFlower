@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TrendingUp, AlertTriangle, Check } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/ui/cn';

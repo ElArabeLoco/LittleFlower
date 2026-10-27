@@ -10,7 +10,7 @@
  */
 
 import { useState } from 'react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
@@ -20,7 +20,7 @@ import { LogOut, Sun, Moon, SunMoon, Check, Home, Share2, Languages, Tag, Users,
 import { ExportImportSection } from './export/ExportImportSection';
 import { cn } from '@/shared/ui/cn';
 import { useHouseholdQuery, useUserQuery } from '@/infrastructure/powersync/queries/useHouseholdQueries';
-import { useI18n, type Locale } from '@/shared/i18n/I18nContext';
+import { useI18n, type Locale } from '@/shared/i18n/useI18n';
 import { useHouseholdMembers } from '@/application/useHouseholdMembers';
 import { formatList } from '@/features/members/formatList';
 

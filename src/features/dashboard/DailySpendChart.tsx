@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { ChartCard } from './shared';
 import { formatK, buildDailyChartData } from './helpers';
 import { useDailyExpensesByCategory } from '@/infrastructure/powersync/queries/useExpenseQueries';

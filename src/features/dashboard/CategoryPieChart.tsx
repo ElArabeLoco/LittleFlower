@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { ChartCard, PieTooltip, PieLabel } from './shared';
 import { useMonthlyData } from './useMonthlyData';

@@ -15,7 +15,7 @@
 
 import { useId } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
 
 interface MetricInfoProps {

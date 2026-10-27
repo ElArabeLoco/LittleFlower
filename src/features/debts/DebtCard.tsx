@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Link2, X, CalendarRange } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';

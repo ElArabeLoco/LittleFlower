@@ -14,7 +14,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { buttonVariants } from '@/shared/ui/buttonVariants';
 import { cn } from '@/shared/ui/cn';
 import { FlowerMark } from '@/shared/ui/FlowerMark';

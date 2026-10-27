@@ -10,7 +10,7 @@
 
 import type { ReactNode } from 'react';
 import type { SyncHealth } from '@/application/useSyncStatus';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 import { Popover, PopoverTrigger } from '@/shared/ui/popover';
 import { healthVisual, visibleSyncState, type SyncIcon, type SyncTone } from './syncPresentation';

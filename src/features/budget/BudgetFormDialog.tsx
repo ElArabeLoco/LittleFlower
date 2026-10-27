@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CreditCard, Banknote, ArrowLeftRight } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';

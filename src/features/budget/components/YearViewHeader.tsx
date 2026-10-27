@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 import type { YearLens } from '@/application/yearViewLens';
 import type { YearSortKey } from '../sortYearBudgets';

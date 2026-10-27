@@ -4,7 +4,7 @@
 
 import { Link } from '@tanstack/react-router';
 import type { RecentExpenseRow } from '@/application/useHomeData';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 
 export function RecentExpensesCard({ expenses }: { expenses: RecentExpenseRow[] }) {

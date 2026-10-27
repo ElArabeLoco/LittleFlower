@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { ChartTooltip } from './shared';
 import { ChartCard } from './shared';
 import { formatK, makeShortMonth } from './helpers';

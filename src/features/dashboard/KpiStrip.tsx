@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Wallet, Scale, AlertCircle, type LucideIcon } from 'lucide-react';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { cn } from '@/shared/ui/cn';
 import { useMonthlyData } from './useMonthlyData';

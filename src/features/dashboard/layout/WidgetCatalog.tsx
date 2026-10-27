@@ -5,7 +5,7 @@ import {
   WIDGET_IDS,
   type WidgetId,
 } from '@/domain/dashboard/dashboardLayout';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { Dialog, DialogOverlay, DialogPortal } from '@/shared/ui/dialog';
 import type { DashboardEditor } from './useDashboardEditor';
 

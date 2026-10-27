@@ -10,12 +10,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { supabase } from '@/infrastructure/powersync/SupabaseConnector';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { FlowerMark } from '@/shared/ui/FlowerMark';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 
 export function JoinPage() {
   const { t } = useI18n();

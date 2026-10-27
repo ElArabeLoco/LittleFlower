@@ -1,5 +1,5 @@
 import { Pencil, Trash2, CalendarOff, History } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';

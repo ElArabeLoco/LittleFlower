@@ -1,5 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { ChartCard, ChartTooltip } from './shared';
 import { formatK } from './helpers';
 import { useMonthlyData } from './useMonthlyData';

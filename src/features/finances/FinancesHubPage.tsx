@@ -12,7 +12,7 @@ import { TrendingUp, LayoutList, CreditCard, PiggyBank, Scale } from 'lucide-rea
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { HubLinkCard } from '@/shared/ui/HubLinkCard';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 
 function GroupTitle({ id, children }: { id: string; children: React.ReactNode }) {
   return (

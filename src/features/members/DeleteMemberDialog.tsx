@@ -9,7 +9,7 @@ import { useState } from 'react';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { MemberAvatar } from './components/MemberAvatar';
 import { formatList } from './formatList';
 

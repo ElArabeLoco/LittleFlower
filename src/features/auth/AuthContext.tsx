@@ -7,7 +7,7 @@
  * Exposes: session, isLoading, login, register, logout, refreshSession
  */
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/infrastructure/powersync/SupabaseConnector';
 import { db } from '@/infrastructure/powersync/client';
 import { SupabaseConnector } from '@/infrastructure/powersync/SupabaseConnector';
@@ -18,17 +18,7 @@ import {
   type AuthSession,
   type AuthError,
 } from '@/infrastructure/auth/SupabaseAuthAdapter';
-
-interface AuthContextValue {
-  session: AuthSession | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ error?: AuthError }>;
-  register: (email: string, password: string, name: string) => Promise<{ error?: AuthError; pendingConfirmation?: true }>;
-  logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext } from './useAuth';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -156,10 +146,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
 }

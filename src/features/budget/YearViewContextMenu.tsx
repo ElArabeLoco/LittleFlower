@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 import type { CtxMenuState, CellContextData } from './yearViewTypes';
 

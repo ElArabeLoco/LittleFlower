@@ -5,11 +5,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, CreditCard, Banknote, LayoutList, X } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { SpendingViewSwitch } from '@/shared/ui/SpendingViewSwitch';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useMonthViewData, type BudgetRow, type BudgetMonthRow } from '@/application/useMonthViewData';
 import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { getCurrentMonth, prevMonth, nextMonth } from '@/shared/helpers';

@@ -17,7 +17,7 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { SyncActivityEvent, SyncAlert, SyncErrorInfo, SyncHealth } from '@/application/useSyncStatus';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { PopoverContent } from '@/shared/ui/popover';

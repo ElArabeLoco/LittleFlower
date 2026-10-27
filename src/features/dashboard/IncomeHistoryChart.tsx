@@ -3,7 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 import { ChartCard, ChartTooltip } from './shared';
 import { formatK, getCurrentMonth, makeShortMonth } from './helpers';

@@ -11,7 +11,7 @@
  */
 
 import { CircleCheck, WifiOff } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 
 type SampleBudgetKey = 'sampleRent' | 'sampleGroceries' | 'sampleTransport' | 'sampleUtilities' | 'sampleRestaurants';
