@@ -1,4 +1,4 @@
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { cn } from '@/shared/ui/cn';
 import type { YearLens } from '@/application/yearViewLens';

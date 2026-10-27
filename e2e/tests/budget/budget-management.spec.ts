@@ -8,8 +8,6 @@
 import { test, expect } from '@playwright/test';
 import { BudgetManagementPage } from '../../pages/BudgetManagementPage';
 
-const BUDGET_NAME = `E2E Budget ${Date.now()}`;
-
 test.describe('Budget Management (/settings/budgets)', () => {
   let budgetPage: BudgetManagementPage;
 

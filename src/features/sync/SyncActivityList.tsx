@@ -10,7 +10,7 @@ import { useId, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { SyncActivityEvent } from '@/application/useSyncStatus';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 import {
   SYNC_ACTIVITY_FILTERS,

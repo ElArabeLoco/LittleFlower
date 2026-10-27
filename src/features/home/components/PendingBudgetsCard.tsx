@@ -7,7 +7,7 @@ import { Link } from '@tanstack/react-router';
 import { CircleCheck } from 'lucide-react';
 import type { MonthBudget } from '@/application/homeSummary';
 import type { PaymentMode } from '@/domain/budget/Budget';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';

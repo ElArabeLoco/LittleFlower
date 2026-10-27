@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Download, Upload, FileJson, FileSpreadsheet, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { exportToLF, exportToXLSX } from './exportService';
 import { importFromLF } from './importService';
 

@@ -1,6 +1,6 @@
 import { cn } from '@/shared/ui/cn';
 import { formatK } from './helpers';
-import { useWidgetSlot } from './layout/WidgetSlotContext';
+import { useWidgetSlot } from './layout/useWidgetSlot';
 
 // ---------------------------------------------------------------------------
 // Chart tooltip

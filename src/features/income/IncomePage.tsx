@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { Button } from '@/shared/ui/button';
@@ -8,7 +8,7 @@ import { cn } from '@/shared/ui/cn';
 import { useIncomeMutations } from '@/application/useIncomeMutations';
 import { useHoldersBySubject } from '@/application/useHolders';
 import { useHouseholdMembers } from '@/application/useHouseholdMembers';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { getCurrentMonth, prevMonth, nextMonth } from './helpers';
 import { useIncomeData } from './useIncomeData';

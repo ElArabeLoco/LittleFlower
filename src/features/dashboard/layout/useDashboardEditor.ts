@@ -11,7 +11,7 @@ import {
   type WidgetId,
   type WidgetWidth,
 } from '@/domain/dashboard/dashboardLayout';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { GridMotion, type GridMotionCallbacks } from './gridMotion';
 
 const TOAST_MS = 6000;

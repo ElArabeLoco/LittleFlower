@@ -11,11 +11,11 @@ import { useState } from 'react';
 import { useHomeData } from '@/application/useHomeData';
 import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { daysLeftInMonth, greetingPeriod, type MonthBudget } from '@/application/homeSummary';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { ExpenseFormDialog } from '@/features/expenses/ExpenseFormDialog';
 import { getCurrentMonth } from '@/shared/helpers';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { BudgetPickerDialog } from './components/BudgetPickerDialog';
 import { HomeView } from './HomeView';
 

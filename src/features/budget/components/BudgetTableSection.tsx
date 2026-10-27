@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { getCategoryEmoji } from '@/domain/budget/categories';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import {
   budgetRowValues, sumColumns, sumKnown, plannedAmount, hasStarted, selectionBounds,

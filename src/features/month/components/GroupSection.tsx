@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronUp } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { cn } from '@/shared/ui/cn';
 import type { BudgetRow, BudgetMonthRow } from '@/application/useMonthViewData';

@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, CreditCard, Banknote, ArrowUpDown, ArrowUp, 
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { getCategoryEmoji, getCategoryName } from '@/domain/budget/categories';
 import { useTransactionsForMonth, type TransactionRow } from '@/infrastructure/powersync/queries';

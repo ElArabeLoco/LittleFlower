@@ -16,7 +16,7 @@
  *   $900        → $900
  */
 
-import { useAppSettings } from '@/features/settings/AppSettingsContext';
+import { useAppSettings } from '@/features/settings/useAppSettings';
 
 // ---------------------------------------------------------------------------
 // Pure helpers — read format from localStorage directly.

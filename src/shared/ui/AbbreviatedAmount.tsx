@@ -12,7 +12,7 @@
  */
 
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
-import { useAppSettings } from '@/features/settings/AppSettingsContext';
+import { useAppSettings } from '@/features/settings/useAppSettings';
 import { cn } from '@/shared/ui/cn';
 
 interface AbbreviatedAmountProps {

@@ -5,12 +5,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, CreditCard, Banknote, LayoutList, X } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { AppNav } from '@/shared/ui/AppNav';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { SpendingViewSwitch } from '@/shared/ui/SpendingViewSwitch';
-import { getCategoryName } from '@/domain/budget/categories';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useMonthViewData, type BudgetRow, type BudgetMonthRow } from '@/application/useMonthViewData';
 import { useBudgetMutations } from '@/application/useBudgetMutations';
 import { getCurrentMonth, prevMonth, nextMonth } from '@/shared/helpers';
@@ -18,59 +17,7 @@ import { BalanceCard } from '@/features/month/components/BalanceCard';
 import { GroupSection } from '@/features/month/components/GroupSection';
 import { IncomeSection } from '@/features/month/components/IncomeSection';
 import { FilterSortBar, type SortKey } from '@/features/month/components/FilterSortBar';
-
-export function sortAndFilterBudgets(
-  budgets: BudgetRow[],
-  sortKey: SortKey,
-  filterText: string,
-  bmMap: Map<string, BudgetMonthRow>,
-  month: string,
-): BudgetRow[] {
-  const q = filterText.toLowerCase().trim();
-  const filtered = q ? budgets.filter(b => b.name.toLowerCase().includes(q)) : budgets;
-
-  return [...filtered].sort((a, b) => {
-    switch (sortKey) {
-      case 'pending-desc': {
-        const bmA = bmMap.get(`${a.id}|${month}`);
-        const bmB = bmMap.get(`${b.id}|${month}`);
-        const execA = bmA?.is_executed === 1 ? 1 : 0;
-        const execB = bmB?.is_executed === 1 ? 1 : 0;
-        if (execA !== execB) return execA - execB;
-        if (execA === 0) {
-          const amtA = bmA?.amount ?? a.default_amount;
-          const amtB = bmB?.amount ?? b.default_amount;
-          if (amtB !== amtA) return amtB - amtA;
-        }
-        return a.name.localeCompare(b.name);
-      }
-      case 'value-desc': {
-        const amtA = bmMap.get(`${a.id}|${month}`)?.amount ?? a.default_amount;
-        const amtB = bmMap.get(`${b.id}|${month}`)?.amount ?? b.default_amount;
-        return amtB - amtA;
-      }
-      case 'value-asc': {
-        const amtA = bmMap.get(`${a.id}|${month}`)?.amount ?? a.default_amount;
-        const amtB = bmMap.get(`${b.id}|${month}`)?.amount ?? b.default_amount;
-        return amtA - amtB;
-      }
-      case 'name-asc':
-        return a.name.localeCompare(b.name);
-      case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'category-asc': {
-        const cmp = getCategoryName(a.category_id).localeCompare(getCategoryName(b.category_id));
-        return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
-      }
-      case 'category-desc': {
-        const cmp = getCategoryName(b.category_id).localeCompare(getCategoryName(a.category_id));
-        return cmp !== 0 ? cmp : b.name.localeCompare(a.name);
-      }
-      default:
-        return 0;
-    }
-  });
-}
+import { sortAndFilterBudgets } from '@/features/month/sortAndFilterBudgets';
 
 export function MonthViewPageV2() {
   const { session } = useAuth();

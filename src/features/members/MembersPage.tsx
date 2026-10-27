@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { useHouseholdMembers } from '@/application/useHouseholdMembers';
 import { useMemberHoldings } from '@/application/useMemberHoldings';
 import { useMemberMutations } from '@/application/useMemberMutations';
@@ -16,7 +16,7 @@ import { useMemberSuggestions } from '@/application/useMemberSuggestions';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { AppNav } from '@/shared/ui/AppNav';
 import { Button } from '@/shared/ui/button';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { DeleteMemberDialog } from './DeleteMemberDialog';
 import { MemberFormDialog } from './MemberFormDialog';
 import { MembersView } from './MembersView';

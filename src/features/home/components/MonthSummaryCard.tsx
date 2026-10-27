@@ -16,7 +16,7 @@
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, ChevronRight } from 'lucide-react';
 import type { MonthBalance } from '@/application/homeSummary';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { cn } from '@/shared/ui/cn';
 import { PetalMeter } from '@/shared/ui/PetalMeter';

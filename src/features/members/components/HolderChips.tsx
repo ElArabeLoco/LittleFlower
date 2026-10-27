@@ -2,7 +2,7 @@ import { House } from 'lucide-react';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
 import type { HoldableType } from '@/domain/member/holders';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { MemberAvatar } from './MemberAvatar';
 
 interface HolderChipProps {

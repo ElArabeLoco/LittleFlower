@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useNetWorth } from '@/application/useNetWorth';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { AppNav } from '@/shared/ui/AppNav';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { NetWorthView, type NetWorthScope } from './NetWorthView';
 
 export function NetWorthPage() {

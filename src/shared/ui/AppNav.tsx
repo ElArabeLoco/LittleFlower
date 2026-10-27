@@ -10,8 +10,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { House, ChartColumn, Receipt, Wallet, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
-import { useAuth } from '@/features/auth/AuthContext';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useAuth } from '@/features/auth/useAuth';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { activeNavTab, NAV_TABS, type NavPath, type NavTabKey } from './navTabs';
 
 // ---------------------------------------------------------------------------

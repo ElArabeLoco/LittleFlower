@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { ChartTooltip } from './shared';
 import { ChartCard } from './shared';
 import { formatK, makeShortMonth } from './helpers';
@@ -8,10 +8,10 @@ import { useDebtData } from './useDebtData';
 
 export function DebtEvolutionChart() {
   const { t } = useI18n();
-  const shortMonth = makeShortMonth(t);
   const { dashDebts, dashDebtTxs, debtInitialCOP, last6 } = useDebtData();
 
   const debtEvolutionData = useMemo(() => {
+    const shortMonth = makeShortMonth(t);
     return last6.map(month => {
       const endOfMonth = `${month}-31`;
       let total = 0;
@@ -25,7 +25,7 @@ export function DebtEvolutionChart() {
       }
       return { month, label: shortMonth(month), saldo: total };
     });
-  }, [last6, dashDebts, dashDebtTxs, debtInitialCOP]);
+  }, [last6, dashDebts, dashDebtTxs, debtInitialCOP, t]);
 
   if (dashDebts.length === 0) return null;
 

@@ -20,7 +20,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { AssetHistoryEntry, AssetItem } from '@/application/useAssets';
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { formatK } from '@/features/dashboard/helpers';
 import { useValuationFormat } from './valuationFormat';
 import { ValueChangeBadge } from './ValueChangeBadge';

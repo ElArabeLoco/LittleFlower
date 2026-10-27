@@ -1,5 +1,5 @@
 import { ChartColumn } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useHasBudgets } from '@/infrastructure/powersync/queries/useBudgetQueries';
 
 export function EmptyState() {

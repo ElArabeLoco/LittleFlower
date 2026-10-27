@@ -6,7 +6,7 @@
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import type { ValueChange } from '@/domain/asset/assetValuation';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { signedPercent, useValuationFormat } from './valuationFormat';
 
 const TONES = {

@@ -10,7 +10,7 @@ import { Link } from '@tanstack/react-router';
 import type { MemberRef } from '@/domain/member/HouseholdMember';
 import { describeHolders, type HoldableType } from '@/domain/member/holders';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { formatList } from '../formatList';
 import { MEMBER_TONE_CLASSES } from '../memberTones';
 import { MemberAvatar } from './MemberAvatar';

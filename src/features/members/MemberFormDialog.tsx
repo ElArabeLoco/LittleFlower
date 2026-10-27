@@ -18,7 +18,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { cn } from '@/shared/ui/cn';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { HolderChip } from './components/HolderChips';
 import { MemberAvatar } from './components/MemberAvatar';
 import { memberInitial } from './memberInitial';

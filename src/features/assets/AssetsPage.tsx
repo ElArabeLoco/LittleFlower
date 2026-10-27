@@ -8,14 +8,14 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth } from '@/features/auth/useAuth';
 import { useAssets, type AssetHistoryEntry, type AssetItem } from '@/application/useAssets';
 import { useAssetMutations } from '@/application/useAssetMutations';
 import { useHouseholdMembers } from '@/application/useHouseholdMembers';
 import { AppHeader } from '@/shared/ui/AppHeader';
 import { AppNav } from '@/shared/ui/AppNav';
 import { Button } from '@/shared/ui/button';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AssetFormDialog } from './AssetFormDialog';
 import { AssetHistoryDialog } from './AssetHistoryDialog';
 import { AssetValueDialog } from './AssetValueDialog';

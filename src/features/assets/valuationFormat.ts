@@ -4,7 +4,7 @@
  */
 
 import type { AssetCurrency } from '@/domain/asset/Asset';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 
 /** Money in its own currency and dates like "12 Ene 2026". */

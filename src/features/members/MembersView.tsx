@@ -10,7 +10,7 @@ import type { MemberRef } from '@/domain/member/HouseholdMember';
 import type { MemberHoldingCounts } from '@/application/useHouseholdMembers';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { MemberAvatar } from './components/MemberAvatar';
 import { memberSummary } from './memberSummary';
 

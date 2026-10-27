@@ -24,7 +24,7 @@ import { useExpensesForBudgetMonth } from '@/infrastructure/powersync/queries/us
 import { useDebtDetail } from '@/application/useDebtDetail';
 import { suggestPaymentSplit, type PaymentSplit } from '@/application/debtPlan';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 
 // ---------------------------------------------------------------------------
 // Types

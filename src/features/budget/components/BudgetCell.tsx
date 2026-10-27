@@ -1,7 +1,7 @@
 import React, {
   useState, useRef, useEffect, useImperativeHandle,
 } from 'react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { cn } from '@/shared/ui/cn';

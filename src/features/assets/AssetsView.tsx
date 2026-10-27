@@ -26,7 +26,7 @@ import type { AssetItem } from '@/application/useAssets';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { HolderChips } from '@/features/members/components/HolderChips';
 import { ASSET_KIND_STYLES } from './assetKinds';

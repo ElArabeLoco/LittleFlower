@@ -33,7 +33,7 @@ import type { NetWorthData, WorthGroup, WorthLine, WorthTotals } from '@/applica
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { useNumberFormat } from '@/shared/hooks/useNumberFormat';
 import { MemberAvatar } from '@/features/members/components/MemberAvatar';
 import { ASSET_KIND_STYLES } from '@/features/assets/assetKinds';

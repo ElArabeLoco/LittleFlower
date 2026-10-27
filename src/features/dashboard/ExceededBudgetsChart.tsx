@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { CreditCard } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { CATEGORY_MAP } from '@/domain/budget/categories';
 import { AbbreviatedAmount } from '@/shared/ui/AbbreviatedAmount';
 import { ChartCard } from './shared';

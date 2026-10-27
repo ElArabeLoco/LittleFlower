@@ -6,8 +6,9 @@
 
 import { Link } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
-import { Button, buttonVariants } from '@/shared/ui/button';
+import { useI18n } from '@/shared/i18n/useI18n';
+import { Button } from '@/shared/ui/button';
+import { buttonVariants } from '@/shared/ui/buttonVariants';
 
 interface QuickActionsCardProps {
   onRecordExpense: () => void;

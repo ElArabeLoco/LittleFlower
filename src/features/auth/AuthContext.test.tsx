@@ -29,7 +29,8 @@ vi.mock('@/infrastructure/auth/SupabaseAuthAdapter', () => ({
 
 import { supabase, SupabaseConnector } from '@/infrastructure/powersync/SupabaseConnector';
 import { db } from '@/infrastructure/powersync/client';
-import { AuthProvider, useAuth } from './AuthContext';
+import { AuthProvider } from './AuthContext';
+import { useAuth } from './useAuth';
 
 const mockRefreshSession = supabase.auth.refreshSession as Mock;
 const mockOnAuthStateChange = supabase.auth.onAuthStateChange as Mock;

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ChevronUp, SlidersHorizontal, Search, X, RotateCcw } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { cn } from '@/shared/ui/cn';
 
 export type SortKey =

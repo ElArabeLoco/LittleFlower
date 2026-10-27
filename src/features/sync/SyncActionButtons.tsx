@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { Check, Copy, RotateCw } from 'lucide-react';
-import { useI18n } from '@/shared/i18n/I18nContext';
+import { useI18n } from '@/shared/i18n/useI18n';
 import { Button, type ButtonProps } from '@/shared/ui/button';
 import { cn } from '@/shared/ui/cn';
 

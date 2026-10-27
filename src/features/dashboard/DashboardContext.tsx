@@ -14,13 +14,10 @@
  * regardless of how many chart components are mounted.
  */
 
-import { createContext, useContext, useMemo } from 'react';
-import { useDashboardData, type DashboardData } from '@/application/useDashboardData';
-import { useDashboardDebtSummary, type DashboardDebtSummary } from '@/application/useDebtSummary';
-
-export interface DashboardContextValue extends DashboardData, DashboardDebtSummary {}
-
-const DashboardContext = createContext<DashboardContextValue | null>(null);
+import { useMemo } from 'react';
+import { useDashboardData } from '@/application/useDashboardData';
+import { useDashboardDebtSummary } from '@/application/useDebtSummary';
+import { DashboardContext, type DashboardContextValue } from './useDashboardCtx';
 
 export function DashboardDataProvider({
   children,
@@ -42,10 +39,4 @@ export function DashboardDataProvider({
       {children}
     </DashboardContext.Provider>
   );
-}
-
-export function useDashboardCtx(): DashboardContextValue {
-  const ctx = useContext(DashboardContext);
-  if (!ctx) throw new Error('useDashboardCtx must be used inside DashboardDataProvider');
-  return ctx;
 }
